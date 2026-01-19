@@ -230,8 +230,13 @@ apt-get install -y \
     bat
 
 # Crear symlinks para herramientas con nombres diferentes
-ln -sf /usr/bin/batcat /usr/local/bin/bat 2>/dev/null || true
-ln -sf /usr/bin/fdfind /usr/local/bin/fd 2>/dev/null || true
+# Note: || true is acceptable here - these are convenience symlinks that may not exist on all systems
+if ! ln -sf /usr/bin/batcat /usr/local/bin/bat 2>/dev/null; then
+    log "INFO: batcat not available, bat command will not work"
+fi
+if ! ln -sf /usr/bin/fdfind /usr/local/bin/fd 2>/dev/null; then
+    log "INFO: fdfind not available, fd command will not work"
+fi
 
 # ==============================================================================
 # 2. DOCKER
@@ -361,11 +366,19 @@ run_as_user "git config --global push.autoSetupRemote true"
 
 if [[ "${NERD_FONT}" == "true" ]]; then
     log "4/9 Instalando JetBrains Mono Nerd Font..."
-    
+
     FONT_DIR="${HOME_DIR}/.local/share/fonts"
     mkdir -p "${FONT_DIR}"
-    
-    FONT_VERSION="v3.1.1"
+
+    # Try to fetch latest version from GitHub API, with fallback
+    FONT_VERSION=$(curl --max-time 30 --fail --silent --show-error https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest 2>/dev/null | jq -r '.tag_name' 2>/dev/null || echo "")
+
+    if [[ -z "$FONT_VERSION" || "$FONT_VERSION" == "null" ]]; then
+        log "WARNING: Failed to fetch latest font version, using fallback"
+        FONT_VERSION="v3.1.1"  # Fallback to known stable version
+    fi
+
+    log "Downloading JetBrains Mono Nerd Font ${FONT_VERSION}..."
     curl --max-time 120 -Lo /tmp/JetBrainsMono.zip "https://github.com/ryanoasis/nerd-fonts/releases/download/${FONT_VERSION}/JetBrainsMono.zip"
 
     if validate_zip_archive /tmp/JetBrainsMono.zip "JetBrainsMono font"; then
@@ -467,7 +480,9 @@ case "${PROMPT_THEME}" in
         # Aplicar preset
         mkdir -p "${HOME_DIR}/.config"
         if [[ "${STARSHIP_PRESET}" != "none" && "${STARSHIP_PRESET}" != "" ]]; then
-            starship preset "${STARSHIP_PRESET}" -o "${HOME_DIR}/.config/starship.toml" || true
+            if ! starship preset "${STARSHIP_PRESET}" -o "${HOME_DIR}/.config/starship.toml" 2>/dev/null; then
+                log "WARNING: Failed to apply starship preset '${STARSHIP_PRESET}', using default config"
+            fi
         fi
         
         # Añadir a shell
@@ -551,9 +566,14 @@ EOF
         "EditorConfig.EditorConfig"
         "redhat.vscode-yaml"
     )
-    
+
+    log "Installing VS Code extensions..."
     for ext in "${EXTENSIONS[@]}"; do
-        run_as_user "code --install-extension ${ext} --force" || true
+        if run_as_user "code --install-extension ${ext} --force" 2>/dev/null; then
+            log "✓ Installed extension: ${ext}"
+        else
+            log "WARNING: Failed to install extension: ${ext}"
+        fi
     done
 else
     log "7/9 Saltando instalación de VS Code (deshabilitado)..."
@@ -683,6 +703,7 @@ else
     echo "${ALIASES_CONTENT}" >> "${HOME_DIR}/.bashrc"
 fi
 
+# Fix ownership of shell config files (may not exist depending on shell choice)
 chown "${USERNAME}:${USERNAME}" "${HOME_DIR}/.zshrc" 2>/dev/null || true
 chown "${USERNAME}:${USERNAME}" "${HOME_DIR}/.bashrc" 2>/dev/null || true
 

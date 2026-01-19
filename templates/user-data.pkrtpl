@@ -12,6 +12,8 @@ autoinstall:
   
   # ==========================================================================
   # Identidad (desde variables)
+  # NOTE: username and hostname are validated in main.pkr.hcl to ensure
+  # they are safe for use in system files (sudoers, GDM config, etc)
   # ==========================================================================
   identity:
     hostname: ${hostname}

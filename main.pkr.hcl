@@ -351,7 +351,8 @@ source "hyperv-iso" "ubuntu" {
   iso_checksum = var.iso_checksum
   
   # --- Boot ---
-  boot_wait = "5s"
+  # Increased from 5s to 10s to accommodate slower systems/hosts
+  boot_wait = "10s"
   boot_command = [
     "<wait>e<wait>",
     "<down><down><down><end>",
