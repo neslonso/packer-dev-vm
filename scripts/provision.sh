@@ -602,6 +602,25 @@ chown "${USERNAME}:${USERNAME}" "${HOME_DIR}/.zshrc" 2>/dev/null || true
 chown "${USERNAME}:${USERNAME}" "${HOME_DIR}/.bashrc" 2>/dev/null || true
 
 # ==============================================================================
+# PACKER BUILD - Allow shutdown without password
+# ==============================================================================
+# This is needed for Packer's shutdown_command to work regardless of sudo_nopassword setting
+# Only allows shutdown command, not all sudo commands (security: principle of least privilege)
+echo "# Temporary: Allow shutdown for Packer build (added by provision.sh)" > /etc/sudoers.d/99-packer-shutdown
+echo "${USERNAME} ALL=(ALL) NOPASSWD: /usr/sbin/shutdown" >> /etc/sudoers.d/99-packer-shutdown
+echo "${USERNAME} ALL=(ALL) NOPASSWD: /sbin/shutdown" >> /etc/sudoers.d/99-packer-shutdown
+chmod 440 /etc/sudoers.d/99-packer-shutdown
+
+# Validate sudoers file to ensure it's correct
+if ! visudo -c -f /etc/sudoers.d/99-packer-shutdown; then
+    echo "ERROR: Invalid sudoers file created" >&2
+    rm -f /etc/sudoers.d/99-packer-shutdown
+    exit 1
+fi
+
+log "✓ Shutdown permissions configured for Packer build"
+
+# ==============================================================================
 # FIN
 # ==============================================================================
 

@@ -341,7 +341,8 @@ source "hyperv-iso" "ubuntu" {
   headless         = var.headless
   
   # --- Shutdown ---
-  # Note: User has NOPASSWD configured in sudoers during build, so no password needed
+  # Note: provision.sh creates /etc/sudoers.d/99-packer-shutdown to allow shutdown without password
+  # This works regardless of sudo_nopassword setting (security: only allows shutdown, not all sudo)
   shutdown_command = "sudo shutdown -P now"
 }
 
