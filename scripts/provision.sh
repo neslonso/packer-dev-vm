@@ -30,6 +30,7 @@ DOCKER_LOG_MAX_SIZE="${VM_DOCKER_LOG_MAX_SIZE}"
 DOCKER_LOG_MAX_FILE="${VM_DOCKER_LOG_MAX_FILE}"
 DESKTOP_THEME="${VM_DESKTOP_THEME}"
 INSTALL_VSCODE="${VM_INSTALL_VSCODE}"
+INSTALL_ANTIGRAVITY="${VM_INSTALL_ANTIGRAVITY}"
 INSTALL_BROWSER="${VM_INSTALL_BROWSER}"
 
 HOME_DIR="/home/${USERNAME}"
@@ -587,6 +588,41 @@ else
 fi
 
 # ==============================================================================
+# 7.5. GOOGLE ANTIGRAVITY IDE (si está habilitado)
+# ==============================================================================
+
+if [[ "${INSTALL_ANTIGRAVITY}" == "true" ]]; then
+    log "7.5/9 Instalando Google Antigravity IDE..."
+
+    # Google Antigravity uses Google's signing key (same as Chrome/other Google products)
+    # Google Linux Repository GPG key fingerprint
+    GOOGLE_GPG_FINGERPRINT="EB4C 1BFD 4F04 2F6D DDCC EC91 7721 F63B D38B 4796"
+
+    if ! download_and_verify_gpg_key "https://dl.google.com/linux/linux_signing_key.pub" "/usr/share/keyrings/google-linux.gpg" "$GOOGLE_GPG_FINGERPRINT" "Google Linux Repository GPG key"; then
+        echo "ERROR: Failed to verify Google GPG key" >&2
+        exit 1
+    fi
+
+    # Add Antigravity repository
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-linux.gpg] https://packages.google.com/apt antigravity main" > /etc/apt/sources.list.d/antigravity.list
+
+    apt-get update
+    apt-get install -y google-antigravity
+
+    log "✓ Google Antigravity IDE installed successfully"
+
+    # Configure desktop launcher (optional)
+    if [[ -f "/usr/share/applications/antigravity.desktop" ]]; then
+        # Make it available for the user
+        mkdir -p "${HOME_DIR}/.local/share/applications"
+        cp /usr/share/applications/antigravity.desktop "${HOME_DIR}/.local/share/applications/"
+        chown "${USERNAME}:${USERNAME}" "${HOME_DIR}/.local/share/applications/antigravity.desktop"
+    fi
+else
+    log "7.5/9 Saltando instalación de Google Antigravity IDE (deshabilitado)..."
+fi
+
+# ==============================================================================
 # 8. NAVEGADOR (si está configurado)
 # ==============================================================================
 
@@ -745,6 +781,7 @@ echo "  - Shell: ${SHELL_TYPE}"
 echo "  - Prompt: ${PROMPT_THEME}"
 echo "  - Docker: instalado"
 echo "  - VS Code: ${INSTALL_VSCODE}"
+echo "  - Google Antigravity IDE: ${INSTALL_ANTIGRAVITY}"
 echo "  - Navegador: ${INSTALL_BROWSER}"
 echo "  - Nerd Font: ${NERD_FONT}"
 echo ""
