@@ -67,19 +67,6 @@ run_as_user() {
     sudo -u "${USERNAME}" -H bash -c "$cmd"
 }
 
-# Run command as user with safe argument passing
-run_as_user_safe() {
-    local cmd="$1"
-    shift
-    local args=()
-    for arg in "$@"; do
-        args+=("$(shell_escape "$arg")")
-    done
-    sudo -u "${USERNAME}" -H bash <<EOF
-$cmd ${args[@]+"${args[@]}"}
-EOF
-}
-
 # Download and verify script before execution
 download_and_verify_script() {
     local url="$1"
@@ -391,16 +378,19 @@ if [[ "${NERD_FONT}" == "true" ]]; then
     fi
 
     log "Downloading JetBrains Mono Nerd Font ${FONT_VERSION}..."
-    curl --max-time 120 -Lo /tmp/JetBrainsMono.zip "https://github.com/ryanoasis/nerd-fonts/releases/download/${FONT_VERSION}/JetBrainsMono.zip"
 
-    if validate_zip_archive /tmp/JetBrainsMono.zip "JetBrainsMono font"; then
-        unzip -o /tmp/JetBrainsMono.zip -d "${FONT_DIR}"
+    if curl --max-time 120 --fail -Lo /tmp/JetBrainsMono.zip "https://github.com/ryanoasis/nerd-fonts/releases/download/${FONT_VERSION}/JetBrainsMono.zip" 2>/dev/null; then
+        if validate_zip_archive /tmp/JetBrainsMono.zip "JetBrainsMono font"; then
+            unzip -o /tmp/JetBrainsMono.zip -d "${FONT_DIR}"
+        else
+            echo "ERROR: JetBrainsMono font archive validation failed" >&2
+            exit 1
+        fi
+        rm /tmp/JetBrainsMono.zip
     else
-        echo "ERROR: JetBrainsMono font archive validation failed" >&2
+        echo "ERROR: Failed to download JetBrains Mono Nerd Font" >&2
         exit 1
     fi
-
-    rm /tmp/JetBrainsMono.zip
     
     chown -R "${USERNAME}:${USERNAME}" "${FONT_DIR}"
     
