@@ -33,6 +33,12 @@ INSTALL_VSCODE="${VM_INSTALL_VSCODE}"
 INSTALL_ANTIGRAVITY="${VM_INSTALL_ANTIGRAVITY}"
 INSTALL_BROWSER="${VM_INSTALL_BROWSER}"
 
+# GPG Fingerprints (from centralized configuration in main.pkr.hcl)
+DOCKER_GPG_FINGERPRINT="${GPG_FINGERPRINT_DOCKER}"
+GITHUB_CLI_GPG_FINGERPRINT="${GPG_FINGERPRINT_GITHUB}"
+MICROSOFT_GPG_FINGERPRINT="${GPG_FINGERPRINT_MICROSOFT}"
+GOOGLE_GPG_FINGERPRINT="${GPG_FINGERPRINT_GOOGLE}"
+
 HOME_DIR="/home/${USERNAME}"
 
 export DEBIAN_FRONTEND=noninteractive
@@ -246,8 +252,7 @@ log "2/9 Instalando Docker..."
 
 # Añadir repositorio de Docker (with GPG key verification)
 install -m 0755 -d /etc/apt/keyrings
-# Docker official GPG key fingerprint
-DOCKER_GPG_FINGERPRINT="9DC8 5822 9FC7 DD38 854A E2D8 8D81 803C 0EBF CD88"
+# Docker official GPG key fingerprint (from main.pkr.hcl)
 if ! download_and_verify_gpg_key "https://download.docker.com/linux/ubuntu/gpg" "/etc/apt/keyrings/docker.gpg" "$DOCKER_GPG_FINGERPRINT" "Docker GPG key"; then
     echo "ERROR: Failed to verify Docker GPG key" >&2
     exit 1
@@ -337,8 +342,7 @@ else
 fi
 
 # GitHub CLI (with GPG key verification)
-# GitHub CLI official GPG key fingerprint
-GITHUB_CLI_GPG_FINGERPRINT="23F3 D4EA 75C7 C96E ED2F 6D8B 15D3 3B7B D59C 46E1"
+# GitHub CLI official GPG key fingerprint (from main.pkr.hcl)
 if ! download_and_verify_gpg_key "https://cli.github.com/packages/githubcli-archive-keyring.gpg" "/usr/share/keyrings/githubcli-archive-keyring.gpg" "$GITHUB_CLI_GPG_FINGERPRINT" "GitHub CLI GPG key"; then
     echo "ERROR: Failed to verify GitHub CLI GPG key" >&2
     exit 1
@@ -527,8 +531,7 @@ apt-get install -y \
 if [[ "${INSTALL_VSCODE}" == "true" ]]; then
     log "7/9 Instalando VS Code..."
 
-    # Microsoft GPG key (with verification)
-    MICROSOFT_GPG_FINGERPRINT="BC52 8686 B50D 79E3 39D3 721C EB3E 94AD BE12 29CF"
+    # Microsoft GPG key (with verification - from main.pkr.hcl)
     if ! download_and_verify_gpg_key "https://packages.microsoft.com/keys/microsoft.asc" "/usr/share/keyrings/packages.microsoft.gpg" "$MICROSOFT_GPG_FINGERPRINT" "Microsoft GPG key"; then
         echo "ERROR: Failed to verify Microsoft GPG key" >&2
         exit 1
@@ -595,9 +598,7 @@ if [[ "${INSTALL_ANTIGRAVITY}" == "true" ]]; then
     log "7.5/9 Instalando Google Antigravity IDE..."
 
     # Google Antigravity uses Google's signing key (same as Chrome/other Google products)
-    # Google Linux Repository GPG key fingerprint
-    GOOGLE_GPG_FINGERPRINT="EB4C 1BFD 4F04 2F6D DDCC EC91 7721 F63B D38B 4796"
-
+    # Google Linux Repository GPG key fingerprint (from main.pkr.hcl)
     if ! download_and_verify_gpg_key "https://dl.google.com/linux/linux_signing_key.pub" "/usr/share/keyrings/google-linux.gpg" "$GOOGLE_GPG_FINGERPRINT" "Google Linux Repository GPG key"; then
         echo "ERROR: Failed to verify Google GPG key" >&2
         exit 1

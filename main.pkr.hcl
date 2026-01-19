@@ -293,10 +293,19 @@ variable "hyperv_secure_boot" {
 locals {
   # Password hash para cloud-init (SHA-512) - Generated dynamically from var.password
   password_hash = jsondecode(data.external-raw.password_hash.result).hash
-  
+
   # Timestamp para nombres únicos
   timestamp = formatdate("YYYYMMDD-hhmm", timestamp())
-  
+
+  # GPG Key Fingerprints (centralized for easy maintenance)
+  # These fingerprints are verified during package repository setup
+  gpg_fingerprints = {
+    docker    = "9DC8 5822 9FC7 DD38 854A  E2D8 8D81 803C 0EBF CD88"
+    github    = "23F3 D4EA 75C7 C96E ED2F  6D8B 15D3 3B7B D59C 46E1"
+    microsoft = "BC52 8686 B50D 79E3 39D3  721C EB3E 94AD BE12 29CF"
+    google    = "EB4C 1BFD 4F04 2F6D DDCC  EC91 7721 F63B D38B 4796"
+  }
+
   # Variables para el script de provisioning (todas las que necesita)
   provision_env_vars = [
     "VM_USERNAME=${var.username}",
@@ -324,6 +333,11 @@ locals {
     "VM_INSTALL_VSCODE=${var.install_vscode}",
     "VM_INSTALL_ANTIGRAVITY=${var.install_antigravity}",
     "VM_INSTALL_BROWSER=${var.install_browser}",
+    # GPG Fingerprints (centralized)
+    "GPG_FINGERPRINT_DOCKER=${local.gpg_fingerprints.docker}",
+    "GPG_FINGERPRINT_GITHUB=${local.gpg_fingerprints.github}",
+    "GPG_FINGERPRINT_MICROSOFT=${local.gpg_fingerprints.microsoft}",
+    "GPG_FINGERPRINT_GOOGLE=${local.gpg_fingerprints.google}",
   ]
 }
 
