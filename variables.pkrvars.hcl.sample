@@ -1,0 +1,135 @@
+# ==============================================================================
+# PACKER DEVELOPMENT VM - CONFIGURATION
+# ==============================================================================
+# Este es el ÚNICO archivo de configuración. Todos los valores se propagan
+# automáticamente al resto de archivos (cloud-init, scripts, etc.)
+# ==============================================================================
+
+# ==============================================================================
+# IDENTIDAD
+# ==============================================================================
+vm_name  = "dev-workstation"           # Nombre de la VM en el hypervisor
+username = "developer"                 # Usuario principal
+password = "developer"                 # Contraseña (se genera hash automáticamente)
+hostname = "dev-workstation"           # Hostname de la máquina
+
+# ==============================================================================
+# LOCALIZACIÓN
+# ==============================================================================
+timezone = "Europe/Madrid"             # Zona horaria (formato IANA)
+locale   = "es_ES.UTF-8"               # Locale del sistema
+keyboard = "es"                        # Layout de teclado
+
+# ==============================================================================
+# RECURSOS VM
+# ==============================================================================
+memory    = 8192                       # RAM en MB
+cpus      = 4                          # Número de CPUs
+disk_size = 80000                      # Disco en MB
+
+# ==============================================================================
+# UBUNTU
+# ==============================================================================
+ubuntu_version = "24.04.1"
+iso_url        = "https://releases.ubuntu.com/24.04.1/ubuntu-24.04.1-desktop-amd64.iso"
+iso_checksum   = "sha256:c2e6f4dc37ac944e2ed507f87c6571f4330a63c7f2e9c0aea40fd69a135e6f94"
+
+# ==============================================================================
+# SISTEMA
+# ==============================================================================
+autologin          = true              # Login automático en el desktop
+ssh_port           = 22                # Puerto SSH
+ssh_allow_password = true              # Permitir auth por password
+sudo_nopassword    = true              # Sudo sin password
+
+# ==============================================================================
+# SHELL Y PROMPT
+# ==============================================================================
+# Combinaciones válidas:
+#   shell=bash + prompt_theme=none|starship|ohmybash
+#   shell=zsh  + prompt_theme=none|starship|ohmyzsh
+# ==============================================================================
+shell        = "zsh"                   # bash | zsh
+prompt_theme = "ohmyzsh"               # none | starship | ohmybash | ohmyzsh
+
+# --- Oh My Zsh (solo si shell=zsh y prompt_theme=ohmyzsh) ---
+# Temas SIN Nerd Font: robbyrussell, bira, dst, refined, ys, pure, minimal, bureau, josh, gnzh
+# Temas CON Nerd Font: agnoster, powerlevel10k (requiere nerd_font=true)
+# Lista completa: https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
+ohmyzsh_theme   = "agnoster"
+ohmyzsh_plugins = "git,docker,docker-compose,kubectl"
+
+# --- Oh My Bash (solo si shell=bash y prompt_theme=ohmybash) ---
+# Temas SIN Nerd Font: font, bobby, clean, minimal, pure, modern, brainy
+# Temas CON Nerd Font: agnoster, powerline, powerline-*, powerbash10k (requiere nerd_font=true)
+# Lista completa: https://github.com/ohmybash/oh-my-bash/wiki/Themes
+ohmybash_theme = "powerline"
+
+# --- Starship (solo si prompt_theme=starship, funciona con bash o zsh) ---
+# Presets SIN Nerd Font: plain-text-symbols, no-nerd-font, bracketed-segments, pure-preset
+# Presets CON Nerd Font: pastel-powerline, tokyo-night, gruvbox-rainbow, nerd-font-symbols
+# Lista completa: https://starship.rs/presets/
+starship_preset = "no-nerd-font"
+
+# ==============================================================================
+# FUENTES
+# ==============================================================================
+# Instala JetBrains Mono Nerd Font. Necesario para temas con iconos:
+# - Oh My Zsh: agnoster, powerlevel10k
+# - Oh My Bash: agnoster, powerline*, powerbash10k
+# - Starship: pastel-powerline, tokyo-night, gruvbox-rainbow, nerd-font-symbols
+nerd_font = true
+
+# ==============================================================================
+# GIT
+# ==============================================================================
+git_name           = "Developer"                # Nombre para commits
+git_email          = "developer@example.com"    # Email para commits
+git_default_branch = "main"                     # Branch por defecto
+
+# ==============================================================================
+# DOCKER
+# ==============================================================================
+docker_log_max_size = "10m"            # Tamaño máximo de logs por contenedor
+docker_log_max_file = 3                # Número de archivos de log a mantener
+
+# ==============================================================================
+# DESKTOP
+# ==============================================================================
+desktop_theme       = "dark"           # dark | light
+install_vscode      = true             # Instalar VS Code
+install_antigravity = false            # Instalar Google Antigravity IDE (en preview, puede fallar)
+install_browser     = "firefox"        # firefox | chrome | chromium | none
+
+# ==============================================================================
+# BUILD
+# ==============================================================================
+output_directory = "./output"          # Directorio de salida de la VM
+headless         = false               # true = sin ventana (para CI/CD)
+
+# ==============================================================================
+# HYPER-V (específico)
+# ==============================================================================
+hyperv_switch      = "Default Switch"  # Nombre del switch virtual en Hyper-V
+hyperv_generation  = 2                 # 1 = BIOS legacy, 2 = UEFI (recomendado)
+hyperv_secure_boot = false             # Desactivar para Ubuntu
+
+# ==============================================================================
+# VIRTUALBOX (para futuro, descomentar cuando se añada soporte)
+# ==============================================================================
+# vbox_graphics = "vmsvga"
+# vbox_vram     = 128
+# vbox_3d       = true
+
+# ==============================================================================
+# VMWARE (para futuro, descomentar cuando se añada soporte)
+# ==============================================================================
+# vmware_version   = 19
+# vmware_disk_type = "thin"
+
+# ==============================================================================
+# QEMU/KVM (para futuro, descomentar cuando se añada soporte)
+# ==============================================================================
+# qemu_accelerator = "kvm"
+# qemu_machine     = "q35"
+# qemu_cpu         = "host"

@@ -1,0 +1,112 @@
+#cloud-config
+autoinstall:
+  version: 1
+  
+  # ==========================================================================
+  # Locale y Teclado (desde variables)
+  # ==========================================================================
+  locale: ${locale}
+  keyboard:
+    layout: ${keyboard}
+    variant: ""
+  
+  # ==========================================================================
+  # Identidad (desde variables)
+  # ==========================================================================
+  identity:
+    hostname: ${hostname}
+    username: ${username}
+    password: "${password_hash}"
+  
+  # ==========================================================================
+  # Almacenamiento
+  # ==========================================================================
+  storage:
+    layout:
+      name: lvm
+      sizing-policy: all
+    swap:
+      size: 0
+  
+  # ==========================================================================
+  # Red
+  # ==========================================================================
+  network:
+    network:
+      version: 2
+      ethernets:
+        any:
+          match:
+            name: "*"
+          dhcp4: true
+          dhcp6: false
+  
+  # ==========================================================================
+  # SSH
+  # ==========================================================================
+  ssh:
+    install-server: true
+    allow-pw: ${ssh_allow_password}
+  
+  # ==========================================================================
+  # Paquetes base (mínimos, el resto se instala en provision.sh)
+  # ==========================================================================
+  packages:
+    - ubuntu-desktop-minimal
+    - openssh-server
+    - git
+    - curl
+    - wget
+    - vim
+    - htop
+    - jq
+    - unzip
+    - ca-certificates
+    - gnupg
+    - lsb-release
+    - qemu-guest-agent
+    - spice-vdagent
+  
+  # ==========================================================================
+  # Comandos post-instalación
+  # ==========================================================================
+  late-commands:
+%{ if sudo_nopassword ~}
+    # Sudo sin password
+    - echo '${username} ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/${username}
+    - chmod 440 /target/etc/sudoers.d/${username}
+%{ endif ~}
+    
+%{ if autologin ~}
+    # Autologin en GDM
+    - |
+      mkdir -p /target/etc/gdm3
+      cat > /target/etc/gdm3/custom.conf << 'GDMEOF'
+      [daemon]
+      AutomaticLoginEnable=true
+      AutomaticLogin=${username}
+      [security]
+      [xdmcp]
+      [chooser]
+      [debug]
+      GDMEOF
+%{ endif ~}
+    
+    # Timezone
+    - curtin in-target --target=/target -- timedatectl set-timezone ${timezone}
+    
+    # SSH config
+%{ if ssh_allow_password ~}
+    - sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /target/etc/ssh/sshd_config
+    - sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /target/etc/ssh/sshd_config
+%{ endif ~}
+    
+    # GRUB timeout reducido
+    - sed -i 's/GRUB_TIMEOUT=.*/GRUB_TIMEOUT=2/' /target/etc/default/grub
+    - curtin in-target --target=/target -- update-grub
+    
+    # Crear directorios de proyectos
+    - mkdir -p /target/home/${username}/projects/work
+    - mkdir -p /target/home/${username}/projects/personal
+    - mkdir -p /target/home/${username}/projects/sandbox
+    - curtin in-target --target=/target -- chown -R ${username}:${username} /home/${username}/projects
