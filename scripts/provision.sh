@@ -106,6 +106,52 @@ download_and_verify_script() {
     return 0
 }
 
+# Validate tar archive for path traversal attacks
+validate_tar_archive() {
+    local archive="$1"
+    local description="${2:-archive}"
+
+    log "Validating ${description} for security..."
+
+    # Check for path traversal attempts
+    if tar -tzf "$archive" 2>/dev/null | grep -E '(^|/)\.\.(\/|$)' > /dev/null; then
+        echo "ERROR: ${description} contains dangerous path traversal sequences (..)" >&2
+        return 1
+    fi
+
+    # Check for absolute paths
+    if tar -tzf "$archive" 2>/dev/null | grep -E '^/' > /dev/null; then
+        echo "ERROR: ${description} contains absolute paths" >&2
+        return 1
+    fi
+
+    log "✓ ${description} passed security validation"
+    return 0
+}
+
+# Validate zip archive for path traversal attacks
+validate_zip_archive() {
+    local archive="$1"
+    local description="${2:-archive}"
+
+    log "Validating ${description} for security..."
+
+    # Check for path traversal attempts
+    if unzip -l "$archive" 2>/dev/null | awk '{print $4}' | grep -E '(^|/)\.\.(\/|$)' > /dev/null; then
+        echo "ERROR: ${description} contains dangerous path traversal sequences (..)" >&2
+        return 1
+    fi
+
+    # Check for absolute paths
+    if unzip -l "$archive" 2>/dev/null | awk '{print $4}' | grep -E '^/' > /dev/null; then
+        echo "ERROR: ${description} contains absolute paths" >&2
+        return 1
+    fi
+
+    log "✓ ${description} passed security validation"
+    return 0
+}
+
 # Download GPG key and verify fingerprint
 download_and_verify_gpg_key() {
     local url="$1"
@@ -233,12 +279,28 @@ systemctl enable docker
 systemctl start docker
 
 # Instalar herramientas Docker adicionales
-# lazydocker
-LAZYDOCKER_VERSION=$(curl --max-time 30 -s https://api.github.com/repos/jesseduffield/lazydocker/releases/latest | jq -r '.tag_name')
-curl --max-time 60 -Lo /tmp/lazydocker.tar.gz "https://github.com/jesseduffield/lazydocker/releases/download/${LAZYDOCKER_VERSION}/lazydocker_${LAZYDOCKER_VERSION#v}_Linux_x86_64.tar.gz"
-tar xzf /tmp/lazydocker.tar.gz -C /usr/local/bin lazydocker
-chmod +x /usr/local/bin/lazydocker
-rm /tmp/lazydocker.tar.gz
+# lazydocker (with error handling and fallback version)
+LAZYDOCKER_VERSION=$(curl --max-time 30 --fail --silent --show-error https://api.github.com/repos/jesseduffield/lazydocker/releases/latest 2>/dev/null | jq -r '.tag_name' 2>/dev/null || echo "")
+
+if [[ -z "$LAZYDOCKER_VERSION" || "$LAZYDOCKER_VERSION" == "null" ]]; then
+    log "WARNING: Failed to fetch lazydocker latest version from GitHub API, using fallback"
+    LAZYDOCKER_VERSION="v0.23.1"  # Fallback to known stable version
+fi
+
+log "Installing lazydocker ${LAZYDOCKER_VERSION}..."
+
+if curl --max-time 60 --fail -Lo /tmp/lazydocker.tar.gz "https://github.com/jesseduffield/lazydocker/releases/download/${LAZYDOCKER_VERSION}/lazydocker_${LAZYDOCKER_VERSION#v}_Linux_x86_64.tar.gz" 2>/dev/null; then
+    if validate_tar_archive /tmp/lazydocker.tar.gz "lazydocker archive"; then
+        tar xzf /tmp/lazydocker.tar.gz -C /usr/local/bin lazydocker
+        chmod +x /usr/local/bin/lazydocker
+        log "✓ lazydocker ${LAZYDOCKER_VERSION} installed successfully"
+    else
+        log "ERROR: lazydocker archive validation failed, skipping installation"
+    fi
+    rm /tmp/lazydocker.tar.gz
+else
+    log "WARNING: Failed to download lazydocker, skipping..."
+fi
 
 # ==============================================================================
 # 3. GIT
@@ -246,12 +308,28 @@ rm /tmp/lazydocker.tar.gz
 
 log "3/9 Configurando Git..."
 
-# lazygit
-LAZYGIT_VERSION=$(curl --max-time 30 -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest | jq -r '.tag_name')
-curl --max-time 60 -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION#v}_Linux_x86_64.tar.gz"
-tar xzf /tmp/lazygit.tar.gz -C /usr/local/bin lazygit
-chmod +x /usr/local/bin/lazygit
-rm /tmp/lazygit.tar.gz
+# lazygit (with error handling and fallback version)
+LAZYGIT_VERSION=$(curl --max-time 30 --fail --silent --show-error https://api.github.com/repos/jesseduffield/lazygit/releases/latest 2>/dev/null | jq -r '.tag_name' 2>/dev/null || echo "")
+
+if [[ -z "$LAZYGIT_VERSION" || "$LAZYGIT_VERSION" == "null" ]]; then
+    log "WARNING: Failed to fetch lazygit latest version from GitHub API, using fallback"
+    LAZYGIT_VERSION="v0.40.2"  # Fallback to known stable version
+fi
+
+log "Installing lazygit ${LAZYGIT_VERSION}..."
+
+if curl --max-time 60 --fail -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION#v}_Linux_x86_64.tar.gz" 2>/dev/null; then
+    if validate_tar_archive /tmp/lazygit.tar.gz "lazygit archive"; then
+        tar xzf /tmp/lazygit.tar.gz -C /usr/local/bin lazygit
+        chmod +x /usr/local/bin/lazygit
+        log "✓ lazygit ${LAZYGIT_VERSION} installed successfully"
+    else
+        log "ERROR: lazygit archive validation failed, skipping installation"
+    fi
+    rm /tmp/lazygit.tar.gz
+else
+    log "WARNING: Failed to download lazygit, skipping..."
+fi
 
 # GitHub CLI (with GPG key verification)
 # GitHub CLI official GPG key fingerprint
@@ -289,7 +367,14 @@ if [[ "${NERD_FONT}" == "true" ]]; then
     
     FONT_VERSION="v3.1.1"
     curl --max-time 120 -Lo /tmp/JetBrainsMono.zip "https://github.com/ryanoasis/nerd-fonts/releases/download/${FONT_VERSION}/JetBrainsMono.zip"
-    unzip -o /tmp/JetBrainsMono.zip -d "${FONT_DIR}"
+
+    if validate_zip_archive /tmp/JetBrainsMono.zip "JetBrainsMono font"; then
+        unzip -o /tmp/JetBrainsMono.zip -d "${FONT_DIR}"
+    else
+        echo "ERROR: JetBrainsMono font archive validation failed" >&2
+        exit 1
+    fi
+
     rm /tmp/JetBrainsMono.zip
     
     chown -R "${USERNAME}:${USERNAME}" "${FONT_DIR}"

@@ -15,6 +15,15 @@ packer {
 }
 
 # ==============================================================================
+# DATA SOURCES
+# ==============================================================================
+
+# Generate password hash dynamically using external script
+data "external-raw" "password_hash" {
+  program = ["bash", "${path.root}/scripts/generate_password_hash.sh", "${var.password}"]
+}
+
+# ==============================================================================
 # VARIABLES
 # ==============================================================================
 
@@ -27,12 +36,20 @@ variable "vm_name" {
 variable "username" {
   type        = string
   description = "Usuario principal"
+  validation {
+    condition     = can(regex("^[a-z_][a-z0-9_-]{0,31}$", var.username))
+    error_message = "Username debe comenzar con letra minúscula o guión bajo, y solo contener letras minúsculas, números, guiones y guiones bajos (máximo 32 caracteres)."
+  }
 }
 
 variable "password" {
   type        = string
   sensitive   = true
   description = "Contraseña del usuario"
+  validation {
+    condition     = length(var.password) >= 8
+    error_message = "Password debe tener al menos 8 caracteres."
+  }
 }
 
 variable "hostname" {
@@ -60,16 +77,28 @@ variable "keyboard" {
 variable "memory" {
   type        = number
   description = "RAM en MB"
+  validation {
+    condition     = var.memory >= 2048 && var.memory <= 131072
+    error_message = "Memory debe estar entre 2048 MB (2 GB) y 131072 MB (128 GB). Ubuntu Desktop requiere mínimo 2 GB."
+  }
 }
 
 variable "cpus" {
   type        = number
   description = "Número de CPUs"
+  validation {
+    condition     = var.cpus >= 1 && var.cpus <= 128
+    error_message = "CPUs debe estar entre 1 y 128."
+  }
 }
 
 variable "disk_size" {
   type        = number
   description = "Tamaño del disco en MB"
+  validation {
+    condition     = var.disk_size >= 20480 && var.disk_size <= 2097152
+    error_message = "Disk size debe estar entre 20480 MB (20 GB) y 2097152 MB (2 TB). Ubuntu Desktop requiere mínimo 20 GB."
+  }
 }
 
 # --- Ubuntu ---
@@ -97,6 +126,10 @@ variable "autologin" {
 variable "ssh_port" {
   type        = number
   description = "Puerto SSH"
+  validation {
+    condition     = var.ssh_port >= 1 && var.ssh_port <= 65535
+    error_message = "SSH port debe estar entre 1 y 65535."
+  }
 }
 
 variable "ssh_allow_password" {
@@ -163,22 +196,38 @@ variable "git_name" {
 variable "git_email" {
   type        = string
   description = "Email para commits de Git"
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", var.git_email))
+    error_message = "Git email debe tener un formato de email válido."
+  }
 }
 
 variable "git_default_branch" {
   type        = string
   description = "Branch por defecto de Git"
+  validation {
+    condition     = length(var.git_default_branch) >= 1 && length(var.git_default_branch) <= 255
+    error_message = "Git default branch debe tener entre 1 y 255 caracteres."
+  }
 }
 
 # --- Docker ---
 variable "docker_log_max_size" {
   type        = string
   description = "Tamaño máximo de logs de Docker"
+  validation {
+    condition     = can(regex("^[0-9]+(k|m|g)$", var.docker_log_max_size))
+    error_message = "Docker log max size debe tener formato válido (ej: 10m, 100k, 1g)."
+  }
 }
 
 variable "docker_log_max_file" {
   type        = number
   description = "Número de archivos de log de Docker"
+  validation {
+    condition     = var.docker_log_max_file >= 1 && var.docker_log_max_file <= 100
+    error_message = "Docker log max file debe estar entre 1 y 100."
+  }
 }
 
 # --- Desktop ---
@@ -242,9 +291,8 @@ variable "hyperv_secure_boot" {
 # ==============================================================================
 
 locals {
-  # Password hash para cloud-init (SHA-512)
-  # Nota: En producción, usar un hash pre-generado o mkpasswd
-  password_hash = "$6$rounds=4096$packer$9nJ8xwZ0Z8vYvN9vJ5Z3Z8X0Z8vYvN9vJ5Z3Z8X0Z8vYvN9vJ5Z3"
+  # Password hash para cloud-init (SHA-512) - Generated dynamically from var.password
+  password_hash = jsondecode(data.external-raw.password_hash.result).hash
   
   # Timestamp para nombres únicos
   timestamp = formatdate("YYYYMMDD-hhmm", timestamp())
