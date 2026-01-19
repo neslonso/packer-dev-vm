@@ -341,7 +341,8 @@ source "hyperv-iso" "ubuntu" {
   headless         = var.headless
   
   # --- Shutdown ---
-  shutdown_command = "echo '${var.password}' | sudo -S shutdown -P now"
+  # Note: User has NOPASSWD configured in sudoers during build, so no password needed
+  shutdown_command = "sudo shutdown -P now"
 }
 
 # ==============================================================================

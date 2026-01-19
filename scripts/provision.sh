@@ -48,8 +48,111 @@ log() {
     echo "╚══════════════════════════════════════════════════════════════╝"
 }
 
+# Escape string for safe use in shell commands
+shell_escape() {
+    local str="$1"
+    # Replace single quotes with '\'' (end quote, escaped quote, start quote)
+    printf '%s' "$str" | sed "s/'/'\\\\''/g"
+}
+
+# Run command as user with proper escaping
 run_as_user() {
-    sudo -u "${USERNAME}" -H bash -c "$1"
+    local cmd="$1"
+    sudo -u "${USERNAME}" -H bash -c "$cmd"
+}
+
+# Run command as user with safe argument passing
+run_as_user_safe() {
+    local cmd="$1"
+    shift
+    local args=()
+    for arg in "$@"; do
+        args+=("$(shell_escape "$arg")")
+    done
+    sudo -u "${USERNAME}" -H bash <<EOF
+$cmd ${args[@]+"${args[@]}"}
+EOF
+}
+
+# Download and verify script before execution
+download_and_verify_script() {
+    local url="$1"
+    local temp_file="$2"
+    local description="${3:-script}"
+
+    log "Downloading ${description} from ${url}..."
+
+    # Download with timeout and HTTPS verification
+    if ! curl --max-time 60 --fail --silent --show-error --location "$url" -o "$temp_file"; then
+        echo "ERROR: Failed to download ${description} from ${url}" >&2
+        return 1
+    fi
+
+    # Verify file is not empty
+    if [[ ! -s "$temp_file" ]]; then
+        echo "ERROR: Downloaded ${description} is empty" >&2
+        rm -f "$temp_file"
+        return 1
+    fi
+
+    # Basic sanity check: file should contain shell script markers
+    if ! grep -q -E '(^#!/|bash|sh)' "$temp_file"; then
+        echo "ERROR: Downloaded ${description} doesn't appear to be a valid shell script" >&2
+        rm -f "$temp_file"
+        return 1
+    fi
+
+    log "Successfully downloaded and verified ${description}"
+    return 0
+}
+
+# Download GPG key and verify fingerprint
+download_and_verify_gpg_key() {
+    local url="$1"
+    local output_file="$2"
+    local expected_fingerprint="$3"
+    local description="${4:-GPG key}"
+
+    log "Downloading ${description}..."
+
+    # Download key to temporary file
+    local temp_key="/tmp/gpg-key-$$.asc"
+    if ! curl --max-time 30 --fail --silent --show-error --location "$url" -o "$temp_key"; then
+        echo "ERROR: Failed to download ${description}" >&2
+        return 1
+    fi
+
+    # Import to temporary keyring and get fingerprint
+    local temp_keyring="/tmp/keyring-$$"
+    mkdir -p "$temp_keyring"
+    chmod 700 "$temp_keyring"
+
+    local actual_fingerprint
+    actual_fingerprint=$(gpg --no-default-keyring --keyring "$temp_keyring/temp.gpg" --import "$temp_key" 2>&1 | grep -oP '[0-9A-F]{40}' | head -1 | sed 's/.\{4\}/& /g' | xargs)
+
+    # Clean up temporary keyring
+    rm -rf "$temp_keyring"
+
+    # Normalize fingerprints for comparison (remove spaces)
+    local expected_norm="${expected_fingerprint// /}"
+    local actual_norm="${actual_fingerprint// /}"
+
+    # Verify fingerprint matches
+    if [[ "$actual_norm" != "$expected_norm" ]]; then
+        echo "ERROR: ${description} fingerprint mismatch!" >&2
+        echo "  Expected: ${expected_fingerprint}" >&2
+        echo "  Got:      ${actual_fingerprint}" >&2
+        rm -f "$temp_key"
+        return 1
+    fi
+
+    log "✓ ${description} fingerprint verified: ${actual_fingerprint}"
+
+    # Dearmor and save to final location
+    gpg --dearmor < "$temp_key" > "$output_file"
+    rm -f "$temp_key"
+
+    return 0
 }
 
 # ==============================================================================
@@ -90,9 +193,14 @@ ln -sf /usr/bin/fdfind /usr/local/bin/fd 2>/dev/null || true
 
 log "2/9 Instalando Docker..."
 
-# Añadir repositorio de Docker
+# Añadir repositorio de Docker (with GPG key verification)
 install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+# Docker official GPG key fingerprint
+DOCKER_GPG_FINGERPRINT="9DC8 5822 9FC7 DD38 854A E2D8 8D81 803C 0EBF CD88"
+if ! download_and_verify_gpg_key "https://download.docker.com/linux/ubuntu/gpg" "/etc/apt/keyrings/docker.gpg" "$DOCKER_GPG_FINGERPRINT" "Docker GPG key"; then
+    echo "ERROR: Failed to verify Docker GPG key" >&2
+    exit 1
+fi
 chmod a+r /etc/apt/keyrings/docker.gpg
 
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
@@ -126,8 +234,8 @@ systemctl start docker
 
 # Instalar herramientas Docker adicionales
 # lazydocker
-LAZYDOCKER_VERSION=$(curl -s https://api.github.com/repos/jesseduffield/lazydocker/releases/latest | jq -r '.tag_name')
-curl -Lo /tmp/lazydocker.tar.gz "https://github.com/jesseduffield/lazydocker/releases/download/${LAZYDOCKER_VERSION}/lazydocker_${LAZYDOCKER_VERSION#v}_Linux_x86_64.tar.gz"
+LAZYDOCKER_VERSION=$(curl --max-time 30 -s https://api.github.com/repos/jesseduffield/lazydocker/releases/latest | jq -r '.tag_name')
+curl --max-time 60 -Lo /tmp/lazydocker.tar.gz "https://github.com/jesseduffield/lazydocker/releases/download/${LAZYDOCKER_VERSION}/lazydocker_${LAZYDOCKER_VERSION#v}_Linux_x86_64.tar.gz"
 tar xzf /tmp/lazydocker.tar.gz -C /usr/local/bin lazydocker
 chmod +x /usr/local/bin/lazydocker
 rm /tmp/lazydocker.tar.gz
@@ -139,23 +247,32 @@ rm /tmp/lazydocker.tar.gz
 log "3/9 Configurando Git..."
 
 # lazygit
-LAZYGIT_VERSION=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest | jq -r '.tag_name')
-curl -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION#v}_Linux_x86_64.tar.gz"
+LAZYGIT_VERSION=$(curl --max-time 30 -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest | jq -r '.tag_name')
+curl --max-time 60 -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION#v}_Linux_x86_64.tar.gz"
 tar xzf /tmp/lazygit.tar.gz -C /usr/local/bin lazygit
 chmod +x /usr/local/bin/lazygit
 rm /tmp/lazygit.tar.gz
 
-# GitHub CLI
-curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+# GitHub CLI (with GPG key verification)
+# GitHub CLI official GPG key fingerprint
+GITHUB_CLI_GPG_FINGERPRINT="23F3 D4EA 75C7 C96E ED2F 6D8B 15D3 3B7B D59C 46E1"
+if ! download_and_verify_gpg_key "https://cli.github.com/packages/githubcli-archive-keyring.gpg" "/usr/share/keyrings/githubcli-archive-keyring.gpg" "$GITHUB_CLI_GPG_FINGERPRINT" "GitHub CLI GPG key"; then
+    echo "ERROR: Failed to verify GitHub CLI GPG key" >&2
+    exit 1
+fi
 chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list
 apt-get update
 apt-get install -y gh
 
-# Configurar Git para el usuario
-run_as_user "git config --global user.name '${GIT_NAME}'"
-run_as_user "git config --global user.email '${GIT_EMAIL}'"
-run_as_user "git config --global init.defaultBranch '${GIT_DEFAULT_BRANCH}'"
+# Configurar Git para el usuario (using safe escaping)
+GIT_NAME_ESCAPED=$(shell_escape "${GIT_NAME}")
+GIT_EMAIL_ESCAPED=$(shell_escape "${GIT_EMAIL}")
+GIT_BRANCH_ESCAPED=$(shell_escape "${GIT_DEFAULT_BRANCH}")
+
+run_as_user "git config --global user.name '${GIT_NAME_ESCAPED}'"
+run_as_user "git config --global user.email '${GIT_EMAIL_ESCAPED}'"
+run_as_user "git config --global init.defaultBranch '${GIT_BRANCH_ESCAPED}'"
 run_as_user "git config --global core.editor vim"
 run_as_user "git config --global pull.rebase true"
 run_as_user "git config --global push.autoSetupRemote true"
@@ -171,7 +288,7 @@ if [[ "${NERD_FONT}" == "true" ]]; then
     mkdir -p "${FONT_DIR}"
     
     FONT_VERSION="v3.1.1"
-    curl -Lo /tmp/JetBrainsMono.zip "https://github.com/ryanoasis/nerd-fonts/releases/download/${FONT_VERSION}/JetBrainsMono.zip"
+    curl --max-time 120 -Lo /tmp/JetBrainsMono.zip "https://github.com/ryanoasis/nerd-fonts/releases/download/${FONT_VERSION}/JetBrainsMono.zip"
     unzip -o /tmp/JetBrainsMono.zip -d "${FONT_DIR}"
     rm /tmp/JetBrainsMono.zip
     
@@ -204,15 +321,24 @@ case "${PROMPT_THEME}" in
             exit 1
         fi
         
-        # Instalar Oh My Zsh
-        run_as_user 'sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended'
-        
-        # Configurar tema
-        sed -i "s/ZSH_THEME=\".*\"/ZSH_THEME=\"${OHMYZSH_THEME}\"/" "${HOME_DIR}/.zshrc"
-        
-        # Configurar plugins
+        # Instalar Oh My Zsh (with verification)
+        OMZSH_SCRIPT="/tmp/omzsh-install.sh"
+        if download_and_verify_script "https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh" "$OMZSH_SCRIPT" "Oh My Zsh installer"; then
+            run_as_user "sh ${OMZSH_SCRIPT} --unattended"
+            rm -f "$OMZSH_SCRIPT"
+        else
+            echo "ERROR: Failed to install Oh My Zsh" >&2
+            exit 1
+        fi
+
+        # Configurar tema (using safe escaping for sed)
+        OHMYZSH_THEME_ESCAPED=$(printf '%s\n' "${OHMYZSH_THEME}" | sed 's/[\/&]/\\&/g')
+        sed -i "s/ZSH_THEME=\".*\"/ZSH_THEME=\"${OHMYZSH_THEME_ESCAPED}\"/" "${HOME_DIR}/.zshrc"
+
+        # Configurar plugins (using safe escaping)
         PLUGINS_FORMATTED=$(echo "${OHMYZSH_PLUGINS}" | tr ',' ' ')
-        sed -i "s/plugins=(.*)/plugins=(${PLUGINS_FORMATTED})/" "${HOME_DIR}/.zshrc"
+        PLUGINS_ESCAPED=$(printf '%s\n' "${PLUGINS_FORMATTED}" | sed 's/[\/&]/\\&/g')
+        sed -i "s/plugins=(.*)/plugins=(${PLUGINS_ESCAPED})/" "${HOME_DIR}/.zshrc"
         
         # Si el tema es powerlevel10k, instalarlo
         if [[ "${OHMYZSH_THEME}" == "powerlevel10k" ]]; then
@@ -227,16 +353,31 @@ case "${PROMPT_THEME}" in
             exit 1
         fi
         
-        # Instalar Oh My Bash
-        run_as_user 'bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)" --unattended'
-        
-        # Configurar tema
-        sed -i "s/OSH_THEME=\".*\"/OSH_THEME=\"${OHMYBASH_THEME}\"/" "${HOME_DIR}/.bashrc"
+        # Instalar Oh My Bash (with verification)
+        OMBSH_SCRIPT="/tmp/ombash-install.sh"
+        if download_and_verify_script "https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh" "$OMBSH_SCRIPT" "Oh My Bash installer"; then
+            run_as_user "bash ${OMBSH_SCRIPT} --unattended"
+            rm -f "$OMBSH_SCRIPT"
+        else
+            echo "ERROR: Failed to install Oh My Bash" >&2
+            exit 1
+        fi
+
+        # Configurar tema (using safe escaping for sed)
+        OHMYBASH_THEME_ESCAPED=$(printf '%s\n' "${OHMYBASH_THEME}" | sed 's/[\/&]/\\&/g')
+        sed -i "s/OSH_THEME=\".*\"/OSH_THEME=\"${OHMYBASH_THEME_ESCAPED}\"/" "${HOME_DIR}/.bashrc"
         ;;
         
     "starship")
-        # Instalar Starship
-        curl -sS https://starship.rs/install.sh | sh -s -- -y
+        # Instalar Starship (with verification)
+        STARSHIP_SCRIPT="/tmp/starship-install.sh"
+        if download_and_verify_script "https://starship.rs/install.sh" "$STARSHIP_SCRIPT" "Starship installer"; then
+            sh "$STARSHIP_SCRIPT" -y
+            rm -f "$STARSHIP_SCRIPT"
+        else
+            echo "ERROR: Failed to install Starship" >&2
+            exit 1
+        fi
         
         # Aplicar preset
         mkdir -p "${HOME_DIR}/.config"
@@ -277,8 +418,13 @@ apt-get install -y \
 
 if [[ "${INSTALL_VSCODE}" == "true" ]]; then
     log "7/9 Instalando VS Code..."
-    
-    wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /usr/share/keyrings/packages.microsoft.gpg
+
+    # Microsoft GPG key (with verification)
+    MICROSOFT_GPG_FINGERPRINT="BC52 8686 B50D 79E3 39D3 721C EB3E 94AD BE12 29CF"
+    if ! download_and_verify_gpg_key "https://packages.microsoft.com/keys/microsoft.asc" "/usr/share/keyrings/packages.microsoft.gpg" "$MICROSOFT_GPG_FINGERPRINT" "Microsoft GPG key"; then
+        echo "ERROR: Failed to verify Microsoft GPG key" >&2
+        exit 1
+    fi
     echo "deb [arch=amd64 signed-by=/usr/share/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list
     
     apt-get update
