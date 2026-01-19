@@ -1,4 +1,14 @@
 #cloud-config
+# ==============================================================================
+# UBUNTU AUTOINSTALL CLOUD-INIT TEMPLATE
+# ==============================================================================
+# Este archivo usa Packer HCL Template Syntax para inyectar variables:
+#   ${variable}           - Interpola valor de variable
+#   %{ if condition ~}    - Condicional (~ elimina whitespace)
+#   %{ endif ~}           - Cierre de condicional
+#
+# Ver: https://developer.hashicorp.com/packer/docs/templates/hcl_templates/functions
+# ==============================================================================
 autoinstall:
   version: 1
   

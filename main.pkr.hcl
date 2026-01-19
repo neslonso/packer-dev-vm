@@ -30,12 +30,12 @@ data "external-raw" "password_hash" {
 # --- Identidad ---
 variable "vm_name" {
   type        = string
-  description = "Nombre de la VM"
+  description = "Nombre de la VM (usado para directorios de output). Ejemplo: 'ubuntu-dev', 'my-workstation'"
 }
 
 variable "username" {
   type        = string
-  description = "Usuario principal"
+  description = "Usuario principal del sistema. Debe seguir convenciones Linux: comenzar con letra minúscula o '_', solo a-z, 0-9, '-', '_' (máx 32 chars). Ejemplo: 'developer', 'john_doe'"
   validation {
     condition     = can(regex("^[a-z_][a-z0-9_-]{0,31}$", var.username))
     error_message = "Username debe comenzar con letra minúscula o guión bajo, y solo contener letras minúsculas, números, guiones y guiones bajos (máximo 32 caracteres)."
@@ -45,7 +45,7 @@ variable "username" {
 variable "password" {
   type        = string
   sensitive   = true
-  description = "Contraseña del usuario"
+  description = "Contraseña del usuario principal (mínimo 8 caracteres). Se genera hash SHA-512 automáticamente."
   validation {
     condition     = length(var.password) >= 8
     error_message = "Password debe tener al menos 8 caracteres."
@@ -54,23 +54,23 @@ variable "password" {
 
 variable "hostname" {
   type        = string
-  description = "Hostname de la máquina"
+  description = "Hostname de la máquina (nombre visible en red). Ejemplo: 'dev-machine', 'ubuntu-desktop'"
 }
 
 # --- Localización ---
 variable "timezone" {
   type        = string
-  description = "Zona horaria"
+  description = "Zona horaria (formato IANA). Ejemplos: 'America/New_York', 'Europe/Madrid', 'Asia/Tokyo', 'UTC'. Ver: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones"
 }
 
 variable "locale" {
   type        = string
-  description = "Locale del sistema"
+  description = "Locale del sistema (idioma y región). Ejemplos: 'en_US.UTF-8', 'es_ES.UTF-8', 'de_DE.UTF-8'"
 }
 
 variable "keyboard" {
   type        = string
-  description = "Layout de teclado"
+  description = "Layout de teclado. Ejemplos: 'us' (inglés), 'es' (español), 'de' (alemán), 'fr' (francés)"
 }
 
 # --- Recursos ---
@@ -163,22 +163,22 @@ variable "prompt_theme" {
 
 variable "ohmyzsh_theme" {
   type        = string
-  description = "Tema de Oh My Zsh"
+  description = "Tema de Oh My Zsh. Ejemplos: 'robbyrussell' (default), 'agnoster', 'powerlevel10k', 'spaceship'. Ver: https://github.com/ohmyzsh/ohmyzsh/wiki/Themes"
 }
 
 variable "ohmyzsh_plugins" {
   type        = string
-  description = "Plugins de Oh My Zsh (separados por coma)"
+  description = "Plugins de Oh My Zsh (separados por coma sin espacios). Ejemplos: 'git,docker,kubectl', 'git,z,fzf'. Ver: https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins"
 }
 
 variable "ohmybash_theme" {
   type        = string
-  description = "Tema de Oh My Bash"
+  description = "Tema de Oh My Bash. Ejemplos: 'powerline', 'agnoster', 'simple'. Ver: https://github.com/ohmybash/oh-my-bash/wiki/Themes"
 }
 
 variable "starship_preset" {
   type        = string
-  description = "Preset de Starship"
+  description = "Preset de Starship. Opciones: 'none' (sin preset), 'nerd-font-symbols', 'bracketed-segments', 'plain-text-symbols', 'no-runtime-versions', 'no-empty-icons', 'pure-preset', 'pastel-powerline'. Ver: https://starship.rs/presets/"
 }
 
 # --- Fuentes ---
@@ -242,12 +242,7 @@ variable "desktop_theme" {
 
 variable "install_vscode" {
   type        = bool
-  description = "Instalar VS Code"
-}
-
-variable "install_antigravity" {
-  type        = bool
-  description = "Instalar Google Antigravity IDE"
+  description = "Instalar VS Code con extensiones básicas (Docker, Git, YAML)"
 }
 
 variable "install_browser" {
@@ -322,7 +317,6 @@ locals {
     "VM_DOCKER_LOG_MAX_FILE=${var.docker_log_max_file}",
     "VM_DESKTOP_THEME=${var.desktop_theme}",
     "VM_INSTALL_VSCODE=${var.install_vscode}",
-    "VM_INSTALL_ANTIGRAVITY=${var.install_antigravity}",
     "VM_INSTALL_BROWSER=${var.install_browser}",
   ]
 }

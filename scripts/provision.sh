@@ -30,7 +30,6 @@ DOCKER_LOG_MAX_SIZE="${VM_DOCKER_LOG_MAX_SIZE}"
 DOCKER_LOG_MAX_FILE="${VM_DOCKER_LOG_MAX_FILE}"
 DESKTOP_THEME="${VM_DESKTOP_THEME}"
 INSTALL_VSCODE="${VM_INSTALL_VSCODE}"
-INSTALL_ANTIGRAVITY="${VM_INSTALL_ANTIGRAVITY}"
 INSTALL_BROWSER="${VM_INSTALL_BROWSER}"
 
 HOME_DIR="/home/${USERNAME}"
@@ -359,6 +358,14 @@ run_as_user "git config --global init.defaultBranch '${GIT_BRANCH_ESCAPED}'"
 run_as_user "git config --global core.editor vim"
 run_as_user "git config --global pull.rebase true"
 run_as_user "git config --global push.autoSetupRemote true"
+
+# Security and safety configurations
+run_as_user "git config --global core.autocrlf input"  # Prevent CRLF issues
+run_as_user "git config --global core.filemode false"  # Ignore file mode changes (useful in VMs)
+run_as_user "git config --global fetch.prune true"     # Auto-prune deleted remote branches
+run_as_user "git config --global diff.colorMoved zebra"  # Better diff visualization
+run_as_user "git config --global rerere.enabled true"  # Remember resolved conflicts
+run_as_user "git config --global help.autocorrect 10"  # Auto-correct typos after 1 second
 
 # ==============================================================================
 # 4. NERD FONT (si está habilitado)
