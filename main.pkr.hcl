@@ -65,16 +65,28 @@ variable "hostname" {
 variable "timezone" {
   type        = string
   description = "Zona horaria (formato IANA). Ejemplos: 'America/New_York', 'Europe/Madrid', 'Asia/Tokyo', 'UTC'. Ver: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones"
+  validation {
+    condition     = can(regex("^[A-Za-z_]+/[A-Za-z_]+$", var.timezone)) || var.timezone == "UTC"
+    error_message = "Timezone debe tener formato IANA válido (ej: 'America/New_York', 'Europe/Madrid') o ser 'UTC'."
+  }
 }
 
 variable "locale" {
   type        = string
   description = "Locale del sistema (idioma y región). Ejemplos: 'en_US.UTF-8', 'es_ES.UTF-8', 'de_DE.UTF-8'"
+  validation {
+    condition     = can(regex("^[a-z]{2}_[A-Z]{2}\\.UTF-8$", var.locale))
+    error_message = "Locale debe tener formato válido (ej: 'en_US.UTF-8', 'es_ES.UTF-8')."
+  }
 }
 
 variable "keyboard" {
   type        = string
   description = "Layout de teclado. Ejemplos: 'us' (inglés), 'es' (español), 'de' (alemán), 'fr' (francés)"
+  validation {
+    condition     = can(regex("^[a-z]{2}(-[a-z]+)?$", var.keyboard))
+    error_message = "Keyboard debe ser un código válido de layout (ej: 'us', 'es', 'de', 'fr', 'en-gb')."
+  }
 }
 
 # --- Recursos ---
@@ -287,6 +299,10 @@ variable "hyperv_switch" {
 variable "hyperv_generation" {
   type        = number
   description = "Generación de VM Hyper-V (1 o 2)"
+  validation {
+    condition     = var.hyperv_generation == 1 || var.hyperv_generation == 2
+    error_message = "Hyperv generation debe ser 1 o 2."
+  }
 }
 
 variable "hyperv_secure_boot" {

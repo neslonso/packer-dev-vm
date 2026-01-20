@@ -286,7 +286,7 @@ fi
 
 log "Installing lazydocker ${LAZYDOCKER_VERSION}..."
 
-if curl --max-time 60 --fail -Lo /tmp/lazydocker.tar.gz "https://github.com/jesseduffield/lazydocker/releases/download/${LAZYDOCKER_VERSION}/lazydocker_${LAZYDOCKER_VERSION#v}_Linux_x86_64.tar.gz" 2>/dev/null; then
+if curl --max-time 60 --fail -Lo /tmp/lazydocker.tar.gz "https://github.com/jesseduffield/lazydocker/releases/download/${LAZYDOCKER_VERSION}/lazydocker_${LAZYDOCKER_VERSION#v}_Linux_x86_64.tar.gz" 2>&1; then
     if validate_tar_archive /tmp/lazydocker.tar.gz "lazydocker archive"; then
         tar xzf /tmp/lazydocker.tar.gz -C /usr/local/bin lazydocker
         chmod +x /usr/local/bin/lazydocker
@@ -315,7 +315,7 @@ fi
 
 log "Installing lazygit ${LAZYGIT_VERSION}..."
 
-if curl --max-time 60 --fail -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION#v}_Linux_x86_64.tar.gz" 2>/dev/null; then
+if curl --max-time 60 --fail -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION#v}_Linux_x86_64.tar.gz" 2>&1; then
     if validate_tar_archive /tmp/lazygit.tar.gz "lazygit archive"; then
         tar xzf /tmp/lazygit.tar.gz -C /usr/local/bin lazygit
         chmod +x /usr/local/bin/lazygit
@@ -383,7 +383,7 @@ if [[ "${NERD_FONT}" != "none" ]]; then
     FONT_FILE="/tmp/${NERD_FONT}.zip"
     FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/${FONT_VERSION}/${NERD_FONT}.zip"
 
-    if curl --max-time 120 --fail -Lo "${FONT_FILE}" "${FONT_URL}" 2>/dev/null; then
+    if curl --max-time 120 --fail -Lo "${FONT_FILE}" "${FONT_URL}" 2>&1; then
         if validate_zip_archive "${FONT_FILE}" "${NERD_FONT} font"; then
             unzip -o "${FONT_FILE}" -d "${FONT_DIR}"
             log "✓ ${NERD_FONT} Nerd Font installed successfully"
@@ -691,8 +691,15 @@ cat > "${HOME_DIR}/.config/autostart-setup.sh" << EOF
 #!/bin/bash
 # Configuración de GNOME (ejecutar una vez)
 
+# Error handling
+set -euo pipefail
+LOG_FILE="\${HOME}/.config/gnome-setup.log"
+exec > >(tee -a "\${LOG_FILE}") 2>&1
+
+echo "[\$(date)] Starting GNOME configuration..."
+
 # Tema
-gsettings set org.gnome.desktop.interface color-scheme 'prefer-${DESKTOP_THEME}'
+gsettings set org.gnome.desktop.interface color-scheme 'prefer-${DESKTOP_THEME}' || echo "WARNING: Failed to set color scheme"
 
 # Fuente monospace si Nerd Font está instalado
 if [[ "${NERD_FONT}" != "none" ]]; then
@@ -718,12 +725,12 @@ if [[ "${NERD_FONT}" != "none" ]]; then
             FONT_SYSTEM_NAME="${NERD_FONT} Nerd Font 11"
             ;;
     esac
-    gsettings set org.gnome.desktop.interface monospace-font-name "${FONT_SYSTEM_NAME}"
+    gsettings set org.gnome.desktop.interface monospace-font-name "${FONT_SYSTEM_NAME}" || echo "WARNING: Failed to set monospace font"
 fi
 
 # Desactivar suspensión
-gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing'
-gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'nothing'
+gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing' || echo "WARNING: Failed to set AC sleep policy"
+gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'nothing' || echo "WARNING: Failed to set battery sleep policy"
 
 # Dock favorites - build dynamically based on installed apps
 DOCK_APPS="'org.gnome.Nautilus.desktop', 'org.gnome.Terminal.desktop'"
@@ -741,9 +748,11 @@ case "${INSTALL_BROWSER}" in
         DOCK_APPS="\${DOCK_APPS}, 'chromium.desktop'"
         ;;
 esac
-gsettings set org.gnome.shell favorite-apps "[\${DOCK_APPS}]"
+gsettings set org.gnome.shell favorite-apps "[\${DOCK_APPS}]" || echo "WARNING: Failed to set dock favorites"
 
-# Auto-eliminar este script después de ejecutar
+echo "[\$(date)] GNOME configuration completed successfully"
+
+# Auto-eliminar este script después de ejecutar exitosamente
 rm -f "\$0"
 EOF
 

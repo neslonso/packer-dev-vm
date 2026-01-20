@@ -4,6 +4,18 @@
 
 set -euo pipefail
 
+# Validate argument
+if [[ $# -ne 1 ]]; then
+    echo "ERROR: Missing password argument" >&2
+    echo "Usage: $0 <password>" >&2
+    exit 1
+fi
+
+if [[ -z "$1" ]]; then
+    echo "ERROR: Password cannot be empty" >&2
+    exit 1
+fi
+
 PASSWORD="$1"
 
 # Check if mkpasswd is available
