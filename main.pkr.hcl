@@ -55,6 +55,10 @@ variable "password" {
 variable "hostname" {
   type        = string
   description = "Hostname de la máquina (nombre visible en red). Ejemplo: 'dev-machine', 'ubuntu-desktop'"
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$", var.hostname))
+    error_message = "Hostname debe tener entre 1 y 63 caracteres, comenzar y terminar con alfanumérico, y solo contener letras, números y guiones."
+  }
 }
 
 # --- Localización ---

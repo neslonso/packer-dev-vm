@@ -129,14 +129,14 @@ validate_zip_archive() {
 
     log "Validating ${description} for security..."
 
-    # Check for path traversal attempts
-    if unzip -l "$archive" 2>/dev/null | awk '{print $4}' | grep -E '(^|/)\.\.(\/|$)' > /dev/null; then
+    # Check for path traversal attempts (using -Z -1 to handle filenames with spaces)
+    if unzip -Z -1 "$archive" 2>/dev/null | grep -E '(^|/)\.\.(\/|$)' > /dev/null; then
         echo "ERROR: ${description} contains dangerous path traversal sequences (..)" >&2
         return 1
     fi
 
     # Check for absolute paths
-    if unzip -l "$archive" 2>/dev/null | awk '{print $4}' | grep -E '^/' > /dev/null; then
+    if unzip -Z -1 "$archive" 2>/dev/null | grep -E '^/' > /dev/null; then
         echo "ERROR: ${description} contains absolute paths" >&2
         return 1
     fi
@@ -658,12 +658,19 @@ case "${INSTALL_BROWSER}" in
         apt-get install -y firefox
         ;;
     "chrome")
-        wget -q -O /tmp/chrome.deb "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
-        apt-get install -y /tmp/chrome.deb || apt-get install -f -y
-        rm /tmp/chrome.deb
+        # Add Google Chrome repository with GPG verification
+        download_and_verify_gpg_key \
+            "https://dl.google.com/linux/linux_signing_key.pub" \
+            "${GPG_FINGERPRINT_GOOGLE}" \
+            "/etc/apt/keyrings/google-chrome.gpg" \
+            "Google Chrome"
+
+        echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
+        apt-get update
+        apt-get install -y google-chrome-stable
         ;;
     "chromium")
-        apt-get install -y chromium-browser
+        apt-get install -y chromium
         ;;
     "none")
         echo "Sin navegador adicional."
@@ -718,8 +725,23 @@ fi
 gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing'
 gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'nothing'
 
-# Dock favorites
-gsettings set org.gnome.shell favorite-apps "['org.gnome.Nautilus.desktop', 'org.gnome.Terminal.desktop', 'code.desktop', 'firefox.desktop']"
+# Dock favorites - build dynamically based on installed apps
+DOCK_APPS="'org.gnome.Nautilus.desktop', 'org.gnome.Terminal.desktop'"
+if [[ "${INSTALL_VSCODE}" == "true" ]]; then
+    DOCK_APPS="\${DOCK_APPS}, 'code.desktop'"
+fi
+case "${INSTALL_BROWSER}" in
+    "firefox")
+        DOCK_APPS="\${DOCK_APPS}, 'firefox.desktop'"
+        ;;
+    "chrome")
+        DOCK_APPS="\${DOCK_APPS}, 'google-chrome.desktop'"
+        ;;
+    "chromium")
+        DOCK_APPS="\${DOCK_APPS}, 'chromium.desktop'"
+        ;;
+esac
+gsettings set org.gnome.shell favorite-apps "[\${DOCK_APPS}]"
 
 # Auto-eliminar este script después de ejecutar
 rm -f "\$0"
