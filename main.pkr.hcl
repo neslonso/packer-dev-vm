@@ -183,8 +183,12 @@ variable "starship_preset" {
 
 # --- Fuentes ---
 variable "nerd_font" {
-  type        = bool
-  description = "Instalar JetBrains Mono Nerd Font"
+  type        = string
+  description = "Nerd Font a instalar ('none' para no instalar, o nombre de fuente). Opciones: 'JetBrainsMono', 'FiraCode', 'Hack', 'SourceCodePro', 'Meslo', 'none'. Ver: https://www.nerdfonts.com/font-downloads"
+  validation {
+    condition     = contains(["none", "JetBrainsMono", "FiraCode", "Hack", "SourceCodePro", "Meslo"], var.nerd_font)
+    error_message = "nerd_font debe ser 'none', 'JetBrainsMono', 'FiraCode', 'Hack', 'SourceCodePro' o 'Meslo'."
+  }
 }
 
 # --- Git ---

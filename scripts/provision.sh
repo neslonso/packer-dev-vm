@@ -363,8 +363,8 @@ run_as_user "git config --global help.autocorrect 10"  # Auto-correct typos afte
 # 4. NERD FONT (si está habilitado)
 # ==============================================================================
 
-if [[ "${NERD_FONT}" == "true" ]]; then
-    log "4/9 Instalando JetBrains Mono Nerd Font..."
+if [[ "${NERD_FONT}" != "none" ]]; then
+    log "4/9 Instalando ${NERD_FONT} Nerd Font..."
 
     FONT_DIR="${HOME_DIR}/.local/share/fonts"
     mkdir -p "${FONT_DIR}"
@@ -373,31 +373,37 @@ if [[ "${NERD_FONT}" == "true" ]]; then
     FONT_VERSION=$(curl --max-time 30 --fail --silent --show-error https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest 2>/dev/null | jq -r '.tag_name' 2>/dev/null || echo "")
 
     if [[ -z "$FONT_VERSION" || "$FONT_VERSION" == "null" ]]; then
-        log "WARNING: Failed to fetch latest font version, using fallback"
+        log "WARNING: Failed to fetch latest font version from GitHub API, using fallback"
         FONT_VERSION="v3.1.1"  # Fallback to known stable version
     fi
 
-    log "Downloading JetBrains Mono Nerd Font ${FONT_VERSION}..."
+    log "Downloading ${NERD_FONT} Nerd Font ${FONT_VERSION}..."
 
-    if curl --max-time 120 --fail -Lo /tmp/JetBrainsMono.zip "https://github.com/ryanoasis/nerd-fonts/releases/download/${FONT_VERSION}/JetBrainsMono.zip" 2>/dev/null; then
-        if validate_zip_archive /tmp/JetBrainsMono.zip "JetBrainsMono font"; then
-            unzip -o /tmp/JetBrainsMono.zip -d "${FONT_DIR}"
+    # Download font archive (name matches the variable, e.g., JetBrainsMono.zip, FiraCode.zip)
+    FONT_FILE="/tmp/${NERD_FONT}.zip"
+    FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/${FONT_VERSION}/${NERD_FONT}.zip"
+
+    if curl --max-time 120 --fail -Lo "${FONT_FILE}" "${FONT_URL}" 2>/dev/null; then
+        if validate_zip_archive "${FONT_FILE}" "${NERD_FONT} font"; then
+            unzip -o "${FONT_FILE}" -d "${FONT_DIR}"
+            log "✓ ${NERD_FONT} Nerd Font installed successfully"
         else
-            echo "ERROR: JetBrainsMono font archive validation failed" >&2
+            echo "ERROR: ${NERD_FONT} font archive validation failed" >&2
             exit 1
         fi
-        rm /tmp/JetBrainsMono.zip
+        rm "${FONT_FILE}"
     else
-        echo "ERROR: Failed to download JetBrains Mono Nerd Font" >&2
+        echo "ERROR: Failed to download ${NERD_FONT} Nerd Font from ${FONT_URL}" >&2
+        echo "NOTE: Ensure the font name matches the release asset name on GitHub" >&2
         exit 1
     fi
-    
+
     chown -R "${USERNAME}:${USERNAME}" "${FONT_DIR}"
-    
+
     # Actualizar cache de fuentes
     fc-cache -fv
 else
-    log "4/9 Saltando instalación de Nerd Font (deshabilitado)..."
+    log "4/9 Saltando instalación de Nerd Font (nerd_font=none)..."
 fi
 
 # ==============================================================================
@@ -534,10 +540,38 @@ if [[ "${INSTALL_VSCODE}" == "true" ]]; then
     # Configurar VS Code
     VSCODE_DIR="${HOME_DIR}/.config/Code/User"
     mkdir -p "${VSCODE_DIR}"
-    
-    cat > "${VSCODE_DIR}/settings.json" << 'EOF'
+
+    # Determine font family based on installed Nerd Font (if any)
+    if [[ "${NERD_FONT}" != "none" ]]; then
+        # Map font names to their VS Code font family names
+        case "${NERD_FONT}" in
+            "JetBrainsMono")
+                VSCODE_FONT_FAMILY="'JetBrainsMono Nerd Font', 'JetBrains Mono', monospace"
+                ;;
+            "FiraCode")
+                VSCODE_FONT_FAMILY="'FiraCode Nerd Font', 'Fira Code', monospace"
+                ;;
+            "Hack")
+                VSCODE_FONT_FAMILY="'Hack Nerd Font', 'Hack', monospace"
+                ;;
+            "SourceCodePro")
+                VSCODE_FONT_FAMILY="'SauceCodePro Nerd Font', 'Source Code Pro', monospace"
+                ;;
+            "Meslo")
+                VSCODE_FONT_FAMILY="'MesloLGS NF', 'Meslo', monospace"
+                ;;
+            *)
+                VSCODE_FONT_FAMILY="'${NERD_FONT} Nerd Font', monospace"
+                ;;
+        esac
+    else
+        # No Nerd Font installed, use system defaults
+        VSCODE_FONT_FAMILY="'Fira Code', 'Consolas', monospace"
+    fi
+
+    cat > "${VSCODE_DIR}/settings.json" << EOF
 {
-    "editor.fontFamily": "'JetBrainsMono Nerd Font', 'JetBrains Mono', 'Fira Code', monospace",
+    "editor.fontFamily": "${VSCODE_FONT_FAMILY}",
     "editor.fontSize": 14,
     "editor.fontLigatures": true,
     "editor.formatOnSave": true,
@@ -545,7 +579,7 @@ if [[ "${INSTALL_VSCODE}" == "true" ]]; then
     "editor.bracketPairColorization.enabled": true,
     "workbench.colorTheme": "Default Dark Modern",
     "workbench.startupEditor": "none",
-    "terminal.integrated.fontFamily": "'JetBrainsMono Nerd Font', monospace",
+    "terminal.integrated.fontFamily": "${VSCODE_FONT_FAMILY}",
     "terminal.integrated.fontSize": 13,
     "files.autoSave": "afterDelay",
     "files.trimTrailingWhitespace": true,
@@ -654,8 +688,30 @@ cat > "${HOME_DIR}/.config/autostart-setup.sh" << EOF
 gsettings set org.gnome.desktop.interface color-scheme 'prefer-${DESKTOP_THEME}'
 
 # Fuente monospace si Nerd Font está instalado
-if [[ "${NERD_FONT}" == "true" ]]; then
-    gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrainsMono Nerd Font 11'
+if [[ "${NERD_FONT}" != "none" ]]; then
+    # Map font names to their system font names for GNOME
+    case "${NERD_FONT}" in
+        "JetBrainsMono")
+            FONT_SYSTEM_NAME="JetBrainsMono Nerd Font 11"
+            ;;
+        "FiraCode")
+            FONT_SYSTEM_NAME="FiraCode Nerd Font 11"
+            ;;
+        "Hack")
+            FONT_SYSTEM_NAME="Hack Nerd Font 11"
+            ;;
+        "SourceCodePro")
+            FONT_SYSTEM_NAME="SauceCodePro Nerd Font 11"
+            ;;
+        "Meslo")
+            FONT_SYSTEM_NAME="MesloLGS NF 11"
+            ;;
+        *)
+            # Default fallback - construct name from variable
+            FONT_SYSTEM_NAME="${NERD_FONT} Nerd Font 11"
+            ;;
+    esac
+    gsettings set org.gnome.desktop.interface monospace-font-name "${FONT_SYSTEM_NAME}"
 fi
 
 # Desactivar suspensión

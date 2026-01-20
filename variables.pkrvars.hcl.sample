@@ -74,11 +74,21 @@ starship_preset = "no-nerd-font"
 # ==============================================================================
 # FUENTES
 # ==============================================================================
-# Instala JetBrains Mono Nerd Font. Necesario para temas con iconos:
+# Instala una Nerd Font (fuentes con iconos). Opciones:
+#   - "JetBrainsMono" (recomendada, moderna, excelente legibilidad)
+#   - "FiraCode"      (popular, ligaduras)
+#   - "Hack"          (clásica, muy legible)
+#   - "SourceCodePro" (Adobe, elegante)
+#   - "Meslo"         (basada en Menlo/Monaco)
+#   - "none"          (no instalar fuente con iconos)
+#
+# Necesario para temas con iconos:
 # - Oh My Zsh: agnoster, powerlevel10k
 # - Oh My Bash: agnoster, powerline*, powerbash10k
 # - Starship: pastel-powerline, tokyo-night, gruvbox-rainbow, nerd-font-symbols
-nerd_font = true
+#
+# Ver todas las fuentes: https://www.nerdfonts.com/font-downloads
+nerd_font = "JetBrainsMono"
 
 # ==============================================================================
 # GIT
