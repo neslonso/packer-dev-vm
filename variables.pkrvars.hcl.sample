@@ -54,14 +54,14 @@ prompt_theme = "ohmyzsh"               # none | starship | ohmybash | ohmyzsh
 
 # --- Oh My Zsh (solo si shell=zsh y prompt_theme=ohmyzsh) ---
 # Temas SIN Nerd Font: robbyrussell, bira, dst, refined, ys, pure, minimal, bureau, josh, gnzh
-# Temas CON Nerd Font: agnoster, powerlevel10k (requiere nerd_font=true)
+# Temas CON Nerd Font: agnoster, powerlevel10k (requiere nerd_font != "none")
 # Lista completa: https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
 ohmyzsh_theme   = "agnoster"
 ohmyzsh_plugins = "git,docker,docker-compose,kubectl"
 
 # --- Oh My Bash (solo si shell=bash y prompt_theme=ohmybash) ---
 # Temas SIN Nerd Font: font, bobby, clean, minimal, pure, modern, brainy
-# Temas CON Nerd Font: agnoster, powerline, powerline-*, powerbash10k (requiere nerd_font=true)
+# Temas CON Nerd Font: agnoster, powerline, powerline-*, powerbash10k (requiere nerd_font != "none")
 # Lista completa: https://github.com/ohmybash/oh-my-bash/wiki/Themes
 ohmybash_theme = "powerline"
 

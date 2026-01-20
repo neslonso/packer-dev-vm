@@ -204,7 +204,7 @@ log "1/9 Configurando sistema base..."
 apt-get update
 apt-get upgrade -y
 
-# Configurar locale
+# Configurar locale (generate user's locale and en_US.UTF-8 as fallback for tools that require it)
 locale-gen "${LOCALE}" en_US.UTF-8
 update-locale LANG="${LOCALE}"
 
@@ -442,7 +442,7 @@ case "${PROMPT_THEME}" in
         # Configurar plugins (using safe escaping)
         PLUGINS_FORMATTED=$(echo "${OHMYZSH_PLUGINS}" | tr ',' ' ')
         PLUGINS_ESCAPED=$(printf '%s\n' "${PLUGINS_FORMATTED}" | sed 's/[\/&]/\\&/g')
-        sed -i "s/plugins=(.*)/plugins=(${PLUGINS_ESCAPED})/" "${HOME_DIR}/.zshrc"
+        sed -i "s/^plugins=(.*)/plugins=(${PLUGINS_ESCAPED})/" "${HOME_DIR}/.zshrc"
         
         # Si el tema es powerlevel10k, instalarlo
         if [[ "${OHMYZSH_THEME}" == "powerlevel10k" ]]; then
