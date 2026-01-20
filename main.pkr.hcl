@@ -215,6 +215,10 @@ variable "nerd_font" {
 variable "git_name" {
   type        = string
   description = "Nombre para commits de Git"
+  validation {
+    condition     = length(trimspace(var.git_name)) >= 1 && length(var.git_name) <= 255
+    error_message = "Git name debe tener entre 1 y 255 caracteres y no puede ser solo espacios."
+  }
 }
 
 variable "git_email" {
