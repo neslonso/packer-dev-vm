@@ -380,8 +380,8 @@ if [[ "${NERD_FONT}" != "none" ]]; then
     log "Downloading ${NERD_FONT} Nerd Font ${FONT_VERSION}..."
 
     # Download font archive (name matches the variable, e.g., JetBrainsMono.zip, FiraCode.zip)
-    FONT_FILE="/tmp/${NERD_FONT}.zip"
-    FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/${FONT_VERSION}/${NERD_FONT}.zip"
+    FONT_FILE="/tmp/${NERD_FONT}.${FONT_ARCHIVE_EXTENSION}"
+    FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/${FONT_VERSION}/${NERD_FONT}.${FONT_ARCHIVE_EXTENSION}"
 
     if curl --max-time 120 --fail -Lo "${FONT_FILE}" "${FONT_URL}" 2>/dev/null; then
         if validate_zip_archive "${FONT_FILE}" "${NERD_FONT} font"; then

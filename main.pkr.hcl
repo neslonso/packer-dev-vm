@@ -310,6 +310,9 @@ locals {
     google    = "EB4C 1BFD 4F04 2F6D DDCC  EC91 7721 F63B D38B 4796"
   }
 
+  # Font archive configuration
+  font_archive_extension = "zip"
+
   # Variables para el script de provisioning (todas las que necesita)
   provision_env_vars = [
     "VM_USERNAME=${var.username}",
@@ -342,6 +345,8 @@ locals {
     "GPG_FINGERPRINT_GITHUB=${local.gpg_fingerprints.github}",
     "GPG_FINGERPRINT_MICROSOFT=${local.gpg_fingerprints.microsoft}",
     "GPG_FINGERPRINT_GOOGLE=${local.gpg_fingerprints.google}",
+    # Font configuration
+    "FONT_ARCHIVE_EXTENSION=${local.font_archive_extension}",
   ]
 }
 
