@@ -66,7 +66,7 @@ variable "timezone" {
   type        = string
   description = "Zona horaria (formato IANA). Ejemplos: 'America/New_York', 'Europe/Madrid', 'Asia/Tokyo', 'UTC'. Ver: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones"
   validation {
-    condition     = can(regex("^[A-Za-z_]+/[A-Za-z_]+$", var.timezone)) || var.timezone == "UTC"
+    condition     = can(regex("^[A-Za-z_]+(/[A-Za-z_]+)+$", var.timezone)) || var.timezone == "UTC"
     error_message = "Timezone debe tener formato IANA válido (ej: 'America/New_York', 'Europe/Madrid') o ser 'UTC'."
   }
 }
