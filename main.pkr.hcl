@@ -179,21 +179,25 @@ variable "prompt_theme" {
 
 variable "ohmyzsh_theme" {
   type        = string
+  default     = "robbyrussell"
   description = "Tema de Oh My Zsh. Ejemplos: 'robbyrussell' (default), 'agnoster', 'powerlevel10k', 'spaceship'. Ver: https://github.com/ohmyzsh/ohmyzsh/wiki/Themes"
 }
 
 variable "ohmyzsh_plugins" {
   type        = string
+  default     = "git"
   description = "Plugins de Oh My Zsh (separados por coma sin espacios). Ejemplos: 'git,docker,kubectl', 'git,z,fzf'. Ver: https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins"
 }
 
 variable "ohmybash_theme" {
   type        = string
+  default     = "powerline"
   description = "Tema de Oh My Bash. Ejemplos: 'powerline', 'agnoster', 'simple'. Ver: https://github.com/ohmybash/oh-my-bash/wiki/Themes"
 }
 
 variable "starship_preset" {
   type        = string
+  default     = "none"
   description = "Preset de Starship. Opciones: 'none' (sin preset), 'nerd-font-symbols', 'bracketed-segments', 'plain-text-symbols', 'no-runtime-versions', 'no-empty-icons', 'pure-preset', 'pastel-powerline'. Ver: https://starship.rs/presets/"
 }
 

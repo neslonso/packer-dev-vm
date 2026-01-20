@@ -367,7 +367,7 @@ if [[ "${NERD_FONT}" != "none" ]]; then
     log "4/9 Instalando ${NERD_FONT} Nerd Font..."
 
     FONT_DIR="${HOME_DIR}/.local/share/fonts"
-    mkdir -p "${FONT_DIR}"
+    run_as_user "mkdir -p '${FONT_DIR}'"
 
     # Try to fetch latest version from GitHub API, with fallback
     FONT_VERSION=$(curl --max-time 30 --fail --silent --show-error https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest 2>/dev/null | jq -r '.tag_name' 2>/dev/null || echo "")
@@ -397,8 +397,6 @@ if [[ "${NERD_FONT}" != "none" ]]; then
         echo "NOTE: Ensure the font name matches the release asset name on GitHub" >&2
         exit 1
     fi
-
-    chown -R "${USERNAME}:${USERNAME}" "${FONT_DIR}"
 
     # Actualizar cache de fuentes
     fc-cache -fv
@@ -448,7 +446,7 @@ case "${PROMPT_THEME}" in
         
         # Si el tema es powerlevel10k, instalarlo
         if [[ "${OHMYZSH_THEME}" == "powerlevel10k" ]]; then
-            run_as_user "git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \${ZSH_CUSTOM:-${HOME_DIR}/.oh-my-zsh/custom}/themes/powerlevel10k"
+            run_as_user "git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \"\${ZSH_CUSTOM:-\$HOME/.oh-my-zsh/custom}/themes/powerlevel10k\""
             sed -i 's/ZSH_THEME="powerlevel10k"/ZSH_THEME="powerlevel10k\/powerlevel10k"/' "${HOME_DIR}/.zshrc"
         fi
         ;;
@@ -486,7 +484,10 @@ case "${PROMPT_THEME}" in
         fi
         
         # Aplicar preset
-        mkdir -p "${HOME_DIR}/.config"
+        if ! mkdir -p "${HOME_DIR}/.config"; then
+            echo "ERROR: Failed to create .config directory" >&2
+            exit 1
+        fi
         if [[ "${STARSHIP_PRESET}" != "none" && "${STARSHIP_PRESET}" != "" ]]; then
             if ! starship preset "${STARSHIP_PRESET}" -o "${HOME_DIR}/.config/starship.toml" 2>/dev/null; then
                 log "WARNING: Failed to apply starship preset '${STARSHIP_PRESET}', using default config"
@@ -604,7 +605,7 @@ EOF
 
     log "Installing VS Code extensions..."
     for ext in "${EXTENSIONS[@]}"; do
-        if run_as_user "code --install-extension ${ext} --force" 2>/dev/null; then
+        if run_as_user "code --install-extension ${ext} --force" 2>&1; then
             log "✓ Installed extension: ${ext}"
         else
             log "WARNING: Failed to install extension: ${ext}"
@@ -661,8 +662,8 @@ case "${INSTALL_BROWSER}" in
         # Add Google Chrome repository with GPG verification
         download_and_verify_gpg_key \
             "https://dl.google.com/linux/linux_signing_key.pub" \
-            "${GPG_FINGERPRINT_GOOGLE}" \
             "/etc/apt/keyrings/google-chrome.gpg" \
+            "${GPG_FINGERPRINT_GOOGLE}" \
             "Google Chrome"
 
         echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
