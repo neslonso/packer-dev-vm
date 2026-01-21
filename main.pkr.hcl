@@ -31,6 +31,10 @@ data "external-raw" "password_hash" {
 variable "vm_name" {
   type        = string
   description = "Nombre de la VM (usado para directorios de output). Ejemplo: 'ubuntu-dev', 'my-workstation'"
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9][a-zA-Z0-9_-]{0,98}[a-zA-Z0-9]$", var.vm_name))
+    error_message = "vm_name debe tener entre 2 y 100 caracteres, comenzar y terminar con alfanumérico, y solo contener letras, números, guiones y guiones bajos."
+  }
 }
 
 variable "username" {
@@ -130,7 +134,11 @@ variable "iso_url" {
 
 variable "iso_checksum" {
   type        = string
-  description = "Checksum de la ISO"
+  description = "Checksum de la ISO (formato: sha256:HEXSTRING)"
+  validation {
+    condition     = can(regex("^(md5|sha1|sha256|sha512):[a-fA-F0-9]+$", var.iso_checksum))
+    error_message = "iso_checksum debe tener formato válido: 'sha256:HEXSTRING' (también soporta md5, sha1, sha512)."
+  }
 }
 
 # --- Sistema ---

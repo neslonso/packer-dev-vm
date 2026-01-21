@@ -447,7 +447,7 @@ case "${PROMPT_THEME}" in
         # Si el tema es powerlevel10k, instalarlo
         if [[ "${OHMYZSH_THEME}" == "powerlevel10k" ]]; then
             run_as_user "git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \"\${ZSH_CUSTOM:-\$HOME/.oh-my-zsh/custom}/themes/powerlevel10k\""
-            sed -i 's/ZSH_THEME="powerlevel10k"/ZSH_THEME="powerlevel10k\/powerlevel10k"/' "${HOME_DIR}/.zshrc"
+            sed -i 's/^ZSH_THEME="powerlevel10k"/ZSH_THEME="powerlevel10k\/powerlevel10k"/' "${HOME_DIR}/.zshrc"
         fi
         ;;
         
@@ -663,7 +663,7 @@ case "${INSTALL_BROWSER}" in
         download_and_verify_gpg_key \
             "https://dl.google.com/linux/linux_signing_key.pub" \
             "/etc/apt/keyrings/google-chrome.gpg" \
-            "${GPG_FINGERPRINT_GOOGLE}" \
+            "$GOOGLE_GPG_FINGERPRINT" \
             "Google Chrome"
 
         echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
