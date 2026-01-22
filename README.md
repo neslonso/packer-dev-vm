@@ -54,29 +54,16 @@ packer validate -var-file=variables.pkrvars.hcl main.pkr.hcl
 
 # 4. Construir la VM
 packer build -var-file=variables.pkrvars.hcl main.pkr.hcl
+
+# 5. Configuración post-build (REQUERIDO - PowerShell como admin)
+Get-VMNetworkAdapter -VMName "dev-workstation" | Set-VMNetworkAdapter -MacAddressSpoofing On
 ```
 
-**Nota**: La contraseña por defecto es `developer`. Cámbiala tras el primer login con `passwd`.
+**Credenciales:** Usuario `developer`, password `developer`. **Cambia la contraseña** tras primer login con `passwd`.
 
 ### 🐧 Linux/macOS
 
-```bash
-# 1. Clonar el proyecto
-git clone <repo> && cd packer-dev-vm
-
-# 2. Copiar y editar configuración
-cp variables.pkrvars.hcl.sample variables.pkrvars.hcl
-# Editar variables.pkrvars.hcl con tus preferencias
-
-# 3. Inicializar y validar
-packer init main.pkr.hcl
-packer validate -var-file=variables.pkrvars.hcl main.pkr.hcl
-
-# 4. Construir la VM
-packer build -var-file=variables.pkrvars.hcl main.pkr.hcl
-```
-
-**Nota**: La contraseña por defecto es `developer`. Cámbiala tras el primer login con `passwd`.
+**Nota:** Este proyecto está diseñado para Hyper-V (Windows). Para Linux/macOS se requeriría añadir soporte para VirtualBox, VMware o KVM.
 
 ## Estructura del Proyecto
 

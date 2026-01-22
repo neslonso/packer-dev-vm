@@ -512,7 +512,32 @@ build {
       "echo 'VM lista!'"
     ]
   }
-  
+
+  # --- Aviso post-build (se ejecuta en el HOST) ---
+  provisioner "shell-local" {
+    inline = [
+      "echo ''",
+      "echo '============================================================'",
+      "echo 'VM CREADA EXITOSAMENTE'",
+      "echo '============================================================'",
+      "echo ''",
+      "echo 'Credenciales por defecto:'",
+      "echo '  Usuario: ${var.username}'",
+      "echo '  Password: developer'",
+      "echo ''",
+      "echo 'IMPORTANTE - Configuración post-build requerida:'",
+      "echo ''",
+      "echo '1. Habilitar MAC spoofing para Docker (PowerShell como admin):'",
+      "echo '   Get-VMNetworkAdapter -VMName \"${var.vm_name}\" | Set-VMNetworkAdapter -MacAddressSpoofing On'",
+      "echo ''",
+      "echo '2. Cambiar contraseña tras primer login:'",
+      "echo '   passwd'",
+      "echo ''",
+      "echo '============================================================'",
+      "echo ''"
+    ]
+  }
+
   # --- Post-processors ---
   post-processor "manifest" {
     output     = "${var.output_directory}/manifest.json"
