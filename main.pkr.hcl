@@ -46,6 +46,17 @@ variable "username" {
   }
 }
 
+variable "password" {
+  type        = string
+  sensitive   = true
+  default     = "developer"
+  description = "Contraseña en texto plano (solo para SSH durante el build de Packer). Por defecto: 'developer'. DEBE coincidir con password_hash."
+  validation {
+    condition     = length(var.password) >= 8
+    error_message = "La contraseña debe tener al menos 8 caracteres."
+  }
+}
+
 variable "password_hash" {
   type        = string
   sensitive   = true
@@ -453,6 +464,7 @@ source "hyperv-iso" "ubuntu" {
   }
   
   # --- SSH ---
+  # Packer usa password en texto plano para conectarse durante el build
   communicator     = "ssh"
   ssh_username     = var.username
   ssh_password     = var.password

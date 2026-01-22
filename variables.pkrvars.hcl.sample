@@ -10,7 +10,8 @@
 # ==============================================================================
 vm_name       = "dev-workstation"           # Nombre de la VM en el hypervisor
 username      = "developer"                 # Usuario principal
-password_hash = "$6$AQiJ5GBZLGsQOSsY$VZpRX.aQa8u3VwVuKlx0g6q1BoTUkaNJvu1R2eyDZVVdQAbvBnJsRvYkNdSGVgQUmruie/x2jD5q4IuxtfY2o1"  # Password: "developer" - CAMBIAR TRAS PRIMER LOGIN
+password      = "developer"                 # Contraseña (solo para SSH durante build de Packer)
+password_hash = "$6$AQiJ5GBZLGsQOSsY$VZpRX.aQa8u3VwVuKlx0g6q1BoTUkaNJvu1R2eyDZVVdQAbvBnJsRvYkNdSGVgQUmruie/x2jD5q4IuxtfY2o1"  # Hash SHA-512 (usado en la VM). CAMBIAR TRAS PRIMER LOGIN
 hostname      = "dev-workstation"           # Hostname de la máquina
 
 # ==============================================================================
