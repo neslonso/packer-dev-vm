@@ -10,7 +10,8 @@
 # ==============================================================================
 vm_name  = "dev-workstation"           # Nombre de la VM en el hypervisor
 username = "developer"                 # Usuario principal
-password = "developer"                 # Contraseña (se genera hash automáticamente)
+password = "developer"                 # Contraseña (solo para referencia)
+password_hash = "$6$rounds=656000$YourSaltHere$YourHashHere"  # Hash SHA-512 (generar con: .\generate-hash.ps1 "developer")
 hostname = "dev-workstation"           # Hostname de la máquina
 
 # ==============================================================================
