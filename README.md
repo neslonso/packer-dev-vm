@@ -30,37 +30,52 @@ VM de desarrollo portable con Docker, configuración centralizada en un único a
 
 ### Requisitos adicionales para Windows
 
-Packer necesita ejecutar scripts para generar el hash de contraseña. Tienes tres opciones:
+El wrapper `build.ps1` requiere una de estas herramientas para generar el hash de contraseña:
 
 **Opción 1 (Recomendada): Git for Windows**
-- Instalar [Git for Windows](https://git-scm.com/download/win) (incluye Git Bash y OpenSSL)
-- Git Bash debe estar en el PATH del sistema
+- Instalar [Git for Windows](https://git-scm.com/download/win) (incluye bash y OpenSSL)
+- El script detecta automáticamente Git Bash
 
 **Opción 2: WSL (Windows Subsystem for Linux)**
-- Habilitar WSL y tener `bash` disponible en el PATH de Windows
+- Habilitar WSL y tener `bash` disponible
 
-**Opción 3: PowerShell con OpenSSL**
+**Opción 3: OpenSSL standalone**
 - Instalar [OpenSSL para Windows](https://slproweb.com/products/Win32OpenSSL.html)
-- Modificar `main.pkr.hcl` línea 23 para usar PowerShell:
-  ```hcl
-  data "external" "password_hash" {
-    program = ["powershell", "-File", "${path.root}/scripts/generate_password_hash.ps1", "${var.password}"]
-  }
-  ```
+- Asegurarse de que `openssl.exe` esté en el PATH
 
 ## Quick Start
+
+### 🪟 Windows (Recomendado)
+
+```powershell
+# 1. Clonar el proyecto
+git clone <repo>
+cd packer-dev-vm
+
+# 2. Editar variables.pkrvars.hcl con tus preferencias
+
+# 3. Validar configuración (asegurarse de tener Git Bash/OpenSSL instalado)
+.\build.ps1 -ValidateOnly -PackerExe .\packer.exe
+
+# 4. Construir la VM
+.\build.ps1 -PackerExe .\packer.exe
+```
+
+**Nota**: El script `build.ps1` detecta automáticamente Git Bash, OpenSSL o mkpasswd y genera el hash de contraseña por ti.
+
+### 🐧 Linux/macOS
 
 ```bash
 # 1. Clonar el proyecto
 git clone <repo> && cd packer-dev-vm
 
-# 2. Obtener checksum de la ISO (actualizar en variables.pkrvars.hcl)
-curl -s https://releases.ubuntu.com/24.04.1/SHA256SUMS | grep desktop-amd64.iso
+# 2. Editar variables.pkrvars.hcl con tus preferencias
 
-# 3. Editar variables.pkrvars.hcl con tus preferencias
+# 3. Descomentar data source en main.pkr.hcl (líneas 27-29)
 
-# 4. Inicializar Packer
+# 4. Inicializar y validar
 packer init main.pkr.hcl
+packer validate -var-file=variables.pkrvars.hcl main.pkr.hcl
 
 # 5. Construir la VM
 packer build -var-file=variables.pkrvars.hcl main.pkr.hcl
