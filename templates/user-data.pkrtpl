@@ -114,9 +114,3 @@ autoinstall:
     # GRUB timeout reducido
     - sed -i 's/GRUB_TIMEOUT=.*/GRUB_TIMEOUT=2/' /target/etc/default/grub
     - curtin in-target --target=/target -- update-grub
-    
-    # Crear directorios de proyectos
-    - mkdir -p /target/home/${username}/projects/work
-    - mkdir -p /target/home/${username}/projects/personal
-    - mkdir -p /target/home/${username}/projects/sandbox
-    - curtin in-target --target=/target -- chown -R ${username}:${username} /home/${username}/projects
