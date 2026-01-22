@@ -110,7 +110,8 @@ autoinstall:
     - sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /target/etc/ssh/sshd_config
     - sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /target/etc/ssh/sshd_config
 %{ endif ~}
-    
+    - curtin in-target --target=/target -- systemctl enable ssh
+
     # GRUB timeout reducido
     - sed -i 's/GRUB_TIMEOUT=.*/GRUB_TIMEOUT=2/' /target/etc/default/grub
     - curtin in-target --target=/target -- update-grub
