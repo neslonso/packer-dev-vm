@@ -28,40 +28,35 @@ VM de desarrollo portable con Docker, configuración centralizada en un único a
 - Hyper-V habilitado (Windows 10/11 Pro o Enterprise)
 - Permisos de administrador
 
-### Requisitos adicionales para Windows
+### Nota sobre contraseñas
 
-El wrapper `build.ps1` requiere una de estas herramientas para generar el hash de contraseña:
-
-**Opción 1 (Recomendada): Git for Windows**
-- Instalar [Git for Windows](https://git-scm.com/download/win) (incluye bash y OpenSSL)
-- El script detecta automáticamente Git Bash
-
-**Opción 2: WSL (Windows Subsystem for Linux)**
-- Habilitar WSL y tener `bash` disponible
-
-**Opción 3: OpenSSL standalone**
-- Instalar [OpenSSL para Windows](https://slproweb.com/products/Win32OpenSSL.html)
-- Asegurarse de que `openssl.exe` esté en el PATH
+La contraseña por defecto es `developer`. Tras el primer login, cámbiala con:
+```bash
+passwd
+```
 
 ## Quick Start
 
-### 🪟 Windows (Recomendado)
+### 🪟 Windows
 
 ```powershell
 # 1. Clonar el proyecto
 git clone <repo>
 cd packer-dev-vm
 
-# 2. Editar variables.pkrvars.hcl con tus preferencias
+# 2. Copiar y editar configuración
+copy variables.pkrvars.hcl.sample variables.pkrvars.hcl
+# Editar variables.pkrvars.hcl con tus preferencias
 
-# 3. Validar configuración (asegurarse de tener Git Bash/OpenSSL instalado)
-.\build.ps1 -ValidateOnly -PackerExe .\packer.exe
+# 3. Inicializar y validar
+packer init main.pkr.hcl
+packer validate -var-file=variables.pkrvars.hcl main.pkr.hcl
 
 # 4. Construir la VM
-.\build.ps1 -PackerExe .\packer.exe
+packer build -var-file=variables.pkrvars.hcl main.pkr.hcl
 ```
 
-**Nota**: El script `build.ps1` detecta automáticamente Git Bash, OpenSSL o mkpasswd y genera el hash de contraseña por ti.
+**Nota**: La contraseña por defecto es `developer`. Cámbiala tras el primer login con `passwd`.
 
 ### 🐧 Linux/macOS
 
@@ -69,17 +64,19 @@ cd packer-dev-vm
 # 1. Clonar el proyecto
 git clone <repo> && cd packer-dev-vm
 
-# 2. Editar variables.pkrvars.hcl con tus preferencias
+# 2. Copiar y editar configuración
+cp variables.pkrvars.hcl.sample variables.pkrvars.hcl
+# Editar variables.pkrvars.hcl con tus preferencias
 
-# 3. Descomentar data source en main.pkr.hcl (líneas 27-29)
-
-# 4. Inicializar y validar
+# 3. Inicializar y validar
 packer init main.pkr.hcl
 packer validate -var-file=variables.pkrvars.hcl main.pkr.hcl
 
-# 5. Construir la VM
+# 4. Construir la VM
 packer build -var-file=variables.pkrvars.hcl main.pkr.hcl
 ```
+
+**Nota**: La contraseña por defecto es `developer`. Cámbiala tras el primer login con `passwd`.
 
 ## Estructura del Proyecto
 
@@ -103,7 +100,7 @@ packer-dev-vm/
 |----------|---------|-------------|
 | `vm_name` | `dev-workstation` | Nombre de la VM en Hyper-V |
 | `username` | `developer` | Usuario principal |
-| `password` | `developer` | Contraseña |
+| `password_hash` | Hash de "developer" | Hash SHA-512 de contraseña (cambiar tras primer login) |
 | `hostname` | `dev-workstation` | Hostname |
 
 ### Localización

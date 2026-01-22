@@ -18,11 +18,10 @@ packer {
 # DATA SOURCES
 # ==============================================================================
 
-# El data source 'external' no está disponible en todas las instalaciones de Packer.
-# Solución simple: Genera el hash manualmente y ponlo en password_hash en variables.pkrvars.hcl
-#
-# Windows: .\generate-hash.ps1 "tu-contraseña"
+# Contraseña por defecto: "developer" (cambiar tras primer login con: passwd)
+# Para generar un hash SHA-512 personalizado:
 # Linux:   echo "tu-contraseña" | mkpasswd -m sha-512 -s
+# Windows: Usa el hash por defecto o genera uno desde WSL/Linux
 
 # ==============================================================================
 # VARIABLES
@@ -50,10 +49,10 @@ variable "username" {
 variable "password_hash" {
   type        = string
   sensitive   = true
-  description = "Hash SHA-512 de la contraseña. Generar con: Windows: .\\generate-hash.ps1 'password' | Linux: echo 'password' | mkpasswd -m sha-512 -s"
+  description = "Hash SHA-512 de la contraseña. Por defecto: 'developer' (cambiar tras primer login). Generar personalizado: echo 'password' | mkpasswd -m sha-512 -s"
   validation {
     condition     = length(var.password_hash) > 0 && can(regex("^\\$6\\$", var.password_hash))
-    error_message = "La variable password_hash debe ser un hash SHA-512 válido (debe comenzar con $6$). Genera uno con generate-hash.ps1 o mkpasswd."
+    error_message = "La variable password_hash debe ser un hash SHA-512 válido (debe comenzar con $6$). Genera uno con: echo 'password' | mkpasswd -m sha-512 -s"
   }
 }
 
