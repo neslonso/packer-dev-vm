@@ -198,7 +198,7 @@ download_and_verify_gpg_key() {
 # 1. SISTEMA BASE
 # ==============================================================================
 
-log "1/9 Configurando sistema base..."
+log "1/10 Configurando sistema base..."
 
 # Actualizar sistema
 apt-get update
@@ -235,7 +235,7 @@ fi
 # 2. DOCKER
 # ==============================================================================
 
-log "2/9 Instalando Docker..."
+log "2/10 Instalando Docker..."
 
 # Añadir repositorio de Docker (with GPG key verification)
 install -m 0755 -d /etc/apt/keyrings
@@ -303,7 +303,7 @@ fi
 # 3. GIT
 # ==============================================================================
 
-log "3/9 Configurando Git..."
+log "3/10 Configurando Git..."
 
 # lazygit (with error handling and fallback version)
 LAZYGIT_VERSION=$(curl --max-time 30 --fail --silent --show-error https://api.github.com/repos/jesseduffield/lazygit/releases/latest 2>/dev/null | jq -r '.tag_name' 2>/dev/null || echo "")
@@ -364,7 +364,7 @@ run_as_user "git config --global help.autocorrect 10"  # Auto-correct typos afte
 # ==============================================================================
 
 if [[ "${NERD_FONT}" != "none" ]]; then
-    log "4/9 Instalando ${NERD_FONT} Nerd Font..."
+    log "4/10 Instalando ${NERD_FONT} Nerd Font..."
 
     FONT_DIR="${HOME_DIR}/.local/share/fonts"
     run_as_user "mkdir -p '${FONT_DIR}'"
@@ -401,14 +401,14 @@ if [[ "${NERD_FONT}" != "none" ]]; then
     # Actualizar cache de fuentes
     fc-cache -fv
 else
-    log "4/9 Saltando instalación de Nerd Font (nerd_font=none)..."
+    log "4/10 Saltando instalación de Nerd Font (nerd_font=none)..."
 fi
 
 # ==============================================================================
 # 5. SHELL Y PROMPT
 # ==============================================================================
 
-log "5/9 Configurando shell (${SHELL_TYPE}) y prompt (${PROMPT_THEME})..."
+log "5/10 Configurando shell (${SHELL_TYPE}) y prompt (${PROMPT_THEME})..."
 
 # Instalar Zsh si es necesario
 if [[ "${SHELL_TYPE}" == "zsh" ]]; then
@@ -511,7 +511,7 @@ esac
 # 6. CLIENTES DE BASE DE DATOS
 # ==============================================================================
 
-log "6/9 Instalando clientes de base de datos..."
+log "6/10 Instalando clientes de base de datos..."
 
 apt-get install -y \
     mysql-client \
@@ -524,7 +524,7 @@ apt-get install -y \
 # ==============================================================================
 
 if [[ "${INSTALL_VSCODE}" == "true" ]]; then
-    log "7/9 Instalando VS Code..."
+    log "7/10 Instalando VS Code..."
 
     # Microsoft GPG key (with verification - from main.pkr.hcl)
     if ! download_and_verify_gpg_key "https://packages.microsoft.com/keys/microsoft.asc" "/usr/share/keyrings/packages.microsoft.gpg" "$MICROSOFT_GPG_FINGERPRINT" "Microsoft GPG key"; then
@@ -608,7 +608,7 @@ EOF
         fi
     done
 else
-    log "7/9 Saltando instalación de VS Code (deshabilitado)..."
+    log "7/10 Saltando instalación de VS Code (deshabilitado)..."
 fi
 
 # ==============================================================================
@@ -616,7 +616,7 @@ fi
 # ==============================================================================
 
 if [[ "${INSTALL_ANTIGRAVITY}" == "true" ]]; then
-    log "7.5/9 Instalando Google Antigravity IDE..."
+    log "7.5/10 Instalando Google Antigravity IDE..."
 
     # Google Antigravity uses Google's signing key (same as Chrome/other Google products)
     # Google Linux Repository GPG key fingerprint (from main.pkr.hcl)
@@ -641,14 +641,14 @@ if [[ "${INSTALL_ANTIGRAVITY}" == "true" ]]; then
         chown "${USERNAME}:${USERNAME}" "${HOME_DIR}/.local/share/applications/antigravity.desktop"
     fi
 else
-    log "7.5/9 Saltando instalación de Google Antigravity IDE (deshabilitado)..."
+    log "7.5/10 Saltando instalación de Google Antigravity IDE (deshabilitado)..."
 fi
 
 # ==============================================================================
 # 8. NAVEGADOR (si está configurado)
 # ==============================================================================
 
-log "8/9 Configurando navegador (${INSTALL_BROWSER})..."
+log "8/10 Configurando navegador (${INSTALL_BROWSER})..."
 
 case "${INSTALL_BROWSER}" in
     "firefox")
@@ -678,7 +678,7 @@ esac
 # 9. CONFIGURACIÓN DESKTOP
 # ==============================================================================
 
-log "9/9 Configurando desktop..."
+log "9/10 Configurando desktop..."
 
 # Instalar gnome-tweaks
 apt-get install -y gnome-tweaks gnome-shell-extension-manager
@@ -841,6 +841,43 @@ if ! visudo -c -f /etc/sudoers.d/99-packer-shutdown; then
 fi
 
 log "✓ Shutdown permissions configured for Packer build"
+
+# ==============================================================================
+# HYPER-V ENHANCED SESSION MODE (RDP para portapapeles compartido)
+# ==============================================================================
+
+log "10/10 Configurando Enhanced Session Mode (xrdp)..."
+
+# Instalar xrdp para habilitar Enhanced Session Mode
+apt-get install -y xrdp xorgxrdp
+
+# Configurar xrdp para usar el desktop environment correcto
+cat > /etc/xrdp/startwm.sh << 'XRDP_EOF'
+#!/bin/sh
+if [ -r /etc/default/locale ]; then
+  . /etc/default/locale
+  export LANG LANGUAGE
+fi
+# Start Ubuntu desktop session
+exec /usr/bin/gnome-session
+XRDP_EOF
+
+chmod +x /etc/xrdp/startwm.sh
+
+# Añadir usuario al grupo ssl-cert (necesario para xrdp)
+usermod -a -G ssl-cert "${USERNAME}"
+
+# Habilitar y arrancar xrdp
+systemctl enable xrdp
+systemctl start xrdp
+
+# Configurar firewall para permitir RDP (puerto 3389)
+if command -v ufw >/dev/null 2>&1; then
+    ufw allow 3389/tcp
+fi
+
+log "✓ Enhanced Session Mode configurado (RDP en puerto 3389)"
+log "  Ahora puedes usar portapapeles compartido con el host"
 
 # ==============================================================================
 # FIN
