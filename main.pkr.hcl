@@ -18,10 +18,10 @@ packer {
 # DATA SOURCES
 # ==============================================================================
 
-# Contraseña por defecto: "developer" (cambiar tras primer login con: passwd)
-# Para generar un hash SHA-512 personalizado:
-# Linux:   echo "tu-contraseña" | mkpasswd -m sha-512 -s
-# Windows: Usa el hash por defecto o genera uno desde WSL/Linux
+# Contraseña fija: "developer"
+# - Hardcoded en ssh_password para build de Packer
+# - El hash por defecto está en la variable password_hash
+# - Usuario debe cambiar contraseña tras primer login con: passwd
 
 # ==============================================================================
 # VARIABLES
@@ -46,21 +46,11 @@ variable "username" {
   }
 }
 
-variable "password" {
-  type        = string
-  sensitive   = true
-  default     = "developer"
-  description = "Contraseña en texto plano (solo para SSH durante el build de Packer). Por defecto: 'developer'. DEBE coincidir con password_hash."
-  validation {
-    condition     = length(var.password) >= 8
-    error_message = "La contraseña debe tener al menos 8 caracteres."
-  }
-}
-
 variable "password_hash" {
   type        = string
   sensitive   = true
-  description = "Hash SHA-512 de la contraseña. Por defecto: 'developer' (cambiar tras primer login). Generar personalizado: echo 'password' | mkpasswd -m sha-512 -s"
+  default     = "$6$AQiJ5GBZLGsQOSsY$VZpRX.aQa8u3VwVuKlx0g6q1BoTUkaNJvu1R2eyDZVVdQAbvBnJsRvYkNdSGVgQUmruie/x2jD5q4IuxtfY2o1"
+  description = "Hash SHA-512 de la contraseña. Por defecto: hash de 'developer' (cambiar tras primer login). Generar personalizado: echo 'password' | mkpasswd -m sha-512 -s"
   validation {
     condition     = length(var.password_hash) > 0 && can(regex("^\\$6\\$", var.password_hash))
     error_message = "La variable password_hash debe ser un hash SHA-512 válido (debe comenzar con $6$). Genera uno con: echo 'password' | mkpasswd -m sha-512 -s"
@@ -464,10 +454,11 @@ source "hyperv-iso" "ubuntu" {
   }
   
   # --- SSH ---
-  # Packer usa password en texto plano para conectarse durante el build
+  # Contraseña fija "developer" para que Packer se conecte durante el build
+  # Si cambias password_hash, debes cambiar también este valor aquí
   communicator     = "ssh"
   ssh_username     = var.username
-  ssh_password     = var.password
+  ssh_password     = "developer"
   ssh_port         = var.ssh_port
   ssh_timeout      = "45m"
   

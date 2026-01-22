@@ -100,8 +100,9 @@ packer-dev-vm/
 |----------|---------|-------------|
 | `vm_name` | `dev-workstation` | Nombre de la VM en Hyper-V |
 | `username` | `developer` | Usuario principal |
-| `password_hash` | Hash de "developer" | Hash SHA-512 de contraseña (cambiar tras primer login) |
 | `hostname` | `dev-workstation` | Hostname |
+
+**Nota:** La contraseña por defecto es `developer` (hardcoded). Cámbiala tras primer login con `passwd`.
 
 ### Localización
 
