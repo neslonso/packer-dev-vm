@@ -39,16 +39,21 @@ autoinstall:
       size: 0
   
   # ==========================================================================
-  # Red
+  # Red (IP estática para build de Packer, luego se cambia a DHCP)
   # ==========================================================================
   network:
     network:
       version: 2
       ethernets:
-        any:
+        eth0:
           match:
-            name: "*"
-          dhcp4: true
+            name: "eth*"
+          addresses:
+            - 172.20.144.100/20
+          gateway4: 172.20.144.1
+          nameservers:
+            addresses: [8.8.8.8, 8.8.4.4]
+          dhcp4: false
           dhcp6: false
   
   # ==========================================================================

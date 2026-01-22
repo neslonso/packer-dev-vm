@@ -200,6 +200,21 @@ download_and_verify_gpg_key() {
 
 log "1/10 Configurando sistema base..."
 
+# Cambiar red de IP estática (usada para build) a DHCP (para uso normal)
+log "Configurando red a DHCP..."
+cat > /etc/netplan/00-installer-config.yaml << 'NETPLAN_EOF'
+network:
+  version: 2
+  ethernets:
+    eth0:
+      match:
+        name: "eth*"
+      dhcp4: true
+      dhcp6: false
+NETPLAN_EOF
+
+netplan apply
+
 # Actualizar sistema
 apt-get update
 apt-get upgrade -y

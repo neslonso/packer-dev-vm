@@ -445,7 +445,9 @@ source "hyperv-iso" "ubuntu" {
   # --- SSH ---
   # Contraseña fija "developer" para que Packer se conecte durante el build
   # Si cambias password_hash, debes cambiar también este valor aquí
+  # IP estática fija para evitar problemas de detección de Hyper-V
   communicator     = "ssh"
+  ssh_host         = "172.20.144.100"
   ssh_username     = var.username
   ssh_password     = "developer"
   ssh_port         = var.ssh_port
