@@ -64,6 +64,8 @@ autoinstall:
   packages:
     - ubuntu-desktop-minimal
     - openssh-server
+    - linux-tools-virtual
+    - linux-cloud-tools-virtual
     - git
     - curl
     - wget
