@@ -500,10 +500,8 @@ case "${PROMPT_THEME}" in
         else
             echo 'eval "$(starship init bash)"' >> "${HOME_DIR}/.bashrc"
         fi
-        
-        chown -R "${USERNAME}:${USERNAME}" "${HOME_DIR}/.config"
         ;;
-        
+
     "none")
         echo "Sin tema de prompt, usando defaults."
         ;;
@@ -590,9 +588,7 @@ if [[ "${INSTALL_VSCODE}" == "true" ]]; then
     "telemetry.telemetryLevel": "off"
 }
 EOF
-    
-    chown -R "${USERNAME}:${USERNAME}" "${HOME_DIR}/.config"
-    
+
     # Instalar extensiones básicas
     EXTENSIONS=(
         "ms-azuretools.vscode-docker"
@@ -639,8 +635,8 @@ if [[ "${INSTALL_ANTIGRAVITY}" == "true" ]]; then
 
     # Configure desktop launcher (optional)
     if [[ -f "/usr/share/applications/antigravity.desktop" ]]; then
-        # Make it available for the user
-        mkdir -p "${HOME_DIR}/.local/share/applications"
+        # Make it available for the user (create directory as user to ensure correct ownership)
+        run_as_user "mkdir -p '${HOME_DIR}/.local/share/applications'"
         cp /usr/share/applications/antigravity.desktop "${HOME_DIR}/.local/share/applications/"
         chown "${USERNAME}:${USERNAME}" "${HOME_DIR}/.local/share/applications/antigravity.desktop"
     fi

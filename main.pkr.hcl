@@ -122,14 +122,13 @@ variable "disk_size" {
 }
 
 # --- Ubuntu ---
-variable "ubuntu_version" {
-  type        = string
-  description = "Versión de Ubuntu"
-}
-
 variable "iso_url" {
   type        = string
-  description = "URL de la ISO de Ubuntu"
+  description = "URL de la ISO de Ubuntu (HTTP/HTTPS o file://)"
+  validation {
+    condition     = can(regex("^(https?|file)://", var.iso_url))
+    error_message = "iso_url debe comenzar con http://, https:// o file://"
+  }
 }
 
 variable "iso_checksum" {
@@ -189,24 +188,40 @@ variable "ohmyzsh_theme" {
   type        = string
   default     = "robbyrussell"
   description = "Tema de Oh My Zsh. Ejemplos: 'robbyrussell' (default), 'agnoster', 'powerlevel10k', 'spaceship'. Ver: https://github.com/ohmyzsh/ohmyzsh/wiki/Themes"
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9_-]+$", var.ohmyzsh_theme))
+    error_message = "ohmyzsh_theme solo debe contener letras, números, guiones y guiones bajos."
+  }
 }
 
 variable "ohmyzsh_plugins" {
   type        = string
   default     = "git"
   description = "Plugins de Oh My Zsh (separados por coma sin espacios). Ejemplos: 'git,docker,kubectl', 'git,z,fzf'. Ver: https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins"
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9_-]+(,[a-zA-Z0-9_-]+)*$", var.ohmyzsh_plugins))
+    error_message = "ohmyzsh_plugins debe ser una lista de plugins separados por coma (solo letras, números, guiones y guiones bajos)."
+  }
 }
 
 variable "ohmybash_theme" {
   type        = string
   default     = "powerline"
   description = "Tema de Oh My Bash. Ejemplos: 'powerline', 'agnoster', 'simple'. Ver: https://github.com/ohmybash/oh-my-bash/wiki/Themes"
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9_-]+$", var.ohmybash_theme))
+    error_message = "ohmybash_theme solo debe contener letras, números, guiones y guiones bajos."
+  }
 }
 
 variable "starship_preset" {
   type        = string
   default     = "none"
   description = "Preset de Starship. Opciones: 'none' (sin preset), 'nerd-font-symbols', 'bracketed-segments', 'plain-text-symbols', 'no-runtime-versions', 'no-empty-icons', 'pure-preset', 'pastel-powerline'. Ver: https://starship.rs/presets/"
+  validation {
+    condition     = contains(["none", "nerd-font-symbols", "bracketed-segments", "plain-text-symbols", "no-runtime-versions", "no-empty-icons", "pure-preset", "pastel-powerline"], var.starship_preset)
+    error_message = "starship_preset debe ser 'none', 'nerd-font-symbols', 'bracketed-segments', 'plain-text-symbols', 'no-runtime-versions', 'no-empty-icons', 'pure-preset' o 'pastel-powerline'."
+  }
 }
 
 # --- Fuentes ---
@@ -298,7 +313,11 @@ variable "install_browser" {
 # --- Build ---
 variable "output_directory" {
   type        = string
-  description = "Directorio de salida"
+  description = "Directorio de salida (path relativo recomendado). Ejemplo: './output', './builds'"
+  validation {
+    condition     = can(regex("^\\./[a-zA-Z0-9][a-zA-Z0-9_/-]*$", var.output_directory)) || can(regex("^[a-zA-Z0-9][a-zA-Z0-9_/-]*$", var.output_directory))
+    error_message = "output_directory debe ser un path válido (preferiblemente relativo comenzando con './'), solo caracteres alfanuméricos, guiones, guiones bajos y barras."
+  }
 }
 
 variable "headless" {
