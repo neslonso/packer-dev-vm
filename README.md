@@ -28,6 +28,26 @@ VM de desarrollo portable con Docker, configuración centralizada en un único a
 - Hyper-V habilitado (Windows 10/11 Pro o Enterprise)
 - Permisos de administrador
 
+### Requisitos adicionales para Windows
+
+Packer necesita ejecutar scripts para generar el hash de contraseña. Tienes tres opciones:
+
+**Opción 1 (Recomendada): Git for Windows**
+- Instalar [Git for Windows](https://git-scm.com/download/win) (incluye Git Bash y OpenSSL)
+- Git Bash debe estar en el PATH del sistema
+
+**Opción 2: WSL (Windows Subsystem for Linux)**
+- Habilitar WSL y tener `bash` disponible en el PATH de Windows
+
+**Opción 3: PowerShell con OpenSSL**
+- Instalar [OpenSSL para Windows](https://slproweb.com/products/Win32OpenSSL.html)
+- Modificar `main.pkr.hcl` línea 23 para usar PowerShell:
+  ```hcl
+  data "external" "password_hash" {
+    program = ["powershell", "-File", "${path.root}/scripts/generate_password_hash.ps1", "${var.password}"]
+  }
+  ```
+
 ## Quick Start
 
 ```bash

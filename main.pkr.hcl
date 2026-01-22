@@ -19,7 +19,7 @@ packer {
 # ==============================================================================
 
 # Generate password hash dynamically using external script
-data "external-raw" "password_hash" {
+data "external" "password_hash" {
   program = ["bash", "${path.root}/scripts/generate_password_hash.sh", "${var.password}"]
 }
 
@@ -217,10 +217,10 @@ variable "ohmybash_theme" {
 variable "starship_preset" {
   type        = string
   default     = "none"
-  description = "Preset de Starship. Opciones: 'none' (sin preset), 'nerd-font-symbols', 'bracketed-segments', 'plain-text-symbols', 'no-runtime-versions', 'no-empty-icons', 'pure-preset', 'pastel-powerline'. Ver: https://starship.rs/presets/"
+  description = "Preset de Starship. Opciones: 'none' (sin preset), 'nerd-font-symbols', 'bracketed-segments', 'plain-text-symbols', 'no-runtime-versions', 'no-empty-icons', 'pure-preset', 'pastel-powerline', 'gruvbox-rainbow'. Ver: https://starship.rs/presets/"
   validation {
     condition     = contains(["none", "nerd-font-symbols", "bracketed-segments", "plain-text-symbols", "no-runtime-versions", "no-empty-icons", "pure-preset", "pastel-powerline", "gruvbox-rainbow"], var.starship_preset)
-    error_message = "La variable starship_preset debe ser 'none', 'nerd-font-symbols', 'bracketed-segments', 'plain-text-symbols', 'no-runtime-versions', 'no-empty-icons', 'pure-preset' o 'pastel-powerline'."
+    error_message = "La variable starship_preset debe ser 'none', 'nerd-font-symbols', 'bracketed-segments', 'plain-text-symbols', 'no-runtime-versions', 'no-empty-icons', 'pure-preset', 'pastel-powerline' o 'gruvbox-rainbow'."
   }
 }
 
@@ -351,7 +351,7 @@ variable "hyperv_secure_boot" {
 
 locals {
   # Password hash para cloud-init (SHA-512) - Generated dynamically from var.password
-  password_hash = jsondecode(data.external-raw.password_hash.result).hash
+  password_hash = data.external.password_hash.result.hash
 
   # Timestamp para nombres únicos
   timestamp = formatdate("YYYYMMDD-hhmm", timestamp())
