@@ -348,6 +348,14 @@ El proyecto está preparado para añadir VirtualBox, VMware o QEMU. Solo hay que
 - Asegurar que existe el switch "Default Switch" en Hyper-V
 - Aumentar `ssh_timeout` en main.pkr.hcl si es necesario
 
+### Warning: "mac spoofing should be allowed"
+- Este warning es normal e informativo
+- Packer no puede configurar MAC spoofing automáticamente
+- Si Docker tiene problemas de networking, ejecutar en el host (PowerShell como admin):
+  ```powershell
+  Get-VMNetworkAdapter -VMName "dev-workstation" | Set-VMNetworkAdapter -MacAddressSpoofing On
+  ```
+
 ### Nested virtualization no funciona (Docker falla)
 - Ejecutar como Administrador
 - Verificar que la VM tiene `enable_virtualization_extensions = true`
