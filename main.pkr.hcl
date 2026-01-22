@@ -33,7 +33,7 @@ variable "vm_name" {
   description = "Nombre de la VM (usado para directorios de output). Ejemplo: 'ubuntu-dev', 'my-workstation'"
   validation {
     condition     = can(regex("^[a-zA-Z0-9][a-zA-Z0-9_-]{0,98}[a-zA-Z0-9]$", var.vm_name))
-    error_message = "vm_name debe tener entre 2 y 100 caracteres, comenzar y terminar con alfanumérico, y solo contener letras, números, guiones y guiones bajos."
+    error_message = "La variable vm_name debe tener entre 2 y 100 caracteres, comenzar y terminar con alfanumérico, y solo contener letras, números, guiones y guiones bajos."
   }
 }
 
@@ -42,7 +42,7 @@ variable "username" {
   description = "Usuario principal del sistema. Debe seguir convenciones Linux: comenzar con letra minúscula o '_', solo a-z, 0-9, '-', '_' (máx 32 chars). Ejemplo: 'developer', 'john_doe'"
   validation {
     condition     = can(regex("^[a-z_][a-z0-9_-]{0,31}$", var.username))
-    error_message = "Username debe comenzar con letra minúscula o guión bajo, y solo contener letras minúsculas, números, guiones y guiones bajos (máximo 32 caracteres)."
+    error_message = "La variable username debe comenzar con letra minúscula o guión bajo, y solo contener letras minúsculas, números, guiones y guiones bajos (máximo 32 caracteres)."
   }
 }
 
@@ -52,7 +52,7 @@ variable "password" {
   description = "Contraseña del usuario principal (mínimo 8 caracteres). Se genera hash SHA-512 automáticamente."
   validation {
     condition     = length(var.password) >= 8
-    error_message = "Password debe tener al menos 8 caracteres."
+    error_message = "La variable password debe tener al menos 8 caracteres."
   }
 }
 
@@ -61,7 +61,7 @@ variable "hostname" {
   description = "Hostname de la máquina (nombre visible en red). Ejemplo: 'dev-machine', 'ubuntu-desktop'"
   validation {
     condition     = can(regex("^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$", var.hostname))
-    error_message = "Hostname debe tener entre 1 y 63 caracteres, comenzar y terminar con alfanumérico, y solo contener letras, números y guiones."
+    error_message = "La variable hostname debe tener entre 1 y 63 caracteres, comenzar y terminar con alfanumérico, y solo contener letras, números y guiones."
   }
 }
 
@@ -71,7 +71,7 @@ variable "timezone" {
   description = "Zona horaria (formato IANA). Ejemplos: 'America/New_York', 'Europe/Madrid', 'Asia/Tokyo', 'UTC'. Ver: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones"
   validation {
     condition     = can(regex("^[A-Za-z_]+(/[A-Za-z_]+)+$", var.timezone)) || var.timezone == "UTC"
-    error_message = "Timezone debe tener formato IANA válido (ej: 'America/New_York', 'Europe/Madrid') o ser 'UTC'."
+    error_message = "La variable timezone debe tener formato IANA válido (ej: 'America/New_York', 'Europe/Madrid') o ser 'UTC'."
   }
 }
 
@@ -80,7 +80,7 @@ variable "locale" {
   description = "Locale del sistema (idioma y región). Ejemplos: 'en_US.UTF-8', 'es_ES.UTF-8', 'de_DE.UTF-8'"
   validation {
     condition     = can(regex("^[a-z]{2}_[A-Z]{2}\\.UTF-8$", var.locale))
-    error_message = "Locale debe tener formato válido (ej: 'en_US.UTF-8', 'es_ES.UTF-8')."
+    error_message = "La variable locale debe tener formato válido (ej: 'en_US.UTF-8', 'es_ES.UTF-8')."
   }
 }
 
@@ -89,7 +89,7 @@ variable "keyboard" {
   description = "Layout de teclado. Ejemplos: 'us' (inglés), 'es' (español), 'de' (alemán), 'fr' (francés)"
   validation {
     condition     = can(regex("^[a-z]{2}(-[a-z]+)?$", var.keyboard))
-    error_message = "Keyboard debe ser un código válido de layout (ej: 'us', 'es', 'de', 'fr', 'en-gb')."
+    error_message = "La variable keyboard debe ser un código válido de layout (ej: 'us', 'es', 'de', 'fr', 'en-gb')."
   }
 }
 
@@ -99,7 +99,7 @@ variable "memory" {
   description = "RAM en MB"
   validation {
     condition     = var.memory >= 2048 && var.memory <= 131072
-    error_message = "Memory debe estar entre 2048 MB (2 GB) y 131072 MB (128 GB). Ubuntu Desktop requiere mínimo 2 GB."
+    error_message = "La variable memory debe estar entre 2048 MB (2 GB) y 131072 MB (128 GB). Ubuntu Desktop requiere mínimo 2 GB."
   }
 }
 
@@ -108,7 +108,7 @@ variable "cpus" {
   description = "Número de CPUs"
   validation {
     condition     = var.cpus >= 1 && var.cpus <= 128
-    error_message = "CPUs debe estar entre 1 y 128."
+    error_message = "La variable cpus debe estar entre 1 y 128."
   }
 }
 
@@ -117,7 +117,7 @@ variable "disk_size" {
   description = "Tamaño del disco en MB"
   validation {
     condition     = var.disk_size >= 20480 && var.disk_size <= 2097152
-    error_message = "Disk size debe estar entre 20480 MB (20 GB) y 2097152 MB (2 TB). Ubuntu Desktop requiere mínimo 20 GB."
+    error_message = "La variable disk_size debe estar entre 20480 MB (20 GB) y 2097152 MB (2 TB). Ubuntu Desktop requiere mínimo 20 GB."
   }
 }
 
@@ -127,7 +127,7 @@ variable "iso_url" {
   description = "URL de la ISO de Ubuntu (HTTP/HTTPS o file://)"
   validation {
     condition     = can(regex("^(https?|file)://", var.iso_url))
-    error_message = "iso_url debe comenzar con http://, https:// o file://"
+    error_message = "La variable iso_url debe comenzar con http://, https:// o file://."
   }
 }
 
@@ -136,7 +136,7 @@ variable "iso_checksum" {
   description = "Checksum de la ISO (formato: sha256:HEXSTRING)"
   validation {
     condition     = can(regex("^(md5|sha1|sha256|sha512):[a-fA-F0-9]+$", var.iso_checksum))
-    error_message = "iso_checksum debe tener formato válido: 'sha256:HEXSTRING' (también soporta md5, sha1, sha512)."
+    error_message = "La variable iso_checksum debe tener formato válido: 'sha256:HEXSTRING' (también soporta md5, sha1, sha512)."
   }
 }
 
@@ -151,7 +151,7 @@ variable "ssh_port" {
   description = "Puerto SSH"
   validation {
     condition     = var.ssh_port >= 1 && var.ssh_port <= 65535
-    error_message = "SSH port debe estar entre 1 y 65535."
+    error_message = "La variable ssh_port debe estar entre 1 y 65535."
   }
 }
 
@@ -171,7 +171,7 @@ variable "shell" {
   description = "Shell: bash o zsh"
   validation {
     condition     = contains(["bash", "zsh"], var.shell)
-    error_message = "Shell debe ser 'bash' o 'zsh'."
+    error_message = "La variable shell debe ser 'bash' o 'zsh'."
   }
 }
 
@@ -180,7 +180,7 @@ variable "prompt_theme" {
   description = "Tema del prompt: none, starship, ohmybash, ohmyzsh"
   validation {
     condition     = contains(["none", "starship", "ohmybash", "ohmyzsh"], var.prompt_theme)
-    error_message = "prompt_theme debe ser 'none', 'starship', 'ohmybash' o 'ohmyzsh'."
+    error_message = "La variable prompt_theme debe ser 'none', 'starship', 'ohmybash' o 'ohmyzsh'."
   }
 }
 
@@ -190,7 +190,7 @@ variable "ohmyzsh_theme" {
   description = "Tema de Oh My Zsh. Ejemplos: 'robbyrussell' (default), 'agnoster', 'powerlevel10k', 'spaceship'. Ver: https://github.com/ohmyzsh/ohmyzsh/wiki/Themes"
   validation {
     condition     = can(regex("^[a-zA-Z0-9_-]+$", var.ohmyzsh_theme))
-    error_message = "ohmyzsh_theme solo debe contener letras, números, guiones y guiones bajos."
+    error_message = "La variable ohmyzsh_theme solo debe contener letras, números, guiones y guiones bajos."
   }
 }
 
@@ -200,7 +200,7 @@ variable "ohmyzsh_plugins" {
   description = "Plugins de Oh My Zsh (separados por coma sin espacios). Ejemplos: 'git,docker,kubectl', 'git,z,fzf'. Ver: https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins"
   validation {
     condition     = can(regex("^[a-zA-Z0-9_-]+(,[a-zA-Z0-9_-]+)*$", var.ohmyzsh_plugins))
-    error_message = "ohmyzsh_plugins debe ser una lista de plugins separados por coma (solo letras, números, guiones y guiones bajos)."
+    error_message = "La variable ohmyzsh_plugins debe ser una lista de plugins separados por coma (solo letras, números, guiones y guiones bajos)."
   }
 }
 
@@ -210,7 +210,7 @@ variable "ohmybash_theme" {
   description = "Tema de Oh My Bash. Ejemplos: 'powerline', 'agnoster', 'simple'. Ver: https://github.com/ohmybash/oh-my-bash/wiki/Themes"
   validation {
     condition     = can(regex("^[a-zA-Z0-9_-]+$", var.ohmybash_theme))
-    error_message = "ohmybash_theme solo debe contener letras, números, guiones y guiones bajos."
+    error_message = "La variable ohmybash_theme solo debe contener letras, números, guiones y guiones bajos."
   }
 }
 
@@ -219,8 +219,8 @@ variable "starship_preset" {
   default     = "none"
   description = "Preset de Starship. Opciones: 'none' (sin preset), 'nerd-font-symbols', 'bracketed-segments', 'plain-text-symbols', 'no-runtime-versions', 'no-empty-icons', 'pure-preset', 'pastel-powerline'. Ver: https://starship.rs/presets/"
   validation {
-    condition     = contains(["none", "nerd-font-symbols", "bracketed-segments", "plain-text-symbols", "no-runtime-versions", "no-empty-icons", "pure-preset", "pastel-powerline"], var.starship_preset)
-    error_message = "starship_preset debe ser 'none', 'nerd-font-symbols', 'bracketed-segments', 'plain-text-symbols', 'no-runtime-versions', 'no-empty-icons', 'pure-preset' o 'pastel-powerline'."
+    condition     = contains(["none", "nerd-font-symbols", "bracketed-segments", "plain-text-symbols", "no-runtime-versions", "no-empty-icons", "pure-preset", "pastel-powerline", "gruvbox-rainbow"], var.starship_preset)
+    error_message = "La variable starship_preset debe ser 'none', 'nerd-font-symbols', 'bracketed-segments', 'plain-text-symbols', 'no-runtime-versions', 'no-empty-icons', 'pure-preset' o 'pastel-powerline'."
   }
 }
 
@@ -230,7 +230,7 @@ variable "nerd_font" {
   description = "Nerd Font a instalar ('none' para no instalar, o nombre de fuente). Opciones: 'JetBrainsMono', 'FiraCode', 'Hack', 'SourceCodePro', 'Meslo', 'none'. Ver: https://www.nerdfonts.com/font-downloads"
   validation {
     condition     = contains(["none", "JetBrainsMono", "FiraCode", "Hack", "SourceCodePro", "Meslo"], var.nerd_font)
-    error_message = "nerd_font debe ser 'none', 'JetBrainsMono', 'FiraCode', 'Hack', 'SourceCodePro' o 'Meslo'."
+    error_message = "La variable nerd_font debe ser 'none', 'JetBrainsMono', 'FiraCode', 'Hack', 'SourceCodePro' o 'Meslo'."
   }
 }
 
@@ -240,7 +240,7 @@ variable "git_name" {
   description = "Nombre para commits de Git"
   validation {
     condition     = length(trimspace(var.git_name)) >= 1 && length(var.git_name) <= 255
-    error_message = "Git name debe tener entre 1 y 255 caracteres y no puede ser solo espacios."
+    error_message = "La variable git_name debe tener entre 1 y 255 caracteres y no puede ser solo espacios."
   }
 }
 
@@ -249,7 +249,7 @@ variable "git_email" {
   description = "Email para commits de Git"
   validation {
     condition     = can(regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", var.git_email))
-    error_message = "Git email debe tener un formato de email válido."
+    error_message = "La variable git_email debe tener un formato de email válido."
   }
 }
 
@@ -258,7 +258,7 @@ variable "git_default_branch" {
   description = "Branch por defecto de Git"
   validation {
     condition     = length(var.git_default_branch) >= 1 && length(var.git_default_branch) <= 255
-    error_message = "Git default branch debe tener entre 1 y 255 caracteres."
+    error_message = "La variable git_default_branch debe tener entre 1 y 255 caracteres."
   }
 }
 
@@ -268,7 +268,7 @@ variable "docker_log_max_size" {
   description = "Tamaño máximo de logs de Docker"
   validation {
     condition     = can(regex("^[0-9]+(k|m|g)$", var.docker_log_max_size))
-    error_message = "Docker log max size debe tener formato válido (ej: 10m, 100k, 1g)."
+    error_message = "La variable docker_log_max_size debe tener formato válido (ej: 10m, 100k, 1g)."
   }
 }
 
@@ -277,7 +277,7 @@ variable "docker_log_max_file" {
   description = "Número de archivos de log de Docker"
   validation {
     condition     = var.docker_log_max_file >= 1 && var.docker_log_max_file <= 100
-    error_message = "Docker log max file debe estar entre 1 y 100."
+    error_message = "La variable docker_log_max_file debe estar entre 1 y 100."
   }
 }
 
@@ -287,7 +287,7 @@ variable "desktop_theme" {
   description = "Tema del desktop: dark o light"
   validation {
     condition     = contains(["dark", "light"], var.desktop_theme)
-    error_message = "desktop_theme debe ser 'dark' o 'light'."
+    error_message = "La variable desktop_theme debe ser 'dark' o 'light'."
   }
 }
 
@@ -306,7 +306,7 @@ variable "install_browser" {
   description = "Navegador a instalar: firefox, chrome, chromium o none"
   validation {
     condition     = contains(["firefox", "chrome", "chromium", "none"], var.install_browser)
-    error_message = "install_browser debe ser 'firefox', 'chrome', 'chromium' o 'none'."
+    error_message = "La variable install_browser debe ser 'firefox', 'chrome', 'chromium' o 'none'."
   }
 }
 
@@ -316,7 +316,7 @@ variable "output_directory" {
   description = "Directorio de salida (path relativo recomendado). Ejemplo: './output', './builds'"
   validation {
     condition     = can(regex("^\\./[a-zA-Z0-9][a-zA-Z0-9_/-]*$", var.output_directory)) || can(regex("^[a-zA-Z0-9][a-zA-Z0-9_/-]*$", var.output_directory))
-    error_message = "output_directory debe ser un path válido (preferiblemente relativo comenzando con './'), solo caracteres alfanuméricos, guiones, guiones bajos y barras."
+    error_message = "La variable output_directory debe ser un path válido (preferiblemente relativo comenzando con './'), solo caracteres alfanuméricos, guiones, guiones bajos y barras."
   }
 }
 
