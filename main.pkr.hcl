@@ -47,16 +47,6 @@ variable "username" {
   }
 }
 
-variable "password" {
-  type        = string
-  sensitive   = true
-  description = "Contraseña del usuario principal (mínimo 8 caracteres). Se genera hash SHA-512 automáticamente."
-  validation {
-    condition     = length(var.password) >= 8
-    error_message = "La variable password debe tener al menos 8 caracteres."
-  }
-}
-
 variable "password_hash" {
   type        = string
   sensitive   = true
