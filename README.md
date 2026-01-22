@@ -125,8 +125,8 @@ packer-dev-vm/
 | `ohmyzsh_theme` | `agnoster` | Tema de Oh My Zsh |
 | `ohmyzsh_plugins` | `git,docker,...` | Plugins (separados por coma) |
 | `ohmybash_theme` | `powerline` | Tema de Oh My Bash |
-| `starship_preset` | `no-nerd-font` | Preset de Starship |
-| `nerd_font` | `true` | Instalar JetBrains Mono Nerd Font |
+| `starship_preset` | `plain-text-symbols` | Preset de Starship |
+| `nerd_font` | `JetBrainsMono` | Nerd Font a instalar (`none` para no instalar) |
 
 ### Git
 
@@ -205,7 +205,7 @@ packer-dev-vm/
 - `josh` - Limpio con hora
 - `gnzh` - Similar a bira
 
-**Con Nerd Font** (requiere `nerd_font = true`):
+**Con Nerd Font** (requiere `nerd_font != "none"`):
 - `agnoster` - Muy popular, segmentos powerline
 - `powerlevel10k` - El más configurable (se instala automáticamente)
 
@@ -222,7 +222,7 @@ packer-dev-vm/
 - `modern` - Actualizado
 - `brainy` - Informativo
 
-**Con Nerd Font** (requiere `nerd_font = true`):
+**Con Nerd Font** (requiere `nerd_font != "none"`):
 - `agnoster` - Segmentos powerline
 - `powerline` - Estilo powerline clásico
 - `powerline-multiline` - Powerline dos líneas
@@ -234,14 +234,15 @@ packer-dev-vm/
 ### Starship (`starship_preset`)
 
 **Sin Nerd Font**:
-- `plain-text-symbols` - Solo texto
-- `no-nerd-font` - Sin iconos Nerd Font
+- `plain-text-symbols` - Solo texto ASCII
 - `bracketed-segments` - Segmentos entre corchetes
 - `pure-preset` - Emula Pure de zsh
+- `no-runtime-versions` - Sin versiones de runtime
+- `no-empty-icons` - Sin iconos vacíos
+- `none` - Sin preset (config por defecto)
 
-**Con Nerd Font** (requiere `nerd_font = true`):
+**Con Nerd Font** (requiere `nerd_font != "none"`):
 - `pastel-powerline` - Colores pastel
-- `tokyo-night` - Tema Tokyo Night
 - `gruvbox-rainbow` - Colores Gruvbox
 - `nerd-font-symbols` - Todos los iconos
 
@@ -349,7 +350,7 @@ El proyecto está preparado para añadir VirtualBox, VMware o QEMU. Solo hay que
 - En host: `Set-VMProcessor -VMName "dev-workstation" -ExposeVirtualizationExtensions $true`
 
 ### Oh My Zsh/Bash no muestra iconos
-- Verificar `nerd_font = true` en variables
+- Verificar `nerd_font != "none"` en variables
 - Configurar el terminal para usar "JetBrainsMono Nerd Font"
 
 ### Error en combinación shell/prompt

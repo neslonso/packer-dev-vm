@@ -65,10 +65,10 @@ ohmyzsh_plugins = "git,docker,docker-compose,kubectl"
 ohmybash_theme = "powerline"
 
 # --- Starship (solo si prompt_theme=starship, funciona con bash o zsh) ---
-# Presets SIN Nerd Font: plain-text-symbols, no-nerd-font, bracketed-segments, pure-preset
-# Presets CON Nerd Font: pastel-powerline, tokyo-night, gruvbox-rainbow, nerd-font-symbols
+# Presets SIN Nerd Font: plain-text-symbols, bracketed-segments, pure-preset, no-runtime-versions, no-empty-icons
+# Presets CON Nerd Font: pastel-powerline, gruvbox-rainbow, nerd-font-symbols
 # Lista completa: https://starship.rs/presets/
-starship_preset = "no-nerd-font"
+starship_preset = "plain-text-symbols"
 
 # ==============================================================================
 # FUENTES
