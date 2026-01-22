@@ -231,12 +231,6 @@ if ! ln -sf /usr/bin/fdfind /usr/local/bin/fd 2>/dev/null; then
     log "INFO: fdfind not available, fd command will not work"
 fi
 
-# Crear directorios de proyectos
-mkdir -p "${HOME_DIR}/projects/work"
-mkdir -p "${HOME_DIR}/projects/personal"
-mkdir -p "${HOME_DIR}/projects/sandbox"
-chown -R "${USERNAME}:${USERNAME}" "${HOME_DIR}/projects"
-
 # ==============================================================================
 # 2. DOCKER
 # ==============================================================================
@@ -817,8 +811,6 @@ alias lzd="lazydocker"
 alias ll="ls -la"
 alias ..="cd .."
 alias ...="cd ../.."
-alias proj="cd ~/projects"
-alias work="cd ~/projects/work"
 '
 
 if [[ "${SHELL_TYPE}" == "zsh" ]]; then
