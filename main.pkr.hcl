@@ -486,7 +486,7 @@ build {
   provisioner "shell" {
     environment_vars = local.provision_env_vars
     script           = "${path.root}/scripts/provision.sh"
-    execute_command  = "sudo -E sh -c '{{ .Vars }} {{ .Path }}'"
+    execute_command  = "{{ .Vars }} sudo -E bash '{{ .Path }}'"
   }
   
   # --- Limpieza final ---
@@ -501,30 +501,13 @@ build {
       "sudo truncate -s 0 /etc/machine-id",
       "sudo rm -f /var/lib/dbus/machine-id",
       "rm -f ~/.bash_history",
-      "echo 'VM lista!'"
-    ]
-  }
-
-  # --- Aviso post-build (se ejecuta en el HOST) ---
-  provisioner "shell-local" {
-    inline = [
       "echo ''",
       "echo '============================================================'",
-      "echo 'VM CREADA EXITOSAMENTE'",
+      "echo 'BUILD COMPLETADO EXITOSAMENTE'",
       "echo '============================================================'",
-      "echo ''",
-      "echo 'Credenciales por defecto:'",
-      "echo '  Usuario: ${var.username}'",
-      "echo '  Password: developer'",
-      "echo ''",
-      "echo 'IMPORTANTE - Configuración post-build requerida:'",
-      "echo ''",
-      "echo '1. Habilitar MAC spoofing para Docker (PowerShell como admin):'",
-      "echo '   Get-VMNetworkAdapter -VMName \"${var.vm_name}\" | Set-VMNetworkAdapter -MacAddressSpoofing On'",
-      "echo ''",
-      "echo '2. Cambiar contraseña tras primer login:'",
-      "echo '   passwd'",
-      "echo ''",
+      "echo 'Credenciales: ${var.username} / developer'",
+      "echo 'Recuerda: Cambiar password tras login (passwd)'",
+      "echo 'Recuerda: Habilitar MAC spoofing si Docker falla'",
       "echo '============================================================'",
       "echo ''"
     ]
