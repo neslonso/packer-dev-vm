@@ -183,8 +183,28 @@ download_and_verify_gpg_key() {
     mkdir -p "$temp_keyring"
     chmod 700 "$temp_keyring"
 
-    local actual_fingerprint
-    actual_fingerprint=$(gpg --no-default-keyring --keyring "$temp_keyring/temp.gpg" --import "$temp_key" 2>&1 | grep -oP '[0-9A-F]{40}' | head -1 | sed 's/.\{4\}/& /g' | xargs)
+    # Import key and capture output
+    local import_output
+    import_output=$(gpg --no-default-keyring --keyring "$temp_keyring/temp.gpg" --import "$temp_key" 2>&1)
+
+    # Extract fingerprint - try multiple methods
+    local actual_fingerprint=""
+
+    # Method 1: Look for 40 consecutive hex chars
+    actual_fingerprint=$(echo "$import_output" | grep -oP '[0-9A-F]{40}' | head -1)
+
+    # Method 2: If not found, look for key ID and get full fingerprint
+    if [[ -z "$actual_fingerprint" ]]; then
+        local key_id=$(echo "$import_output" | grep -oP 'key [0-9A-F]+' | head -1 | awk '{print $2}')
+        if [[ -n "$key_id" ]]; then
+            actual_fingerprint=$(gpg --no-default-keyring --keyring "$temp_keyring/temp.gpg" --fingerprint --with-colons "$key_id" 2>/dev/null | grep '^fpr:' | head -1 | cut -d: -f10)
+        fi
+    fi
+
+    # Format fingerprint with spaces (groups of 4)
+    if [[ -n "$actual_fingerprint" ]]; then
+        actual_fingerprint=$(echo "$actual_fingerprint" | sed 's/.\{4\}/& /g' | xargs)
+    fi
 
     # Clean up temporary keyring
     rm -rf "$temp_keyring"
