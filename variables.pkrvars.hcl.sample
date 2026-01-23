@@ -8,9 +8,9 @@
 # ==============================================================================
 # IDENTIDAD
 # ==============================================================================
+# Contraseña por defecto: "developer" (cambiar tras primer login con: passwd)
 vm_name  = "dev-workstation"           # Nombre de la VM en el hypervisor
 username = "developer"                 # Usuario principal
-password = "developer"                 # Contraseña (se genera hash automáticamente)
 hostname = "dev-workstation"           # Hostname de la máquina
 
 # ==============================================================================
@@ -30,9 +30,8 @@ disk_size = 80000                      # Disco en MB
 # ==============================================================================
 # UBUNTU
 # ==============================================================================
-ubuntu_version = "24.04.1"
-iso_url        = "https://releases.ubuntu.com/24.04.1/ubuntu-24.04.1-desktop-amd64.iso"
-iso_checksum   = "sha256:c2e6f4dc37ac944e2ed507f87c6571f4330a63c7f2e9c0aea40fd69a135e6f94"
+iso_url      = "https://releases.ubuntu.com/24.04.1/ubuntu-24.04.1-desktop-amd64.iso"
+iso_checksum = "sha256:c2e6f4dc37ac944e2ed507f87c6571f4330a63c7f2e9c0aea40fd69a135e6f94"
 
 # ==============================================================================
 # SISTEMA
@@ -54,31 +53,41 @@ prompt_theme = "ohmyzsh"               # none | starship | ohmybash | ohmyzsh
 
 # --- Oh My Zsh (solo si shell=zsh y prompt_theme=ohmyzsh) ---
 # Temas SIN Nerd Font: robbyrussell, bira, dst, refined, ys, pure, minimal, bureau, josh, gnzh
-# Temas CON Nerd Font: agnoster, powerlevel10k (requiere nerd_font=true)
+# Temas CON Nerd Font: agnoster, powerlevel10k (requiere nerd_font != "none")
 # Lista completa: https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
 ohmyzsh_theme   = "agnoster"
 ohmyzsh_plugins = "git,docker,docker-compose,kubectl"
 
 # --- Oh My Bash (solo si shell=bash y prompt_theme=ohmybash) ---
 # Temas SIN Nerd Font: font, bobby, clean, minimal, pure, modern, brainy
-# Temas CON Nerd Font: agnoster, powerline, powerline-*, powerbash10k (requiere nerd_font=true)
+# Temas CON Nerd Font: agnoster, powerline, powerline-*, powerbash10k (requiere nerd_font != "none")
 # Lista completa: https://github.com/ohmybash/oh-my-bash/wiki/Themes
 ohmybash_theme = "powerline"
 
 # --- Starship (solo si prompt_theme=starship, funciona con bash o zsh) ---
-# Presets SIN Nerd Font: plain-text-symbols, no-nerd-font, bracketed-segments, pure-preset
-# Presets CON Nerd Font: pastel-powerline, tokyo-night, gruvbox-rainbow, nerd-font-symbols
+# Presets SIN Nerd Font: plain-text-symbols, bracketed-segments, pure-preset, no-runtime-versions, no-empty-icons
+# Presets CON Nerd Font: pastel-powerline, gruvbox-rainbow, nerd-font-symbols
 # Lista completa: https://starship.rs/presets/
-starship_preset = "no-nerd-font"
+starship_preset = "plain-text-symbols"
 
 # ==============================================================================
 # FUENTES
 # ==============================================================================
-# Instala JetBrains Mono Nerd Font. Necesario para temas con iconos:
+# Instala una Nerd Font (fuentes con iconos). Opciones:
+#   - "JetBrainsMono" (recomendada, moderna, excelente legibilidad)
+#   - "FiraCode"      (popular, ligaduras)
+#   - "Hack"          (clásica, muy legible)
+#   - "SourceCodePro" (Adobe, elegante)
+#   - "Meslo"         (basada en Menlo/Monaco)
+#   - "none"          (no instalar fuente con iconos)
+#
+# Necesario para temas con iconos:
 # - Oh My Zsh: agnoster, powerlevel10k
 # - Oh My Bash: agnoster, powerline*, powerbash10k
 # - Starship: pastel-powerline, tokyo-night, gruvbox-rainbow, nerd-font-symbols
-nerd_font = true
+#
+# Ver todas las fuentes: https://www.nerdfonts.com/font-downloads
+nerd_font = "JetBrainsMono"
 
 # ==============================================================================
 # GIT

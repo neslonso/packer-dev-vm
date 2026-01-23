@@ -28,23 +28,45 @@ VM de desarrollo portable con Docker, configuración centralizada en un único a
 - Hyper-V habilitado (Windows 10/11 Pro o Enterprise)
 - Permisos de administrador
 
+### Nota sobre contraseñas
+
+La contraseña por defecto es `developer`. Tras el primer login, cámbiala con:
+```bash
+passwd
+```
+
 ## Quick Start
 
-```bash
+### 🪟 Windows
+
+```powershell
 # 1. Clonar el proyecto
-git clone <repo> && cd packer-dev-vm
+git clone <repo>
+cd packer-dev-vm
 
-# 2. Obtener checksum de la ISO (actualizar en variables.pkrvars.hcl)
-curl -s https://releases.ubuntu.com/24.04.1/SHA256SUMS | grep desktop-amd64.iso
+# 2. Copiar y editar configuración
+copy variables.pkrvars.hcl.sample variables.pkrvars.hcl
+# Editar variables.pkrvars.hcl con tus preferencias
 
-# 3. Editar variables.pkrvars.hcl con tus preferencias
-
-# 4. Inicializar Packer
+# 3. Inicializar y validar
 packer init main.pkr.hcl
+packer validate -var-file=variables.pkrvars.hcl main.pkr.hcl
+
+# 4. IMPORTANTE: Desactivar NumLock antes de construir
+#    (Si NumLock está activo, el boot_command fallará)
 
 # 5. Construir la VM
 packer build -var-file=variables.pkrvars.hcl main.pkr.hcl
+
+# 6. Configuración post-build (REQUERIDO - PowerShell como admin)
+Get-VMNetworkAdapter -VMName "dev-workstation" | Set-VMNetworkAdapter -MacAddressSpoofing On
 ```
+
+**Credenciales:** Usuario `developer`, password `developer`. **Cambia la contraseña** tras primer login con `passwd`.
+
+### 🐧 Linux/macOS
+
+**Nota:** Este proyecto está diseñado para Hyper-V (Windows). Para Linux/macOS se requeriría añadir soporte para VirtualBox, VMware o KVM.
 
 ## Estructura del Proyecto
 
@@ -68,8 +90,9 @@ packer-dev-vm/
 |----------|---------|-------------|
 | `vm_name` | `dev-workstation` | Nombre de la VM en Hyper-V |
 | `username` | `developer` | Usuario principal |
-| `password` | `developer` | Contraseña |
 | `hostname` | `dev-workstation` | Hostname |
+
+**Nota:** La contraseña por defecto es `developer` (hardcoded). Cámbiala tras primer login con `passwd`.
 
 ### Localización
 
@@ -105,8 +128,8 @@ packer-dev-vm/
 | `ohmyzsh_theme` | `agnoster` | Tema de Oh My Zsh |
 | `ohmyzsh_plugins` | `git,docker,...` | Plugins (separados por coma) |
 | `ohmybash_theme` | `powerline` | Tema de Oh My Bash |
-| `starship_preset` | `no-nerd-font` | Preset de Starship |
-| `nerd_font` | `true` | Instalar JetBrains Mono Nerd Font |
+| `starship_preset` | `plain-text-symbols` | Preset de Starship |
+| `nerd_font` | `JetBrainsMono` | Nerd Font a instalar (`none` para no instalar) |
 
 ### Git
 
@@ -185,7 +208,7 @@ packer-dev-vm/
 - `josh` - Limpio con hora
 - `gnzh` - Similar a bira
 
-**Con Nerd Font** (requiere `nerd_font = true`):
+**Con Nerd Font** (requiere `nerd_font != "none"`):
 - `agnoster` - Muy popular, segmentos powerline
 - `powerlevel10k` - El más configurable (se instala automáticamente)
 
@@ -202,7 +225,7 @@ packer-dev-vm/
 - `modern` - Actualizado
 - `brainy` - Informativo
 
-**Con Nerd Font** (requiere `nerd_font = true`):
+**Con Nerd Font** (requiere `nerd_font != "none"`):
 - `agnoster` - Segmentos powerline
 - `powerline` - Estilo powerline clásico
 - `powerline-multiline` - Powerline dos líneas
@@ -214,14 +237,15 @@ packer-dev-vm/
 ### Starship (`starship_preset`)
 
 **Sin Nerd Font**:
-- `plain-text-symbols` - Solo texto
-- `no-nerd-font` - Sin iconos Nerd Font
+- `plain-text-symbols` - Solo texto ASCII
 - `bracketed-segments` - Segmentos entre corchetes
 - `pure-preset` - Emula Pure de zsh
+- `no-runtime-versions` - Sin versiones de runtime
+- `no-empty-icons` - Sin iconos vacíos
+- `none` - Sin preset (config por defecto)
 
-**Con Nerd Font** (requiere `nerd_font = true`):
+**Con Nerd Font** (requiere `nerd_font != "none"`):
 - `pastel-powerline` - Colores pastel
-- `tokyo-night` - Tema Tokyo Night
 - `gruvbox-rainbow` - Colores Gruvbox
 - `nerd-font-symbols` - Todos los iconos
 
@@ -310,10 +334,23 @@ El proyecto está preparado para añadir VirtualBox, VMware o QEMU. Solo hay que
 
 ## Troubleshooting
 
+### Boot command escribe números (2221) en lugar de navegar
+- **Causa:** NumLock está activado
+- **Solución:** Desactivar NumLock antes de ejecutar `packer build`
+- Con NumLock activo, las teclas de navegación se interpretan como números del teclado numérico
+
 ### SSH timeout durante build
 - Verificar checksum de la ISO
 - Asegurar que existe el switch "Default Switch" en Hyper-V
 - Aumentar `ssh_timeout` en main.pkr.hcl si es necesario
+
+### Warning: "mac spoofing should be allowed"
+- Este warning es normal e informativo
+- Packer no puede configurar MAC spoofing automáticamente
+- Si Docker tiene problemas de networking, ejecutar en el host (PowerShell como admin):
+  ```powershell
+  Get-VMNetworkAdapter -VMName "dev-workstation" | Set-VMNetworkAdapter -MacAddressSpoofing On
+  ```
 
 ### Nested virtualization no funciona (Docker falla)
 - Ejecutar como Administrador
@@ -321,7 +358,7 @@ El proyecto está preparado para añadir VirtualBox, VMware o QEMU. Solo hay que
 - En host: `Set-VMProcessor -VMName "dev-workstation" -ExposeVirtualizationExtensions $true`
 
 ### Oh My Zsh/Bash no muestra iconos
-- Verificar `nerd_font = true` en variables
+- Verificar `nerd_font != "none"` en variables
 - Configurar el terminal para usar "JetBrainsMono Nerd Font"
 
 ### Error en combinación shell/prompt

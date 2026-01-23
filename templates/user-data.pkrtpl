@@ -1,4 +1,12 @@
 #cloud-config
+# ==============================================================================
+# UBUNTU AUTOINSTALL CLOUD-INIT TEMPLATE
+# ==============================================================================
+# Este archivo usa Packer HCL Template Syntax para inyectar variables.
+# Las variables se pasan desde main.pkr.hcl en el bloque templatefile().
+#
+# Ver: https://developer.hashicorp.com/packer/docs/templates/hcl_templates/functions
+# ==============================================================================
 autoinstall:
   version: 1
   
@@ -12,6 +20,8 @@ autoinstall:
   
   # ==========================================================================
   # Identidad (desde variables)
+  # NOTE: username and hostname are validated in main.pkr.hcl to ensure
+  # they are safe for use in system files (sudoers, GDM config, etc)
   # ==========================================================================
   identity:
     hostname: ${hostname}
@@ -29,16 +39,21 @@ autoinstall:
       size: 0
   
   # ==========================================================================
-  # Red
+  # Red (IP estática para build de Packer, luego se cambia a DHCP)
   # ==========================================================================
   network:
     network:
       version: 2
       ethernets:
-        any:
+        eth0:
           match:
-            name: "*"
-          dhcp4: true
+            name: "eth*"
+          addresses:
+            - 172.20.144.100/20
+          gateway4: 172.20.144.1
+          nameservers:
+            addresses: [8.8.8.8, 8.8.4.4]
+          dhcp4: false
           dhcp6: false
   
   # ==========================================================================
@@ -54,6 +69,8 @@ autoinstall:
   packages:
     - ubuntu-desktop-minimal
     - openssh-server
+    - linux-tools-virtual
+    - linux-cloud-tools-virtual
     - git
     - curl
     - wget
@@ -100,13 +117,8 @@ autoinstall:
     - sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /target/etc/ssh/sshd_config
     - sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /target/etc/ssh/sshd_config
 %{ endif ~}
-    
+    - curtin in-target --target=/target -- systemctl enable ssh
+
     # GRUB timeout reducido
     - sed -i 's/GRUB_TIMEOUT=.*/GRUB_TIMEOUT=2/' /target/etc/default/grub
     - curtin in-target --target=/target -- update-grub
-    
-    # Crear directorios de proyectos
-    - mkdir -p /target/home/${username}/projects/work
-    - mkdir -p /target/home/${username}/projects/personal
-    - mkdir -p /target/home/${username}/projects/sandbox
-    - curtin in-target --target=/target -- chown -R ${username}:${username} /home/${username}/projects
