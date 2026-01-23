@@ -65,17 +65,10 @@ echo ""
 log() {
     local msg="$1"
     # Use simple ASCII characters instead of Unicode box drawing
-    echo "" >&2
-    echo "============================================================" >&2
-    echo ">>> $msg" >&2
-    echo "============================================================" >&2
-    echo "" >&2
-    # Also output to stdout to ensure Packer captures it
     echo ""
-    echo "============================================================"
-    echo ">>> $msg"
-    echo "============================================================"
-    echo ""
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║ $msg"
+    echo "╚══════════════════════════════════════════════════════════════╝"
 }
 
 # Escape string for safe use in shell commands
@@ -247,15 +240,18 @@ chmod 600 /etc/netplan/00-installer-config.yaml
 netplan apply
 
 # Actualizar sistema
-apt-get update
-apt-get upgrade -y
+log "Actualizar sistema..."
+apt-get -qq update
+apt-get -qq upgrade -y
 
 # Configurar locale (generate user's locale and en_US.UTF-8 as fallback for tools that require it)
+log "Configurar locale..."
 locale-gen "${LOCALE}" en_US.UTF-8
 update-locale LANG="${LOCALE}"
 
 # Instalar herramientas básicas
-apt-get install -y \
+log "Instalar herramientas básicas..."
+apt-get -qq install -y \
     software-properties-common \
     apt-transport-https \
     net-tools \
