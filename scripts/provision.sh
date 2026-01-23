@@ -226,6 +226,10 @@ log "1/10 Configurando sistema base..."
 
 # Cambiar red de IP estática (usada para build) a DHCP (para uso normal)
 log "Configurando red a DHCP..."
+
+# Remove old netplan configs to avoid permission warnings
+rm -f /etc/netplan/01-network-manager-all.yaml
+
 cat > /etc/netplan/00-installer-config.yaml << 'NETPLAN_EOF'
 network:
   version: 2
@@ -236,6 +240,9 @@ network:
       dhcp4: true
       dhcp6: false
 NETPLAN_EOF
+
+# Set correct permissions to avoid netplan warnings
+chmod 600 /etc/netplan/00-installer-config.yaml
 
 netplan apply
 
