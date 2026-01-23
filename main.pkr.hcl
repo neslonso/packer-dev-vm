@@ -486,6 +486,7 @@ build {
   provisioner "shell" {
     environment_vars = local.provision_env_vars
     script           = "${path.root}/scripts/provision.sh"
+    execute_command  = "sudo -E sh -c '{{ .Vars }} {{ .Path }}'"
   }
   
   # --- Limpieza final ---
