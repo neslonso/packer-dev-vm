@@ -242,7 +242,7 @@ netplan apply
 # Actualizar sistema
 log "Actualizar sistema..."
 apt-get -qq update
-apt-get -qq upgrade -y
+DEBIAN_FRONTEND=noninteractive apt-get -qq upgrade -y -o Dpkg::Use-Pty=0 1>/dev/null
 
 # Configurar locale (generate user's locale and en_US.UTF-8 as fallback for tools that require it)
 log "Configurar locale..."
@@ -251,7 +251,9 @@ update-locale LANG="${LOCALE}"
 
 # Instalar herramientas básicas
 log "Instalar herramientas básicas..."
+sudo DEBIAN_FRONTEND=noninteractive \
 apt-get -qq install -y \
+    -o Dpkg::Use-Pty=0 \
     software-properties-common \
     apt-transport-https \
     net-tools \
@@ -262,7 +264,8 @@ apt-get -qq install -y \
     fzf \
     ripgrep \
     fd-find \
-    bat
+    bat \
+    1>/dev/null
 
 # Crear symlinks para herramientas con nombres diferentes
 # Note: || true is acceptable here - these are convenience symlinks that may not exist on all systems
