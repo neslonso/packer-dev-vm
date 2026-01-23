@@ -220,8 +220,8 @@ log "1/10 Configurando sistema base..."
 # Cambiar red de IP estática (usada para build) a DHCP (para uso normal)
 log "Configurando red a DHCP..."
 
-# Remove old netplan configs to avoid permission warnings
-rm -f /etc/netplan/01-network-manager-all.yaml
+# Remove ALL old netplan configs to avoid warnings (permissions, deprecated gateway4, etc.)
+rm -f /etc/netplan/*.yaml
 
 cat > /etc/netplan/00-installer-config.yaml << 'NETPLAN_EOF'
 network:
