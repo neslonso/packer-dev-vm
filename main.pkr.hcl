@@ -417,7 +417,9 @@ source "hyperv-iso" "ubuntu" {
   # --- Boot ---
   boot_wait = "10s"
   boot_command = [
-    "<wait>e<wait>",
+    "<wait>",
+    "<numLock>",
+    "e<wait>",
     "<down><down><down><end>",
     " autoinstall ds=nocloud-net\\;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/",
     "<f10>"
