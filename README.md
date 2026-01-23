@@ -52,10 +52,13 @@ copy variables.pkrvars.hcl.sample variables.pkrvars.hcl
 packer init main.pkr.hcl
 packer validate -var-file=variables.pkrvars.hcl main.pkr.hcl
 
-# 4. Construir la VM
+# 4. IMPORTANTE: Desactivar NumLock antes de construir
+#    (Si NumLock está activo, el boot_command fallará)
+
+# 5. Construir la VM
 packer build -var-file=variables.pkrvars.hcl main.pkr.hcl
 
-# 5. Configuración post-build (REQUERIDO - PowerShell como admin)
+# 6. Configuración post-build (REQUERIDO - PowerShell como admin)
 Get-VMNetworkAdapter -VMName "dev-workstation" | Set-VMNetworkAdapter -MacAddressSpoofing On
 ```
 
@@ -330,6 +333,11 @@ El proyecto está preparado para añadir VirtualBox, VMware o QEMU. Solo hay que
 ---
 
 ## Troubleshooting
+
+### Boot command escribe números (2221) en lugar de navegar
+- **Causa:** NumLock está activado
+- **Solución:** Desactivar NumLock antes de ejecutar `packer build`
+- Con NumLock activo, las teclas de navegación se interpretan como números del teclado numérico
 
 ### SSH timeout durante build
 - Verificar checksum de la ISO
