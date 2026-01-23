@@ -48,15 +48,33 @@ HOME_DIR="/home/${USERNAME}"
 export DEBIAN_FRONTEND=noninteractive
 
 # ==============================================================================
+# LOGGING
+# ==============================================================================
+PROVISION_LOG="/var/log/provision.log"
+touch "$PROVISION_LOG"
+chmod 644 "$PROVISION_LOG"
+
+# Redirect all command output to log file
+exec 3>&1 4>&2  # Save stdout/stderr
+exec 1>>"$PROVISION_LOG" 2>&1  # Redirect to log
+
+# Function to write to both console and log
+log_console() {
+    echo "$@" >&3  # Write to console (saved fd 3)
+    echo "$@" >>"$PROVISION_LOG"  # Also write to log
+}
+
+# ==============================================================================
 # INICIO DEL SCRIPT
 # ==============================================================================
-echo ""
-echo "============================================================"
-echo ">>> INICIO DE PROVISION.SH"
-echo ">>> Usuario: ${VM_USERNAME:-NO DEFINIDO}"
-echo ">>> Shell: ${VM_SHELL:-NO DEFINIDO}"
-echo "============================================================"
-echo ""
+log_console ""
+log_console "============================================================"
+log_console ">>> INICIO DE PROVISION.SH"
+log_console ">>> Usuario: ${VM_USERNAME:-NO DEFINIDO}"
+log_console ">>> Shell: ${VM_SHELL:-NO DEFINIDO}"
+log_console ">>> Log file: $PROVISION_LOG"
+log_console "============================================================"
+log_console ""
 
 # ==============================================================================
 # FUNCIONES AUXILIARES
@@ -65,10 +83,10 @@ echo ""
 log() {
     local msg="$1"
     # Use simple ASCII characters instead of Unicode box drawing
-    echo ""
-    echo "╔══════════════════════════════════════════════════════════════╗"
-    echo "║ $msg"
-    echo "╚══════════════════════════════════════════════════════════════╝"
+    log_console ""
+    log_console "╔══════════════════════════════════════════════════════════════╗"
+    log_console "║ $msg"
+    log_console "╚══════════════════════════════════════════════════════════════╝"
 }
 
 # Escape string for safe use in shell commands
@@ -94,20 +112,20 @@ download_and_verify_script() {
 
     # Download with timeout and HTTPS verification
     if ! curl --max-time 60 --fail --silent --show-error --location "$url" -o "$temp_file"; then
-        echo "ERROR: Failed to download ${description} from ${url}" >&2
+        log_console "ERROR: Failed to download ${description} from ${url}"
         return 1
     fi
 
     # Verify file is not empty
     if [[ ! -s "$temp_file" ]]; then
-        echo "ERROR: Downloaded ${description} is empty" >&2
+        log_console "ERROR: Downloaded ${description} is empty"
         rm -f "$temp_file"
         return 1
     fi
 
     # Basic sanity check: file should contain shell script markers
     if ! grep -q -E '(^#!/|bash|sh)' "$temp_file"; then
-        echo "ERROR: Downloaded ${description} doesn't appear to be a valid shell script" >&2
+        log_console "ERROR: Downloaded ${description} doesn't appear to be a valid shell script"
         rm -f "$temp_file"
         return 1
     fi
@@ -125,13 +143,13 @@ validate_tar_archive() {
 
     # Check for path traversal attempts
     if tar -tzf "$archive" 2>/dev/null | grep -E '(^|/)\.\.(\/|$)' > /dev/null; then
-        echo "ERROR: ${description} contains dangerous path traversal sequences (..)" >&2
+        log_console "ERROR: ${description} contains dangerous path traversal sequences (..)"
         return 1
     fi
 
     # Check for absolute paths
     if tar -tzf "$archive" 2>/dev/null | grep -E '^/' > /dev/null; then
-        echo "ERROR: ${description} contains absolute paths" >&2
+        log_console "ERROR: ${description} contains absolute paths"
         return 1
     fi
 
@@ -148,13 +166,13 @@ validate_zip_archive() {
 
     # Check for path traversal attempts (using -Z -1 to handle filenames with spaces)
     if unzip -Z -1 "$archive" 2>/dev/null | grep -E '(^|/)\.\.(\/|$)' > /dev/null; then
-        echo "ERROR: ${description} contains dangerous path traversal sequences (..)" >&2
+        log_console "ERROR: ${description} contains dangerous path traversal sequences (..)"
         return 1
     fi
 
     # Check for absolute paths
     if unzip -Z -1 "$archive" 2>/dev/null | grep -E '^/' > /dev/null; then
-        echo "ERROR: ${description} contains absolute paths" >&2
+        log_console "ERROR: ${description} contains absolute paths"
         return 1
     fi
 
@@ -174,7 +192,7 @@ download_and_verify_gpg_key() {
     # Download key to temporary file
     local temp_key="/tmp/gpg-key-$$.asc"
     if ! curl --max-time 30 --fail --silent --show-error --location "$url" -o "$temp_key"; then
-        echo "ERROR: Failed to download ${description}" >&2
+        log_console "ERROR: Failed to download ${description}"
         return 1
     fi
 
@@ -215,9 +233,9 @@ download_and_verify_gpg_key() {
 
     # Verify fingerprint matches
     if [[ "$actual_norm" != "$expected_norm" ]]; then
-        echo "ERROR: ${description} fingerprint mismatch!" >&2
-        echo "  Expected: ${expected_fingerprint}" >&2
-        echo "  Got:      ${actual_fingerprint}" >&2
+        log_console "ERROR: ${description} fingerprint mismatch!"
+        log_console "  Expected: ${expected_fingerprint}"
+        log_console "  Got:      ${actual_fingerprint}"
         rm -f "$temp_key"
         return 1
     fi
@@ -261,8 +279,8 @@ netplan apply
 
 # Actualizar sistema
 log "Actualizar sistema..."
-apt-get -qq update
-DEBIAN_FRONTEND=noninteractive apt-get -qq upgrade -y -o Dpkg::Use-Pty=0 1>/dev/null
+apt-get update
+apt-get upgrade -y
 
 # Configurar locale (generate user's locale and en_US.UTF-8 as fallback for tools that require it)
 log "Configurar locale..."
@@ -271,9 +289,7 @@ update-locale LANG="${LOCALE}"
 
 # Instalar herramientas básicas
 log "Instalar herramientas básicas..."
-sudo DEBIAN_FRONTEND=noninteractive \
-apt-get -qq install -y \
-    -o Dpkg::Use-Pty=0 \
+apt-get install -y \
     software-properties-common \
     apt-transport-https \
     net-tools \
@@ -284,8 +300,7 @@ apt-get -qq install -y \
     fzf \
     ripgrep \
     fd-find \
-    bat \
-    1>/dev/null
+    bat
 
 # Crear symlinks para herramientas con nombres diferentes
 # Note: || true is acceptable here - these are convenience symlinks that may not exist on all systems
@@ -306,7 +321,7 @@ log "2/10 Instalando Docker..."
 install -m 0755 -d /etc/apt/keyrings
 # Docker official GPG key fingerprint (from main.pkr.hcl)
 if ! download_and_verify_gpg_key "https://download.docker.com/linux/ubuntu/gpg" "/etc/apt/keyrings/docker.gpg" "$DOCKER_GPG_FINGERPRINT" "Docker GPG key"; then
-    echo "ERROR: Failed to verify Docker GPG key" >&2
+    log_console "ERROR: Failed to verify Docker GPG key"
     exit 1
 fi
 chmod a+r /etc/apt/keyrings/docker.gpg
@@ -396,7 +411,7 @@ fi
 # GitHub CLI (with GPG key verification)
 # GitHub CLI official GPG key fingerprint (from main.pkr.hcl)
 if ! download_and_verify_gpg_key "https://cli.github.com/packages/githubcli-archive-keyring.gpg" "/usr/share/keyrings/githubcli-archive-keyring.gpg" "$GITHUB_CLI_GPG_FINGERPRINT" "GitHub CLI GPG key"; then
-    echo "ERROR: Failed to verify GitHub CLI GPG key" >&2
+    log_console "ERROR: Failed to verify GitHub CLI GPG key"
     exit 1
 fi
 chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
@@ -453,13 +468,13 @@ if [[ "${NERD_FONT}" != "none" ]]; then
             unzip -o "${FONT_FILE}" -d "${FONT_DIR}"
             log "✓ ${NERD_FONT} Nerd Font installed successfully"
         else
-            echo "ERROR: ${NERD_FONT} font archive validation failed" >&2
+            log_console "ERROR: ${NERD_FONT} font archive validation failed"
             exit 1
         fi
         rm "${FONT_FILE}"
     else
-        echo "ERROR: Failed to download ${NERD_FONT} Nerd Font from ${FONT_URL}" >&2
-        echo "NOTE: Ensure the font name matches the release asset name on GitHub" >&2
+        log_console "ERROR: Failed to download ${NERD_FONT} Nerd Font from ${FONT_URL}"
+        log_console "NOTE: Ensure the font name matches the release asset name on GitHub"
         exit 1
     fi
 
@@ -486,7 +501,7 @@ fi
 case "${PROMPT_THEME}" in
     "ohmyzsh")
         if [[ "${SHELL_TYPE}" != "zsh" ]]; then
-            echo "ERROR: Oh My Zsh requiere shell=zsh"
+            log_console "ERROR: Oh My Zsh requiere shell=zsh"
             exit 1
         fi
         
@@ -496,7 +511,7 @@ case "${PROMPT_THEME}" in
             run_as_user "sh ${OMZSH_SCRIPT} --unattended"
             rm -f "$OMZSH_SCRIPT"
         else
-            echo "ERROR: Failed to install Oh My Zsh" >&2
+            log_console "ERROR: Failed to install Oh My Zsh"
             exit 1
         fi
 
@@ -518,7 +533,7 @@ case "${PROMPT_THEME}" in
         
     "ohmybash")
         if [[ "${SHELL_TYPE}" != "bash" ]]; then
-            echo "ERROR: Oh My Bash requiere shell=bash"
+            log_console "ERROR: Oh My Bash requiere shell=bash"
             exit 1
         fi
         
@@ -528,7 +543,7 @@ case "${PROMPT_THEME}" in
             run_as_user "bash ${OMBSH_SCRIPT} --unattended"
             rm -f "$OMBSH_SCRIPT"
         else
-            echo "ERROR: Failed to install Oh My Bash" >&2
+            log_console "ERROR: Failed to install Oh My Bash"
             exit 1
         fi
 
@@ -544,13 +559,13 @@ case "${PROMPT_THEME}" in
             sh "$STARSHIP_SCRIPT" -y
             rm -f "$STARSHIP_SCRIPT"
         else
-            echo "ERROR: Failed to install Starship" >&2
+            log_console "ERROR: Failed to install Starship"
             exit 1
         fi
         
         # Aplicar preset
         if ! mkdir -p "${HOME_DIR}/.config"; then
-            echo "ERROR: Failed to create .config directory" >&2
+            log_console "ERROR: Failed to create .config directory"
             exit 1
         fi
         if [[ "${STARSHIP_PRESET}" != "none" && "${STARSHIP_PRESET}" != "" ]]; then
@@ -593,7 +608,7 @@ if [[ "${INSTALL_VSCODE}" == "true" ]]; then
 
     # Microsoft GPG key (with verification - from main.pkr.hcl)
     if ! download_and_verify_gpg_key "https://packages.microsoft.com/keys/microsoft.asc" "/usr/share/keyrings/packages.microsoft.gpg" "$MICROSOFT_GPG_FINGERPRINT" "Microsoft GPG key"; then
-        echo "ERROR: Failed to verify Microsoft GPG key" >&2
+        log_console "ERROR: Failed to verify Microsoft GPG key"
         exit 1
     fi
     echo "deb [arch=amd64 signed-by=/usr/share/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list
@@ -686,7 +701,7 @@ if [[ "${INSTALL_ANTIGRAVITY}" == "true" ]]; then
     # Google Antigravity uses Google's signing key (same as Chrome/other Google products)
     # Google Linux Repository GPG key fingerprint (from main.pkr.hcl)
     if ! download_and_verify_gpg_key "https://dl.google.com/linux/linux_signing_key.pub" "/usr/share/keyrings/google-linux.gpg" "$GOOGLE_GPG_FINGERPRINT" "Google Linux Repository GPG key"; then
-        echo "ERROR: Failed to verify Google GPG key" >&2
+        log_console "ERROR: Failed to verify Google GPG key"
         exit 1
     fi
 
@@ -900,7 +915,7 @@ chmod 440 /etc/sudoers.d/99-packer-shutdown
 
 # Validate sudoers file to ensure it's correct
 if ! visudo -c -f /etc/sudoers.d/99-packer-shutdown; then
-    echo "ERROR: Invalid sudoers file created" >&2
+    log_console "ERROR: Invalid sudoers file created"
     rm -f /etc/sudoers.d/99-packer-shutdown
     exit 1
 fi
@@ -949,14 +964,18 @@ log "  Ahora puedes usar portapapeles compartido con el host"
 # ==============================================================================
 
 log "✓ Provisioning completado!"
-echo ""
-echo "Resumen:"
-echo "  - Usuario: ${USERNAME}"
-echo "  - Shell: ${SHELL_TYPE}"
-echo "  - Prompt: ${PROMPT_THEME}"
-echo "  - Docker: instalado"
-echo "  - VS Code: ${INSTALL_VSCODE}"
-echo "  - Google Antigravity IDE: ${INSTALL_ANTIGRAVITY}"
-echo "  - Navegador: ${INSTALL_BROWSER}"
-echo "  - Nerd Font: ${NERD_FONT}"
-echo ""
+log_console ""
+log_console "Resumen:"
+log_console "  - Usuario: ${USERNAME}"
+log_console "  - Shell: ${SHELL_TYPE}"
+log_console "  - Prompt: ${PROMPT_THEME}"
+log_console "  - Docker: instalado"
+log_console "  - VS Code: ${INSTALL_VSCODE}"
+log_console "  - Google Antigravity IDE: ${INSTALL_ANTIGRAVITY}"
+log_console "  - Navegador: ${INSTALL_BROWSER}"
+log_console "  - Nerd Font: ${NERD_FONT}"
+log_console ""
+log_console "Detalles completos en: $PROVISION_LOG"
+
+# Restore stdout/stderr
+exec 1>&3 2>&4 3>&- 4>&-
