@@ -481,21 +481,11 @@ build {
       "echo 'cloud-init completado.'"
     ]
   }
-  
-  # --- Copiar script de provisioning ---
-  provisioner "file" {
-    source      = "${path.root}/scripts/provision.sh"
-    destination = "/tmp/provision.sh"
-  }
-  
+
   # --- Ejecutar provisioning con todas las variables ---
   provisioner "shell" {
     environment_vars = local.provision_env_vars
-    inline = [
-      "chmod +x /tmp/provision.sh",
-      "sudo -E /tmp/provision.sh",
-      "rm /tmp/provision.sh"
-    ]
+    script           = "${path.root}/scripts/provision.sh"
   }
   
   # --- Limpieza final ---
