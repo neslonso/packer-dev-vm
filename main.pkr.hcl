@@ -415,16 +415,11 @@ source "hyperv-iso" "ubuntu" {
   iso_checksum = var.iso_checksum
   
   # --- Boot ---
-  # Increased to 15s for slower systems or high CPU load scenarios
-  boot_wait = "15s"
+  boot_wait = "10s"
   boot_command = [
-    "<wait><wait><wait>",
-    "e",
-    "<wait><wait>",
-    "<down><down><down>",
-    "<end><wait>",
+    "e<wait>",
+    "<down><down><down><end>",
     " autoinstall ds=nocloud-net\\;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/",
-    "<wait>",
     "<f10>"
   ]
   
