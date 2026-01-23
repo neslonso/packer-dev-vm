@@ -500,7 +500,7 @@ build {
       "sudo rm -rf /var/tmp/*",
       "sudo truncate -s 0 /etc/machine-id",
       "sudo rm -f /var/lib/dbus/machine-id",
-      "history -c",
+      "rm -f ~/.bash_history",
       "echo 'VM lista!'"
     ]
   }
