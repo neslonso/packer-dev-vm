@@ -815,7 +815,7 @@ if [[ "${NERD_FONT}" != "none" ]]; then
             FONT_SYSTEM_NAME="${NERD_FONT} Nerd Font 11"
             ;;
     esac
-    gsettings set org.gnome.desktop.interface monospace-font-name "${FONT_SYSTEM_NAME}" || echo "WARNING: Failed to set monospace font"
+    gsettings set org.gnome.desktop.interface monospace-font-name "\${FONT_SYSTEM_NAME}" || echo "WARNING: Failed to set monospace font"
 fi
 
 # Desactivar suspensión
