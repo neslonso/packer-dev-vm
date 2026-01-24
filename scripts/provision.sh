@@ -714,18 +714,15 @@ fi
 if [[ "${INSTALL_ANTIGRAVITY}" == "true" ]]; then
     log_section "7.5/10 Instalando Google Antigravity IDE..."
 
-    # Google Antigravity uses Google's signing key (same as Chrome/other Google products)
-    # Google Linux Repository GPG key fingerprint (from main.pkr.hcl)
-    if ! download_and_verify_gpg_key "https://dl.google.com/linux/linux_signing_key.pub" "/usr/share/keyrings/google-linux.gpg" "$GOOGLE_GPG_FINGERPRINT" "Google Linux Repository GPG key"; then
-        log_msg "ERROR: Failed to verify Google GPG key"
-        exit 1
-    fi
+    # Download and add Google Antigravity repository GPG key
+    # Official key from https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg
+    curl -fsSL https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg | gpg --dearmor -o /etc/apt/keyrings/antigravity-repo-key.gpg
 
-    # Add Antigravity repository
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-linux.gpg] https://packages.google.com/apt antigravity main" > /etc/apt/sources.list.d/antigravity.list
+    # Add Antigravity official repository
+    echo "deb [signed-by=/etc/apt/keyrings/antigravity-repo-key.gpg] https://us-central1-apt.pkg.dev/projects/antigravity-auto-updater-dev antigravity-debian main" > /etc/apt/sources.list.d/antigravity.list
 
     apt-get update
-    apt-get install -y google-antigravity
+    apt-get install -y antigravity
 
     log_section "✓ Google Antigravity IDE installed successfully"
 
