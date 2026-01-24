@@ -488,7 +488,15 @@ build {
     script           = "${path.root}/scripts/provision.sh"
     execute_command  = "{{ .Vars }} sudo -E bash '{{ .Path }}'"
   }
-  
+
+  # --- Descargar log de provisioning al host (incluso si hay errores) ---
+  provisioner "file" {
+    source      = "/var/log/provision.log"
+    destination = "${var.output_directory}/provision.log"
+    direction   = "download"
+    on_error    = "continue"
+  }
+
   # --- Limpieza final ---
   provisioner "shell" {
     inline = [
