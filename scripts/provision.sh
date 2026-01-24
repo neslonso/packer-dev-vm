@@ -211,16 +211,29 @@ download_and_verify_gpg_key() {
     # Method 1: Look for 40 consecutive hex chars
     actual_fingerprint=$(echo "$import_output" | grep -oP '[0-9A-F]{40}' | head -1)
 
-    # Method 2: If not found, look for key ID and get full fingerprint
+    # Method 2: Look for fingerprint line with spaces
+    if [[ -z "$actual_fingerprint" ]]; then
+        actual_fingerprint=$(echo "$import_output" | grep -i 'fingerprint' | grep -oP '[0-9A-F]{4}(\s+[0-9A-F]{4}){9}' | head -1 | tr -d ' ')
+    fi
+
+    # Method 3: List keys and get fingerprint
+    if [[ -z "$actual_fingerprint" ]]; then
+        actual_fingerprint=$(gpg --no-default-keyring --keyring "$temp_keyring/temp.gpg" --fingerprint --with-colons 2>/dev/null | grep '^fpr:' | head -1 | cut -d: -f10)
+    fi
+
+    # Method 4: Try with list-keys
     if [[ -z "$actual_fingerprint" ]]; then
         local key_id=$(echo "$import_output" | grep -oP 'key [0-9A-F]+' | head -1 | awk '{print $2}')
         if [[ -n "$key_id" ]]; then
-            actual_fingerprint=$(gpg --no-default-keyring --keyring "$temp_keyring/temp.gpg" --fingerprint --with-colons "$key_id" 2>/dev/null | grep '^fpr:' | head -1 | cut -d: -f10)
+            actual_fingerprint=$(gpg --no-default-keyring --keyring "$temp_keyring/temp.gpg" --list-keys --with-colons "$key_id" 2>/dev/null | grep '^fpr:' | head -1 | cut -d: -f10)
         fi
     fi
 
     # Format fingerprint with spaces (groups of 4)
     if [[ -n "$actual_fingerprint" ]]; then
+        # Remove any existing spaces first
+        actual_fingerprint=$(echo "$actual_fingerprint" | tr -d ' ')
+        # Add spaces every 4 chars
         actual_fingerprint=$(echo "$actual_fingerprint" | sed 's/.\{4\}/& /g' | xargs)
     fi
 
