@@ -107,7 +107,6 @@ docker_log_max_file = 3                # Número de archivos de log a mantener
 # ==============================================================================
 desktop_theme       = "dark"           # dark | light
 install_vscode      = true             # Instalar VS Code
-install_antigravity = false            # Instalar Google Antigravity IDE (en preview, puede fallar)
 install_browser     = "firefox"        # firefox | chrome | chromium | none
 
 # ==============================================================================

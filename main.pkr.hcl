@@ -286,11 +286,6 @@ variable "install_vscode" {
   description = "Instalar VS Code con extensiones básicas (Docker, Git, YAML)"
 }
 
-variable "install_antigravity" {
-  type        = bool
-  description = "Instalar Google Antigravity IDE (AI-powered IDE con agentes autónomos basado en Gemini 3). Requiere: Ubuntu 20.04+, 8GB RAM (16GB recomendado)"
-}
-
 variable "install_browser" {
   type        = string
   description = "Navegador a instalar: firefox, chrome, chromium o none"
@@ -381,7 +376,6 @@ locals {
     "VM_DOCKER_LOG_MAX_FILE=${var.docker_log_max_file}",
     "VM_DESKTOP_THEME=${var.desktop_theme}",
     "VM_INSTALL_VSCODE=${var.install_vscode}",
-    "VM_INSTALL_ANTIGRAVITY=${var.install_antigravity}",
     "VM_INSTALL_BROWSER=${var.install_browser}",
     # GPG Fingerprints (centralized)
     "GPG_FINGERPRINT_DOCKER=${local.gpg_fingerprints.docker}",
