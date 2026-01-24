@@ -351,7 +351,7 @@ locals {
   # These fingerprints are verified during package repository setup
   gpg_fingerprints = {
     docker    = "9DC8 5822 9FC7 DD38 854A  E2D8 8D81 803C 0EBF CD88"
-    github    = "23F3 D4EA 75C7 C96E ED2F  6D8B 15D3 3B7B D59C 46E1"
+    github    = "2C61 0620 1985 B60E 6C7A C873 23F3 D4EA 7571 6059"  # Updated 2026-01-23
     microsoft = "BC52 8686 B50D 79E3 39D3  721C EB3E 94AD BE12 29CF"
     google    = "EB4C 1BFD 4F04 2F6D DDCC  EC91 7721 F63B D38B 4796"
   }
