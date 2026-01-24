@@ -983,8 +983,58 @@ log_success "Shutdown permissions configured for Packer build"
 
 log_section "10/10 Configurando Enhanced Session Mode (xrdp)..."
 
-# Instalar xrdp para habilitar Enhanced Session Mode
-apt-get install -y xrdp xorgxrdp
+# Instalar xrdp y herramientas de clipboard
+apt-get install -y xrdp xorgxrdp xclip
+
+# Configurar xrdp.ini para habilitar clipboard y compartir unidades
+cat > /etc/xrdp/xrdp.ini << 'XRDP_INI_EOF'
+[Globals]
+ini_version=1
+fork=true
+port=3389
+tcp_nodelay=true
+tcp_keepalive=true
+security_layer=negotiate
+crypt_level=high
+certificate=
+key_file=
+ssl_protocols=TLSv1.2, TLSv1.3
+autorun=
+allow_channels=true
+allow_multimon=true
+bitmap_cache=true
+bitmap_compression=true
+bulk_compression=true
+max_bpp=32
+new_cursors=true
+use_fastpath=both
+require_credentials=false
+
+[Logging]
+LogFile=xrdp.log
+LogLevel=INFO
+EnableSyslog=true
+SyslogLevel=INFO
+
+# Habilitar todos los canales para clipboard y compartir unidades
+[channels]
+rdpdr=true
+rdpsnd=true
+drdynvc=true
+cliprdr=true
+rail=true
+xrdpvr=true
+
+# Sesión Xorg (default)
+[Xorg]
+name=Xorg
+lib=libxup.so
+username=ask
+password=ask
+ip=127.0.0.1
+port=-1
+code=20
+XRDP_INI_EOF
 
 # Configurar xrdp para usar el desktop environment correcto
 cat > /etc/xrdp/startwm.sh << 'XRDP_EOF'
@@ -1012,7 +1062,14 @@ if command -v ufw >/dev/null 2>&1; then
 fi
 
 log_success "Enhanced Session Mode configurado (RDP en puerto 3389)"
-log_msg "  Ahora puedes usar portapapeles compartido con el host"
+log_msg ""
+log_msg "COMPARTIR ARCHIVOS CON WINDOWS:"
+log_msg "  Al conectar por RDP, habilita 'Drives' en Local Resources"
+log_msg "  Accede a las unidades Windows desde: /mnt/c/, /mnt/d/, etc."
+log_msg ""
+log_msg "CLIPBOARD:"
+log_msg "  Copiar/pegar texto funciona automáticamente"
+log_msg "  Asegúrate de marcar 'Clipboard' en Local Resources al conectar"
 
 # ==============================================================================
 # FIN
