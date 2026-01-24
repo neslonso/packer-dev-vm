@@ -682,6 +682,9 @@ if [[ "${INSTALL_VSCODE}" == "true" ]]; then
 }
 EOF
 
+    # Fix ownership so user can install extensions
+    chown -R "${USERNAME}:${USERNAME}" "${HOME_DIR}/.config/Code"
+
     # Instalar extensiones básicas
     EXTENSIONS=(
         "ms-azuretools.vscode-docker"
