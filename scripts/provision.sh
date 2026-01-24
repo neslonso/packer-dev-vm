@@ -82,11 +82,35 @@ log_msg ""
 
 log_section() {
     local msg="$1"
-    # Use simple ASCII characters instead of Unicode box drawing
+    # Main section headers with box (N/10 steps only)
     log_msg ""
     log_msg "╔══════════════════════════════════════════════════════════════╗"
     log_msg "║ $msg"
     log_msg "╚══════════════════════════════════════════════════════════════╝"
+}
+
+log_task() {
+    local msg="$1"
+    # Sub-tasks with simple arrow prefix
+    log_msg "→ $msg"
+}
+
+log_success() {
+    local msg="$1"
+    # Success messages with checkmark
+    log_msg "✓ $msg"
+}
+
+log_warning() {
+    local msg="$1"
+    # Warning messages with warning symbol
+    log_msg "⚠ $msg"
+}
+
+log_error() {
+    local msg="$1"
+    # Error messages with X symbol
+    log_msg "✗ $msg"
 }
 
 # Escape string for safe use in shell commands
@@ -108,7 +132,7 @@ download_and_verify_script() {
     local temp_file="$2"
     local description="${3:-script}"
 
-    log_section "Downloading ${description} from ${url}..."
+    log_task "Downloading ${description} from ${url}..."
 
     # Download with timeout and HTTPS verification
     if ! curl --max-time 60 --fail --silent --show-error --location "$url" -o "$temp_file"; then
@@ -130,7 +154,7 @@ download_and_verify_script() {
         return 1
     fi
 
-    log_section "Successfully downloaded and verified ${description}"
+    log_success "Successfully downloaded and verified ${description}"
     return 0
 }
 
@@ -139,7 +163,7 @@ validate_tar_archive() {
     local archive="$1"
     local description="${2:-archive}"
 
-    log_section "Validating ${description} for security..."
+    log_task "Validating ${description} for security..."
 
     # Check for path traversal attempts
     if tar -tzf "$archive" 2>/dev/null | grep -E '(^|/)\.\.(\/|$)' > /dev/null; then
@@ -153,7 +177,7 @@ validate_tar_archive() {
         return 1
     fi
 
-    log_section "✓ ${description} passed security validation"
+    log_success "${description} passed security validation"
     return 0
 }
 
@@ -162,7 +186,7 @@ validate_zip_archive() {
     local archive="$1"
     local description="${2:-archive}"
 
-    log_section "Validating ${description} for security..."
+    log_task "Validating ${description} for security..."
 
     # Check for path traversal attempts (using -Z -1 to handle filenames with spaces)
     if unzip -Z -1 "$archive" 2>/dev/null | grep -E '(^|/)\.\.(\/|$)' > /dev/null; then
@@ -176,7 +200,7 @@ validate_zip_archive() {
         return 1
     fi
 
-    log_section "✓ ${description} passed security validation"
+    log_success "${description} passed security validation"
     return 0
 }
 
@@ -187,7 +211,7 @@ download_and_verify_gpg_key() {
     local expected_fingerprint="$3"
     local description="${4:-GPG key}"
 
-    log_section "Downloading ${description}..."
+    log_task "Downloading ${description}..."
 
     # Download key to temporary file
     local temp_key="/tmp/gpg-key-$$.asc"
@@ -253,7 +277,7 @@ download_and_verify_gpg_key() {
         return 1
     fi
 
-    log_section "✓ ${description} fingerprint verified: ${actual_fingerprint}"
+    log_success "${description} fingerprint verified: ${actual_fingerprint}"
 
     # Dearmor and save to final location
     gpg --dearmor < "$temp_key" > "$output_file"
@@ -269,7 +293,7 @@ download_and_verify_gpg_key() {
 log_section "1/10 Configurando sistema base..."
 
 # Cambiar red de IP estática (usada para build) a DHCP (para uso normal)
-log_section "Configurando red a DHCP..."
+log_task "Configurando red a DHCP..."
 
 # Remove ALL old netplan configs to avoid warnings (permissions, deprecated gateway4, etc.)
 rm -f /etc/netplan/*.yaml
@@ -291,17 +315,17 @@ chmod 600 /etc/netplan/00-installer-config.yaml
 netplan apply
 
 # Actualizar sistema
-log_section "Actualizar sistema..."
+log_task "Actualizar sistema..."
 apt-get update
 apt-get upgrade -y
 
 # Configurar locale (generate user's locale and en_US.UTF-8 as fallback for tools that require it)
-log_section "Configurar locale..."
+log_task "Configurar locale..."
 locale-gen "${LOCALE}" en_US.UTF-8
 update-locale LANG="${LOCALE}"
 
 # Instalar herramientas básicas
-log_section "Instalar herramientas básicas..."
+log_task "Instalar herramientas básicas..."
 apt-get install -y \
     software-properties-common \
     apt-transport-https \
@@ -318,10 +342,10 @@ apt-get install -y \
 # Crear symlinks para herramientas con nombres diferentes
 # Note: || true is acceptable here - these are convenience symlinks that may not exist on all systems
 if ! ln -sf /usr/bin/batcat /usr/local/bin/bat 2>/dev/null; then
-    log_section "INFO: batcat not available, bat command will not work"
+    log_warning "batcat not available, bat command will not work"
 fi
 if ! ln -sf /usr/bin/fdfind /usr/local/bin/fd 2>/dev/null; then
-    log_section "INFO: fdfind not available, fd command will not work"
+    log_warning "fdfind not available, fd command will not work"
 fi
 
 # ==============================================================================
@@ -373,23 +397,23 @@ systemctl start docker
 LAZYDOCKER_VERSION=$(curl --max-time 30 --fail --silent --show-error https://api.github.com/repos/jesseduffield/lazydocker/releases/latest 2>/dev/null | jq -r '.tag_name' 2>/dev/null || echo "")
 
 if [[ -z "$LAZYDOCKER_VERSION" || "$LAZYDOCKER_VERSION" == "null" ]]; then
-    log_section "WARNING: Failed to fetch lazydocker latest version from GitHub API, using fallback"
+    log_warning "Failed to fetch lazydocker latest version from GitHub API, using fallback"
     LAZYDOCKER_VERSION="v0.23.1"  # Fallback to known stable version
 fi
 
-log_section "Installing lazydocker ${LAZYDOCKER_VERSION}..."
+log_task "Installing lazydocker ${LAZYDOCKER_VERSION}..."
 
 if curl --max-time 60 --fail -Lo /tmp/lazydocker.tar.gz "https://github.com/jesseduffield/lazydocker/releases/download/${LAZYDOCKER_VERSION}/lazydocker_${LAZYDOCKER_VERSION#v}_Linux_x86_64.tar.gz" 2>&1; then
     if validate_tar_archive /tmp/lazydocker.tar.gz "lazydocker archive"; then
         tar xzf /tmp/lazydocker.tar.gz -C /usr/local/bin lazydocker
         chmod +x /usr/local/bin/lazydocker
-        log_section "✓ lazydocker ${LAZYDOCKER_VERSION} installed successfully"
+        log_success "lazydocker ${LAZYDOCKER_VERSION} installed successfully"
     else
-        log_section "ERROR: lazydocker archive validation failed, skipping installation"
+        log_error "lazydocker archive validation failed, skipping installation"
     fi
     rm /tmp/lazydocker.tar.gz
 else
-    log_section "WARNING: Failed to download lazydocker, skipping..."
+    log_warning "Failed to download lazydocker, skipping..."
 fi
 
 # ==============================================================================
@@ -402,23 +426,23 @@ log_section "3/10 Configurando Git..."
 LAZYGIT_VERSION=$(curl --max-time 30 --fail --silent --show-error https://api.github.com/repos/jesseduffield/lazygit/releases/latest 2>/dev/null | jq -r '.tag_name' 2>/dev/null || echo "")
 
 if [[ -z "$LAZYGIT_VERSION" || "$LAZYGIT_VERSION" == "null" ]]; then
-    log_section "WARNING: Failed to fetch lazygit latest version from GitHub API, using fallback"
+    log_warning "Failed to fetch lazygit latest version from GitHub API, using fallback"
     LAZYGIT_VERSION="v0.40.2"  # Fallback to known stable version
 fi
 
-log_section "Installing lazygit ${LAZYGIT_VERSION}..."
+log_task "Installing lazygit ${LAZYGIT_VERSION}..."
 
 if curl --max-time 60 --fail -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION#v}_Linux_x86_64.tar.gz" 2>&1; then
     if validate_tar_archive /tmp/lazygit.tar.gz "lazygit archive"; then
         tar xzf /tmp/lazygit.tar.gz -C /usr/local/bin lazygit
         chmod +x /usr/local/bin/lazygit
-        log_section "✓ lazygit ${LAZYGIT_VERSION} installed successfully"
+        log_success "lazygit ${LAZYGIT_VERSION} installed successfully"
     else
-        log_section "ERROR: lazygit archive validation failed, skipping installation"
+        log_error "lazygit archive validation failed, skipping installation"
     fi
     rm /tmp/lazygit.tar.gz
 else
-    log_section "WARNING: Failed to download lazygit, skipping..."
+    log_warning "Failed to download lazygit, skipping..."
 fi
 
 # GitHub CLI (with GPG key verification)
@@ -466,11 +490,11 @@ if [[ "${NERD_FONT}" != "none" ]]; then
     FONT_VERSION=$(curl --max-time 30 --fail --silent --show-error https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest 2>/dev/null | jq -r '.tag_name' 2>/dev/null || echo "")
 
     if [[ -z "$FONT_VERSION" || "$FONT_VERSION" == "null" ]]; then
-        log_section "WARNING: Failed to fetch latest font version from GitHub API, using fallback"
+        log_warning "Failed to fetch latest font version from GitHub API, using fallback"
         FONT_VERSION="v3.1.1"  # Fallback to known stable version
     fi
 
-    log_section "Downloading ${NERD_FONT} Nerd Font ${FONT_VERSION}..."
+    log_task "Downloading ${NERD_FONT} Nerd Font ${FONT_VERSION}..."
 
     # Download font archive (name matches the variable, e.g., JetBrainsMono.zip, FiraCode.zip)
     FONT_FILE="/tmp/${NERD_FONT}.zip"
@@ -479,7 +503,7 @@ if [[ "${NERD_FONT}" != "none" ]]; then
     if curl --max-time 120 --fail -Lo "${FONT_FILE}" "${FONT_URL}" 2>&1; then
         if validate_zip_archive "${FONT_FILE}" "${NERD_FONT} font"; then
             unzip -o "${FONT_FILE}" -d "${FONT_DIR}"
-            log_section "✓ ${NERD_FONT} Nerd Font installed successfully"
+            log_success "${NERD_FONT} Nerd Font installed successfully"
         else
             log_msg "ERROR: ${NERD_FONT} font archive validation failed"
             exit 1
@@ -583,7 +607,7 @@ case "${PROMPT_THEME}" in
         fi
         if [[ "${STARSHIP_PRESET}" != "none" && "${STARSHIP_PRESET}" != "" ]]; then
             if ! starship preset "${STARSHIP_PRESET}" -o "${HOME_DIR}/.config/starship.toml" 2>/dev/null; then
-                log_section "WARNING: Failed to apply starship preset '${STARSHIP_PRESET}', using default config"
+                log_warning "Failed to apply starship preset '${STARSHIP_PRESET}', using default config"
             fi
         fi
         
@@ -695,12 +719,12 @@ EOF
         "redhat.vscode-yaml"
     )
 
-    log_section "Installing VS Code extensions..."
+    log_task "Installing VS Code extensions..."
     for ext in "${EXTENSIONS[@]}"; do
         if run_as_user "code --install-extension ${ext} --force" 2>&1; then
-            log_section "✓ Installed extension: ${ext}"
+            log_success "Installed extension: ${ext}"
         else
-            log_section "WARNING: Failed to install extension: ${ext}"
+            log_warning "Failed to install extension: ${ext}"
         fi
     done
 else
@@ -724,7 +748,7 @@ if [[ "${INSTALL_ANTIGRAVITY}" == "true" ]]; then
     apt-get update
     apt-get install -y antigravity
 
-    log_section "✓ Google Antigravity IDE installed successfully"
+    log_success "Google Antigravity IDE installed successfully"
 
     # Configure desktop launcher (optional)
     if [[ -f "/usr/share/applications/antigravity.desktop" ]]; then
@@ -933,7 +957,7 @@ if ! visudo -c -f /etc/sudoers.d/99-packer-shutdown; then
     exit 1
 fi
 
-log_section "✓ Shutdown permissions configured for Packer build"
+log_success "Shutdown permissions configured for Packer build"
 
 # ==============================================================================
 # HYPER-V ENHANCED SESSION MODE (RDP para portapapeles compartido)
@@ -969,8 +993,8 @@ if command -v ufw >/dev/null 2>&1; then
     ufw allow 3389/tcp
 fi
 
-log_section "✓ Enhanced Session Mode configurado (RDP en puerto 3389)"
-log_section "  Ahora puedes usar portapapeles compartido con el host"
+log_success "Enhanced Session Mode configurado (RDP en puerto 3389)"
+log_msg "  Ahora puedes usar portapapeles compartido con el host"
 
 # ==============================================================================
 # FIN
