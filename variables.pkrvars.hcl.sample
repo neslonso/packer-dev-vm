@@ -113,8 +113,9 @@ install_browser     = "firefox"        # firefox | chrome | chromium | none
 # ==============================================================================
 # BUILD
 # ==============================================================================
-output_directory = "./output"          # Directorio de salida de la VM
-headless         = false               # true = sin ventana (para CI/CD)
+output_directory  = "./output"         # Directorio de salida de la VM
+headless          = false              # true = sin ventana (para CI/CD)
+keep_vm_registered = false             # true = mantener VM en Hyper-V (no exportar), false = exportar y borrar VM temporal
 
 # ==============================================================================
 # HYPER-V (específico)

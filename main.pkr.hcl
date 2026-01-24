@@ -300,6 +300,12 @@ variable "install_browser" {
   }
 }
 
+variable "keep_vm_registered" {
+  type        = bool
+  description = "Mantener la VM registrada en Hyper-V después del build (true = no exportar ni borrar, false = exportar y borrar VM temporal)"
+  default     = false
+}
+
 # --- Build ---
 variable "output_directory" {
   type        = string
@@ -455,7 +461,13 @@ source "hyperv-iso" "ubuntu" {
   # --- Output ---
   output_directory = "${var.output_directory}/hyperv-${var.vm_name}"
   headless         = var.headless
-  
+
+  # --- VM Management ---
+  # keep_registered: mantener VM en Hyper-V después del build (no exportar ni borrar)
+  # false (default): exporta la VM a output_directory y borra la VM temporal
+  # true: mantiene la VM registrada y lista para usar (más rápido para testing)
+  keep_registered = var.keep_vm_registered
+
   # --- Shutdown ---
   # Note: provision.sh creates /etc/sudoers.d/99-packer-shutdown to allow shutdown without password
   # This works regardless of sudo_nopassword setting (security: only allows shutdown, not all sudo)
