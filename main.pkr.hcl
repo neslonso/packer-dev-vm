@@ -513,6 +513,13 @@ build {
     ]
   }
 
+  # --- Descargar log de provisioning al host (siempre, no solo en error) ---
+  provisioner "file" {
+    source      = "/var/log/provision.log"
+    destination = "${var.output_directory}/provision.log"
+    direction   = "download"
+  }
+
   # --- Descargar log en caso de error ---
   error-cleanup-provisioner "file" {
     source      = "/var/log/provision.log"
