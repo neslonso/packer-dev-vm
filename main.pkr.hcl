@@ -489,14 +489,6 @@ build {
     execute_command  = "{{ .Vars }} sudo -E bash '{{ .Path }}'"
   }
 
-  # --- Descargar log de provisioning al host (incluso si hay errores) ---
-  provisioner "file" {
-    source      = "/var/log/provision.log"
-    destination = "${var.output_directory}/provision.log"
-    direction   = "download"
-    on_error    = "continue"
-  }
-
   # --- Limpieza final ---
   provisioner "shell" {
     inline = [
@@ -519,6 +511,13 @@ build {
       "echo '============================================================'",
       "echo ''"
     ]
+  }
+
+  # --- Descargar log en caso de error ---
+  error-cleanup-provisioner "file" {
+    source      = "/var/log/provision.log"
+    destination = "${var.output_directory}/provision.log"
+    direction   = "download"
   }
 
   # --- Post-processors ---
