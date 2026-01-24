@@ -152,6 +152,7 @@ packer-dev-vm/
 |----------|---------|-------------|
 | `desktop_theme` | `dark` | `dark` o `light` |
 | `install_vscode` | `true` | Instalar VS Code |
+| `install_antigravity` | `false` | Instalar Antigravity IDE |
 | `install_browser` | `firefox` | `firefox`, `chrome`, `chromium`, `none` |
 
 ### Build
