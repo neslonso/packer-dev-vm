@@ -1229,7 +1229,7 @@ log_msg "  - VS Code: ${INSTALL_VSCODE}"
 log_msg "  - Google Antigravity IDE: ${INSTALL_ANTIGRAVITY}"
 log_msg "  - Navegador: ${INSTALL_BROWSER}"
 log_msg "  - Nerd Font: ${NERD_FONT}"
-log_msg "  - IP (DHCP): $(hostname -I | awk '{print $1}')"
+log_msg "  - Red: DHCP (IP asignada tras reinicio)"
 log_msg ""
 log_msg "Detalles completos en: $PROVISION_LOG"
 
