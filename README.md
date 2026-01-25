@@ -161,6 +161,7 @@ packer-dev-vm/
 |----------|---------|-------------|
 | `output_directory` | `./output` | Directorio de salida |
 | `headless` | `false` | Sin ventana (para CI/CD) |
+| `keep_vm_registered` | `false` | `true`: mantener VM en Hyper-V (no exportar), `false`: exportar y borrar VM temporal |
 
 ### Hyper-V
 

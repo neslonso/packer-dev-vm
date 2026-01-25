@@ -8,6 +8,10 @@
 
 set -euo pipefail
 
+# Force unbuffered output
+export PYTHONUNBUFFERED=1
+stty -echo 2>/dev/null || true
+
 # ==============================================================================
 # VARIABLES (desde entorno)
 # ==============================================================================
@@ -44,14 +48,87 @@ HOME_DIR="/home/${USERNAME}"
 export DEBIAN_FRONTEND=noninteractive
 
 # ==============================================================================
+# LOGGING
+# ==============================================================================
+PROVISION_LOG="/var/log/provision.log"
+touch "$PROVISION_LOG"
+chmod 644 "$PROVISION_LOG"
+
+# Redirect all command output to log file
+exec 3>&1 4>&2  # Save stdout/stderr
+exec 1>>"$PROVISION_LOG" 2>&1  # Redirect to log
+
+# Function to write to both console and log
+log_msg() {
+    echo "$@" >&3  # Write to console (saved fd 3)
+    echo "$@" >>"$PROVISION_LOG"  # Also write to log
+}
+
+# ==============================================================================
+# INICIO DEL SCRIPT
+# ==============================================================================
+log_msg ""
+log_msg "============================================================"
+log_msg ">>> INICIO DE PROVISION.SH"
+log_msg ">>> Timestamp: $(date '+%Y-%m-%d %H:%M:%S %Z')"
+log_msg ">>> Log file: $PROVISION_LOG"
+log_msg "============================================================"
+log_msg ""
+log_msg "VARIABLES DE BUILD:"
+log_msg "  - Usuario: ${USERNAME}"
+log_msg "  - Hostname: ${HOSTNAME}"
+log_msg "  - Timezone: ${TIMEZONE}"
+log_msg "  - Locale: ${LOCALE}"
+log_msg "  - Keyboard: ${KEYBOARD}"
+log_msg "  - Shell: ${SHELL_TYPE}"
+log_msg "  - Prompt Theme: ${PROMPT_THEME}"
+log_msg "  - Nerd Font: ${NERD_FONT}"
+log_msg "  - Desktop Theme: ${DESKTOP_THEME}"
+log_msg "  - Install VS Code: ${INSTALL_VSCODE}"
+log_msg "  - Install Antigravity: ${INSTALL_ANTIGRAVITY}"
+log_msg "  - Install Browser: ${INSTALL_BROWSER}"
+log_msg "  - Git Name: ${GIT_NAME}"
+log_msg "  - Git Email: ${GIT_EMAIL}"
+log_msg "  - Git Default Branch: ${GIT_DEFAULT_BRANCH}"
+log_msg "  - Docker Log Max Size: ${DOCKER_LOG_MAX_SIZE}"
+log_msg "  - Docker Log Max File: ${DOCKER_LOG_MAX_FILE}"
+log_msg ""
+
+# ==============================================================================
 # FUNCIONES AUXILIARES
 # ==============================================================================
 
-log() {
-    echo ""
-    echo "╔══════════════════════════════════════════════════════════════╗"
-    echo "║  $1"
-    echo "╚══════════════════════════════════════════════════════════════╝"
+log_section() {
+    local msg="$1"
+    # Main section headers with box (N/10 steps only)
+    log_msg ""
+    log_msg "╔══════════════════════════════════════════════════════════════╗"
+    log_msg "║ $msg"
+    log_msg "╚══════════════════════════════════════════════════════════════╝"
+}
+
+log_task() {
+    local msg="$1"
+    # Sub-tasks with simple arrow prefix
+    log_msg "→ $msg"
+}
+
+log_success() {
+    local msg="$1"
+    # Success messages with checkmark
+    log_msg "✓ $msg"
+}
+
+log_warning() {
+    local msg="$1"
+    # Warning messages with warning symbol
+    log_msg "⚠ $msg"
+}
+
+log_error() {
+    local msg="$1"
+    # Error messages with X symbol
+    log_msg "✗ $msg"
 }
 
 # Escape string for safe use in shell commands
@@ -73,29 +150,29 @@ download_and_verify_script() {
     local temp_file="$2"
     local description="${3:-script}"
 
-    log "Downloading ${description} from ${url}..."
+    log_task "Downloading ${description} from ${url}..."
 
     # Download with timeout and HTTPS verification
     if ! curl --max-time 60 --fail --silent --show-error --location "$url" -o "$temp_file"; then
-        echo "ERROR: Failed to download ${description} from ${url}" >&2
+        log_msg "ERROR: Failed to download ${description} from ${url}"
         return 1
     fi
 
     # Verify file is not empty
     if [[ ! -s "$temp_file" ]]; then
-        echo "ERROR: Downloaded ${description} is empty" >&2
+        log_msg "ERROR: Downloaded ${description} is empty"
         rm -f "$temp_file"
         return 1
     fi
 
     # Basic sanity check: file should contain shell script markers
     if ! grep -q -E '(^#!/|bash|sh)' "$temp_file"; then
-        echo "ERROR: Downloaded ${description} doesn't appear to be a valid shell script" >&2
+        log_msg "ERROR: Downloaded ${description} doesn't appear to be a valid shell script"
         rm -f "$temp_file"
         return 1
     fi
 
-    log "Successfully downloaded and verified ${description}"
+    log_success "Successfully downloaded and verified ${description}"
     return 0
 }
 
@@ -104,21 +181,21 @@ validate_tar_archive() {
     local archive="$1"
     local description="${2:-archive}"
 
-    log "Validating ${description} for security..."
+    log_task "Validating ${description} for security..."
 
     # Check for path traversal attempts
     if tar -tzf "$archive" 2>/dev/null | grep -E '(^|/)\.\.(\/|$)' > /dev/null; then
-        echo "ERROR: ${description} contains dangerous path traversal sequences (..)" >&2
+        log_msg "ERROR: ${description} contains dangerous path traversal sequences (..)"
         return 1
     fi
 
     # Check for absolute paths
     if tar -tzf "$archive" 2>/dev/null | grep -E '^/' > /dev/null; then
-        echo "ERROR: ${description} contains absolute paths" >&2
+        log_msg "ERROR: ${description} contains absolute paths"
         return 1
     fi
 
-    log "✓ ${description} passed security validation"
+    log_success "${description} passed security validation"
     return 0
 }
 
@@ -127,21 +204,21 @@ validate_zip_archive() {
     local archive="$1"
     local description="${2:-archive}"
 
-    log "Validating ${description} for security..."
+    log_task "Validating ${description} for security..."
 
     # Check for path traversal attempts (using -Z -1 to handle filenames with spaces)
     if unzip -Z -1 "$archive" 2>/dev/null | grep -E '(^|/)\.\.(\/|$)' > /dev/null; then
-        echo "ERROR: ${description} contains dangerous path traversal sequences (..)" >&2
+        log_msg "ERROR: ${description} contains dangerous path traversal sequences (..)"
         return 1
     fi
 
     # Check for absolute paths
     if unzip -Z -1 "$archive" 2>/dev/null | grep -E '^/' > /dev/null; then
-        echo "ERROR: ${description} contains absolute paths" >&2
+        log_msg "ERROR: ${description} contains absolute paths"
         return 1
     fi
 
-    log "✓ ${description} passed security validation"
+    log_success "${description} passed security validation"
     return 0
 }
 
@@ -152,12 +229,12 @@ download_and_verify_gpg_key() {
     local expected_fingerprint="$3"
     local description="${4:-GPG key}"
 
-    log "Downloading ${description}..."
+    log_task "Downloading ${description}..."
 
     # Download key to temporary file
     local temp_key="/tmp/gpg-key-$$.asc"
     if ! curl --max-time 30 --fail --silent --show-error --location "$url" -o "$temp_key"; then
-        echo "ERROR: Failed to download ${description}" >&2
+        log_msg "ERROR: Failed to download ${description}"
         return 1
     fi
 
@@ -166,8 +243,41 @@ download_and_verify_gpg_key() {
     mkdir -p "$temp_keyring"
     chmod 700 "$temp_keyring"
 
-    local actual_fingerprint
-    actual_fingerprint=$(gpg --no-default-keyring --keyring "$temp_keyring/temp.gpg" --import "$temp_key" 2>&1 | grep -oP '[0-9A-F]{40}' | head -1 | sed 's/.\{4\}/& /g' | xargs)
+    # Import key and capture output
+    local import_output
+    import_output=$(gpg --no-default-keyring --keyring "$temp_keyring/temp.gpg" --import "$temp_key" 2>&1)
+
+    # Extract fingerprint - try multiple methods
+    local actual_fingerprint=""
+
+    # Method 1: Look for 40 consecutive hex chars
+    actual_fingerprint=$(echo "$import_output" | grep -oP '[0-9A-F]{40}' | head -1)
+
+    # Method 2: Look for fingerprint line with spaces
+    if [[ -z "$actual_fingerprint" ]]; then
+        actual_fingerprint=$(echo "$import_output" | grep -i 'fingerprint' | grep -oP '[0-9A-F]{4}(\s+[0-9A-F]{4}){9}' | head -1 | tr -d ' ')
+    fi
+
+    # Method 3: List keys and get fingerprint
+    if [[ -z "$actual_fingerprint" ]]; then
+        actual_fingerprint=$(gpg --no-default-keyring --keyring "$temp_keyring/temp.gpg" --fingerprint --with-colons 2>/dev/null | grep '^fpr:' | head -1 | cut -d: -f10)
+    fi
+
+    # Method 4: Try with list-keys
+    if [[ -z "$actual_fingerprint" ]]; then
+        local key_id=$(echo "$import_output" | grep -oP 'key [0-9A-F]+' | head -1 | awk '{print $2}')
+        if [[ -n "$key_id" ]]; then
+            actual_fingerprint=$(gpg --no-default-keyring --keyring "$temp_keyring/temp.gpg" --list-keys --with-colons "$key_id" 2>/dev/null | grep '^fpr:' | head -1 | cut -d: -f10)
+        fi
+    fi
+
+    # Format fingerprint with spaces (groups of 4)
+    if [[ -n "$actual_fingerprint" ]]; then
+        # Remove any existing spaces first
+        actual_fingerprint=$(echo "$actual_fingerprint" | tr -d ' ')
+        # Add spaces every 4 chars
+        actual_fingerprint=$(echo "$actual_fingerprint" | sed 's/.\{4\}/& /g' | xargs)
+    fi
 
     # Clean up temporary keyring
     rm -rf "$temp_keyring"
@@ -178,14 +288,14 @@ download_and_verify_gpg_key() {
 
     # Verify fingerprint matches
     if [[ "$actual_norm" != "$expected_norm" ]]; then
-        echo "ERROR: ${description} fingerprint mismatch!" >&2
-        echo "  Expected: ${expected_fingerprint}" >&2
-        echo "  Got:      ${actual_fingerprint}" >&2
+        log_msg "ERROR: ${description} fingerprint mismatch!"
+        log_msg "  Expected: ${expected_fingerprint}"
+        log_msg "  Got:      ${actual_fingerprint}"
         rm -f "$temp_key"
         return 1
     fi
 
-    log "✓ ${description} fingerprint verified: ${actual_fingerprint}"
+    log_success "${description} fingerprint verified: ${actual_fingerprint}"
 
     # Dearmor and save to final location
     gpg --dearmor < "$temp_key" > "$output_file"
@@ -198,10 +308,14 @@ download_and_verify_gpg_key() {
 # 1. SISTEMA BASE
 # ==============================================================================
 
-log "1/10 Configurando sistema base..."
+log_section "1/10 Configurando sistema base..."
 
 # Cambiar red de IP estática (usada para build) a DHCP (para uso normal)
-log "Configurando red a DHCP..."
+log_task "Configurando red a DHCP..."
+
+# Remove ALL old netplan configs to avoid warnings (permissions, deprecated gateway4, etc.)
+rm -f /etc/netplan/*.yaml
+
 cat > /etc/netplan/00-installer-config.yaml << 'NETPLAN_EOF'
 network:
   version: 2
@@ -213,17 +327,23 @@ network:
       dhcp6: false
 NETPLAN_EOF
 
+# Set correct permissions to avoid netplan warnings
+chmod 600 /etc/netplan/00-installer-config.yaml
+
 netplan apply
 
 # Actualizar sistema
+log_task "Actualizar sistema..."
 apt-get update
 apt-get upgrade -y
 
 # Configurar locale (generate user's locale and en_US.UTF-8 as fallback for tools that require it)
+log_task "Configurar locale..."
 locale-gen "${LOCALE}" en_US.UTF-8
 update-locale LANG="${LOCALE}"
 
 # Instalar herramientas básicas
+log_task "Instalar herramientas básicas..."
 apt-get install -y \
     software-properties-common \
     apt-transport-https \
@@ -240,23 +360,23 @@ apt-get install -y \
 # Crear symlinks para herramientas con nombres diferentes
 # Note: || true is acceptable here - these are convenience symlinks that may not exist on all systems
 if ! ln -sf /usr/bin/batcat /usr/local/bin/bat 2>/dev/null; then
-    log "INFO: batcat not available, bat command will not work"
+    log_warning "batcat not available, bat command will not work"
 fi
 if ! ln -sf /usr/bin/fdfind /usr/local/bin/fd 2>/dev/null; then
-    log "INFO: fdfind not available, fd command will not work"
+    log_warning "fdfind not available, fd command will not work"
 fi
 
 # ==============================================================================
 # 2. DOCKER
 # ==============================================================================
 
-log "2/10 Instalando Docker..."
+log_section "2/10 Instalando Docker..."
 
 # Añadir repositorio de Docker (with GPG key verification)
 install -m 0755 -d /etc/apt/keyrings
 # Docker official GPG key fingerprint (from main.pkr.hcl)
 if ! download_and_verify_gpg_key "https://download.docker.com/linux/ubuntu/gpg" "/etc/apt/keyrings/docker.gpg" "$DOCKER_GPG_FINGERPRINT" "Docker GPG key"; then
-    echo "ERROR: Failed to verify Docker GPG key" >&2
+    log_msg "ERROR: Failed to verify Docker GPG key"
     exit 1
 fi
 chmod a+r /etc/apt/keyrings/docker.gpg
@@ -295,58 +415,58 @@ systemctl start docker
 LAZYDOCKER_VERSION=$(curl --max-time 30 --fail --silent --show-error https://api.github.com/repos/jesseduffield/lazydocker/releases/latest 2>/dev/null | jq -r '.tag_name' 2>/dev/null || echo "")
 
 if [[ -z "$LAZYDOCKER_VERSION" || "$LAZYDOCKER_VERSION" == "null" ]]; then
-    log "WARNING: Failed to fetch lazydocker latest version from GitHub API, using fallback"
+    log_warning "Failed to fetch lazydocker latest version from GitHub API, using fallback"
     LAZYDOCKER_VERSION="v0.23.1"  # Fallback to known stable version
 fi
 
-log "Installing lazydocker ${LAZYDOCKER_VERSION}..."
+log_task "Installing lazydocker ${LAZYDOCKER_VERSION}..."
 
 if curl --max-time 60 --fail -Lo /tmp/lazydocker.tar.gz "https://github.com/jesseduffield/lazydocker/releases/download/${LAZYDOCKER_VERSION}/lazydocker_${LAZYDOCKER_VERSION#v}_Linux_x86_64.tar.gz" 2>&1; then
     if validate_tar_archive /tmp/lazydocker.tar.gz "lazydocker archive"; then
         tar xzf /tmp/lazydocker.tar.gz -C /usr/local/bin lazydocker
         chmod +x /usr/local/bin/lazydocker
-        log "✓ lazydocker ${LAZYDOCKER_VERSION} installed successfully"
+        log_success "lazydocker ${LAZYDOCKER_VERSION} installed successfully"
     else
-        log "ERROR: lazydocker archive validation failed, skipping installation"
+        log_error "lazydocker archive validation failed, skipping installation"
     fi
     rm /tmp/lazydocker.tar.gz
 else
-    log "WARNING: Failed to download lazydocker, skipping..."
+    log_warning "Failed to download lazydocker, skipping..."
 fi
 
 # ==============================================================================
 # 3. GIT
 # ==============================================================================
 
-log "3/10 Configurando Git..."
+log_section "3/10 Configurando Git..."
 
 # lazygit (with error handling and fallback version)
 LAZYGIT_VERSION=$(curl --max-time 30 --fail --silent --show-error https://api.github.com/repos/jesseduffield/lazygit/releases/latest 2>/dev/null | jq -r '.tag_name' 2>/dev/null || echo "")
 
 if [[ -z "$LAZYGIT_VERSION" || "$LAZYGIT_VERSION" == "null" ]]; then
-    log "WARNING: Failed to fetch lazygit latest version from GitHub API, using fallback"
+    log_warning "Failed to fetch lazygit latest version from GitHub API, using fallback"
     LAZYGIT_VERSION="v0.40.2"  # Fallback to known stable version
 fi
 
-log "Installing lazygit ${LAZYGIT_VERSION}..."
+log_task "Installing lazygit ${LAZYGIT_VERSION}..."
 
 if curl --max-time 60 --fail -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION#v}_Linux_x86_64.tar.gz" 2>&1; then
     if validate_tar_archive /tmp/lazygit.tar.gz "lazygit archive"; then
         tar xzf /tmp/lazygit.tar.gz -C /usr/local/bin lazygit
         chmod +x /usr/local/bin/lazygit
-        log "✓ lazygit ${LAZYGIT_VERSION} installed successfully"
+        log_success "lazygit ${LAZYGIT_VERSION} installed successfully"
     else
-        log "ERROR: lazygit archive validation failed, skipping installation"
+        log_error "lazygit archive validation failed, skipping installation"
     fi
     rm /tmp/lazygit.tar.gz
 else
-    log "WARNING: Failed to download lazygit, skipping..."
+    log_warning "Failed to download lazygit, skipping..."
 fi
 
 # GitHub CLI (with GPG key verification)
 # GitHub CLI official GPG key fingerprint (from main.pkr.hcl)
 if ! download_and_verify_gpg_key "https://cli.github.com/packages/githubcli-archive-keyring.gpg" "/usr/share/keyrings/githubcli-archive-keyring.gpg" "$GITHUB_CLI_GPG_FINGERPRINT" "GitHub CLI GPG key"; then
-    echo "ERROR: Failed to verify GitHub CLI GPG key" >&2
+    log_msg "ERROR: Failed to verify GitHub CLI GPG key"
     exit 1
 fi
 chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
@@ -379,7 +499,7 @@ run_as_user "git config --global help.autocorrect 10"  # Auto-correct typos afte
 # ==============================================================================
 
 if [[ "${NERD_FONT}" != "none" ]]; then
-    log "4/10 Instalando ${NERD_FONT} Nerd Font..."
+    log_section "4/10 Instalando ${NERD_FONT} Nerd Font..."
 
     FONT_DIR="${HOME_DIR}/.local/share/fonts"
     run_as_user "mkdir -p '${FONT_DIR}'"
@@ -388,11 +508,11 @@ if [[ "${NERD_FONT}" != "none" ]]; then
     FONT_VERSION=$(curl --max-time 30 --fail --silent --show-error https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest 2>/dev/null | jq -r '.tag_name' 2>/dev/null || echo "")
 
     if [[ -z "$FONT_VERSION" || "$FONT_VERSION" == "null" ]]; then
-        log "WARNING: Failed to fetch latest font version from GitHub API, using fallback"
+        log_warning "Failed to fetch latest font version from GitHub API, using fallback"
         FONT_VERSION="v3.1.1"  # Fallback to known stable version
     fi
 
-    log "Downloading ${NERD_FONT} Nerd Font ${FONT_VERSION}..."
+    log_task "Downloading ${NERD_FONT} Nerd Font ${FONT_VERSION}..."
 
     # Download font archive (name matches the variable, e.g., JetBrainsMono.zip, FiraCode.zip)
     FONT_FILE="/tmp/${NERD_FONT}.zip"
@@ -401,29 +521,29 @@ if [[ "${NERD_FONT}" != "none" ]]; then
     if curl --max-time 120 --fail -Lo "${FONT_FILE}" "${FONT_URL}" 2>&1; then
         if validate_zip_archive "${FONT_FILE}" "${NERD_FONT} font"; then
             unzip -o "${FONT_FILE}" -d "${FONT_DIR}"
-            log "✓ ${NERD_FONT} Nerd Font installed successfully"
+            log_success "${NERD_FONT} Nerd Font installed successfully"
         else
-            echo "ERROR: ${NERD_FONT} font archive validation failed" >&2
+            log_msg "ERROR: ${NERD_FONT} font archive validation failed"
             exit 1
         fi
         rm "${FONT_FILE}"
     else
-        echo "ERROR: Failed to download ${NERD_FONT} Nerd Font from ${FONT_URL}" >&2
-        echo "NOTE: Ensure the font name matches the release asset name on GitHub" >&2
+        log_msg "ERROR: Failed to download ${NERD_FONT} Nerd Font from ${FONT_URL}"
+        log_msg "NOTE: Ensure the font name matches the release asset name on GitHub"
         exit 1
     fi
 
     # Actualizar cache de fuentes
     fc-cache -fv
 else
-    log "4/10 Saltando instalación de Nerd Font (nerd_font=none)..."
+    log_section "4/10 Saltando instalación de Nerd Font (nerd_font=none)..."
 fi
 
 # ==============================================================================
 # 5. SHELL Y PROMPT
 # ==============================================================================
 
-log "5/10 Configurando shell (${SHELL_TYPE}) y prompt (${PROMPT_THEME})..."
+log_section "5/10 Configurando shell (${SHELL_TYPE}) y prompt (${PROMPT_THEME})..."
 
 # Instalar Zsh si es necesario
 if [[ "${SHELL_TYPE}" == "zsh" ]]; then
@@ -436,7 +556,7 @@ fi
 case "${PROMPT_THEME}" in
     "ohmyzsh")
         if [[ "${SHELL_TYPE}" != "zsh" ]]; then
-            echo "ERROR: Oh My Zsh requiere shell=zsh"
+            log_msg "ERROR: Oh My Zsh requiere shell=zsh"
             exit 1
         fi
         
@@ -446,7 +566,7 @@ case "${PROMPT_THEME}" in
             run_as_user "sh ${OMZSH_SCRIPT} --unattended"
             rm -f "$OMZSH_SCRIPT"
         else
-            echo "ERROR: Failed to install Oh My Zsh" >&2
+            log_msg "ERROR: Failed to install Oh My Zsh"
             exit 1
         fi
 
@@ -468,7 +588,7 @@ case "${PROMPT_THEME}" in
         
     "ohmybash")
         if [[ "${SHELL_TYPE}" != "bash" ]]; then
-            echo "ERROR: Oh My Bash requiere shell=bash"
+            log_msg "ERROR: Oh My Bash requiere shell=bash"
             exit 1
         fi
         
@@ -478,7 +598,7 @@ case "${PROMPT_THEME}" in
             run_as_user "bash ${OMBSH_SCRIPT} --unattended"
             rm -f "$OMBSH_SCRIPT"
         else
-            echo "ERROR: Failed to install Oh My Bash" >&2
+            log_msg "ERROR: Failed to install Oh My Bash"
             exit 1
         fi
 
@@ -494,18 +614,18 @@ case "${PROMPT_THEME}" in
             sh "$STARSHIP_SCRIPT" -y
             rm -f "$STARSHIP_SCRIPT"
         else
-            echo "ERROR: Failed to install Starship" >&2
+            log_msg "ERROR: Failed to install Starship"
             exit 1
         fi
         
         # Aplicar preset
         if ! mkdir -p "${HOME_DIR}/.config"; then
-            echo "ERROR: Failed to create .config directory" >&2
+            log_msg "ERROR: Failed to create .config directory"
             exit 1
         fi
         if [[ "${STARSHIP_PRESET}" != "none" && "${STARSHIP_PRESET}" != "" ]]; then
             if ! starship preset "${STARSHIP_PRESET}" -o "${HOME_DIR}/.config/starship.toml" 2>/dev/null; then
-                log "WARNING: Failed to apply starship preset '${STARSHIP_PRESET}', using default config"
+                log_warning "Failed to apply starship preset '${STARSHIP_PRESET}', using default config"
             fi
         fi
         
@@ -526,7 +646,7 @@ esac
 # 6. CLIENTES DE BASE DE DATOS
 # ==============================================================================
 
-log "6/10 Instalando clientes de base de datos..."
+log_section "6/10 Instalando clientes de base de datos..."
 
 apt-get install -y \
     mysql-client \
@@ -539,11 +659,11 @@ apt-get install -y \
 # ==============================================================================
 
 if [[ "${INSTALL_VSCODE}" == "true" ]]; then
-    log "7/10 Instalando VS Code..."
+    log_section "7/10 Instalando VS Code..."
 
     # Microsoft GPG key (with verification - from main.pkr.hcl)
     if ! download_and_verify_gpg_key "https://packages.microsoft.com/keys/microsoft.asc" "/usr/share/keyrings/packages.microsoft.gpg" "$MICROSOFT_GPG_FINGERPRINT" "Microsoft GPG key"; then
-        echo "ERROR: Failed to verify Microsoft GPG key" >&2
+        log_msg "ERROR: Failed to verify Microsoft GPG key"
         exit 1
     fi
     echo "deb [arch=amd64 signed-by=/usr/share/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list
@@ -604,6 +724,9 @@ if [[ "${INSTALL_VSCODE}" == "true" ]]; then
 }
 EOF
 
+    # Fix ownership so user can install extensions
+    chown -R "${USERNAME}:${USERNAME}" "${HOME_DIR}/.config/Code"
+
     # Instalar extensiones básicas
     EXTENSIONS=(
         "ms-azuretools.vscode-docker"
@@ -614,16 +737,16 @@ EOF
         "redhat.vscode-yaml"
     )
 
-    log "Installing VS Code extensions..."
+    log_task "Installing VS Code extensions..."
     for ext in "${EXTENSIONS[@]}"; do
         if run_as_user "code --install-extension ${ext} --force" 2>&1; then
-            log "✓ Installed extension: ${ext}"
+            log_success "Installed extension: ${ext}"
         else
-            log "WARNING: Failed to install extension: ${ext}"
+            log_warning "Failed to install extension: ${ext}"
         fi
     done
 else
-    log "7/10 Saltando instalación de VS Code (deshabilitado)..."
+    log_section "7/10 Saltando instalación de VS Code (deshabilitado)..."
 fi
 
 # ==============================================================================
@@ -631,22 +754,19 @@ fi
 # ==============================================================================
 
 if [[ "${INSTALL_ANTIGRAVITY}" == "true" ]]; then
-    log "7.5/10 Instalando Google Antigravity IDE..."
+    log_section "7.5/10 Instalando Google Antigravity IDE..."
 
-    # Google Antigravity uses Google's signing key (same as Chrome/other Google products)
-    # Google Linux Repository GPG key fingerprint (from main.pkr.hcl)
-    if ! download_and_verify_gpg_key "https://dl.google.com/linux/linux_signing_key.pub" "/usr/share/keyrings/google-linux.gpg" "$GOOGLE_GPG_FINGERPRINT" "Google Linux Repository GPG key"; then
-        echo "ERROR: Failed to verify Google GPG key" >&2
-        exit 1
-    fi
+    # Download and add Google Antigravity repository GPG key
+    # Official key from https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg
+    curl -fsSL https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg | gpg --dearmor -o /etc/apt/keyrings/antigravity-repo-key.gpg
 
-    # Add Antigravity repository
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-linux.gpg] https://packages.google.com/apt antigravity main" > /etc/apt/sources.list.d/antigravity.list
+    # Add Antigravity official repository
+    echo "deb [signed-by=/etc/apt/keyrings/antigravity-repo-key.gpg] https://us-central1-apt.pkg.dev/projects/antigravity-auto-updater-dev antigravity-debian main" > /etc/apt/sources.list.d/antigravity.list
 
     apt-get update
-    apt-get install -y google-antigravity
+    apt-get install -y antigravity
 
-    log "✓ Google Antigravity IDE installed successfully"
+    log_success "Google Antigravity IDE installed successfully"
 
     # Configure desktop launcher (optional)
     if [[ -f "/usr/share/applications/antigravity.desktop" ]]; then
@@ -656,14 +776,14 @@ if [[ "${INSTALL_ANTIGRAVITY}" == "true" ]]; then
         chown "${USERNAME}:${USERNAME}" "${HOME_DIR}/.local/share/applications/antigravity.desktop"
     fi
 else
-    log "7.5/10 Saltando instalación de Google Antigravity IDE (deshabilitado)..."
+    log_section "7.5/10 Saltando instalación de Google Antigravity IDE (deshabilitado)..."
 fi
 
 # ==============================================================================
 # 8. NAVEGADOR (si está configurado)
 # ==============================================================================
 
-log "8/10 Configurando navegador (${INSTALL_BROWSER})..."
+log_section "8/10 Configurando navegador (${INSTALL_BROWSER})..."
 
 case "${INSTALL_BROWSER}" in
     "firefox")
@@ -693,7 +813,7 @@ esac
 # 9. CONFIGURACIÓN DESKTOP
 # ==============================================================================
 
-log "9/10 Configurando desktop..."
+log_section "9/10 Configurando desktop..."
 
 # Instalar gnome-tweaks
 apt-get install -y gnome-tweaks gnome-shell-extension-manager
@@ -737,7 +857,7 @@ if [[ "${NERD_FONT}" != "none" ]]; then
             FONT_SYSTEM_NAME="${NERD_FONT} Nerd Font 11"
             ;;
     esac
-    gsettings set org.gnome.desktop.interface monospace-font-name "${FONT_SYSTEM_NAME}" || echo "WARNING: Failed to set monospace font"
+    gsettings set org.gnome.desktop.interface monospace-font-name "\${FONT_SYSTEM_NAME}" || echo "WARNING: Failed to set monospace font"
 fi
 
 # Desactivar suspensión
@@ -850,21 +970,71 @@ chmod 440 /etc/sudoers.d/99-packer-shutdown
 
 # Validate sudoers file to ensure it's correct
 if ! visudo -c -f /etc/sudoers.d/99-packer-shutdown; then
-    echo "ERROR: Invalid sudoers file created" >&2
+    log_msg "ERROR: Invalid sudoers file created"
     rm -f /etc/sudoers.d/99-packer-shutdown
     exit 1
 fi
 
-log "✓ Shutdown permissions configured for Packer build"
+log_success "Shutdown permissions configured for Packer build"
 
 # ==============================================================================
 # HYPER-V ENHANCED SESSION MODE (RDP para portapapeles compartido)
 # ==============================================================================
 
-log "10/10 Configurando Enhanced Session Mode (xrdp)..."
+log_section "10/10 Configurando Enhanced Session Mode (xrdp)..."
 
-# Instalar xrdp para habilitar Enhanced Session Mode
-apt-get install -y xrdp xorgxrdp
+# Instalar xrdp y herramientas de clipboard
+apt-get install -y xrdp xorgxrdp xclip
+
+# Configurar xrdp.ini para habilitar clipboard y compartir unidades
+cat > /etc/xrdp/xrdp.ini << 'XRDP_INI_EOF'
+[Globals]
+ini_version=1
+fork=true
+port=3389
+tcp_nodelay=true
+tcp_keepalive=true
+security_layer=negotiate
+crypt_level=high
+certificate=
+key_file=
+ssl_protocols=TLSv1.2, TLSv1.3
+autorun=
+allow_channels=true
+allow_multimon=true
+bitmap_cache=true
+bitmap_compression=true
+bulk_compression=true
+max_bpp=32
+new_cursors=true
+use_fastpath=both
+require_credentials=false
+
+[Logging]
+LogFile=xrdp.log
+LogLevel=INFO
+EnableSyslog=true
+SyslogLevel=INFO
+
+# Habilitar todos los canales para clipboard y compartir unidades
+[channels]
+rdpdr=true
+rdpsnd=true
+drdynvc=true
+cliprdr=true
+rail=true
+xrdpvr=true
+
+# Sesión Xorg (default)
+[Xorg]
+name=Xorg
+lib=libxup.so
+username=ask
+password=ask
+ip=127.0.0.1
+port=-1
+code=20
+XRDP_INI_EOF
 
 # Configurar xrdp para usar el desktop environment correcto
 cat > /etc/xrdp/startwm.sh << 'XRDP_EOF'
@@ -891,22 +1061,33 @@ if command -v ufw >/dev/null 2>&1; then
     ufw allow 3389/tcp
 fi
 
-log "✓ Enhanced Session Mode configurado (RDP en puerto 3389)"
-log "  Ahora puedes usar portapapeles compartido con el host"
+log_success "Enhanced Session Mode configurado (RDP en puerto 3389)"
+log_msg ""
+log_msg "COMPARTIR ARCHIVOS CON WINDOWS:"
+log_msg "  Al conectar por RDP, habilita 'Drives' en Local Resources"
+log_msg "  Accede a las unidades Windows desde: /mnt/c/, /mnt/d/, etc."
+log_msg ""
+log_msg "CLIPBOARD:"
+log_msg "  Copiar/pegar texto funciona automáticamente"
+log_msg "  Asegúrate de marcar 'Clipboard' en Local Resources al conectar"
 
 # ==============================================================================
 # FIN
 # ==============================================================================
 
-log "✓ Provisioning completado!"
-echo ""
-echo "Resumen:"
-echo "  - Usuario: ${USERNAME}"
-echo "  - Shell: ${SHELL_TYPE}"
-echo "  - Prompt: ${PROMPT_THEME}"
-echo "  - Docker: instalado"
-echo "  - VS Code: ${INSTALL_VSCODE}"
-echo "  - Google Antigravity IDE: ${INSTALL_ANTIGRAVITY}"
-echo "  - Navegador: ${INSTALL_BROWSER}"
-echo "  - Nerd Font: ${NERD_FONT}"
-echo ""
+log_section "✓ Provisioning completado!"
+log_msg ""
+log_msg "Resumen:"
+log_msg "  - Usuario: ${USERNAME}"
+log_msg "  - Shell: ${SHELL_TYPE}"
+log_msg "  - Prompt: ${PROMPT_THEME}"
+log_msg "  - Docker: instalado"
+log_msg "  - VS Code: ${INSTALL_VSCODE}"
+log_msg "  - Google Antigravity IDE: ${INSTALL_ANTIGRAVITY}"
+log_msg "  - Navegador: ${INSTALL_BROWSER}"
+log_msg "  - Nerd Font: ${NERD_FONT}"
+log_msg ""
+log_msg "Detalles completos en: $PROVISION_LOG"
+
+# Restore stdout/stderr
+exec 1>&3 2>&4 3>&- 4>&-
