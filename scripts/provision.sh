@@ -334,6 +334,14 @@ chmod 600 /etc/netplan/00-installer-config.yaml
 
 netplan apply
 
+# Forzar renovación DHCP para obtener IP inmediatamente
+sleep 2
+dhclient -r eth0 2>/dev/null || true
+dhclient eth0 2>/dev/null || true
+sleep 2
+
+log_success "Red configurada - IP DHCP: $(hostname -I | awk '{print $1}')"
+
 # Actualizar sistema
 log_task "Actualizar sistema..."
 apt-get update
