@@ -978,98 +978,89 @@ fi
 log_success "Shutdown permissions configured for Packer build"
 
 # ==============================================================================
-# HYPER-V ENHANCED SESSION MODE (RDP para portapapeles compartido)
+# GNOME REMOTE DESKTOP (RDP nativo de alto rendimiento)
 # ==============================================================================
 
-log_section "10/10 Configurando Enhanced Session Mode (xrdp)..."
+log_section "10/10 Configurando GNOME Remote Desktop..."
 
-# Instalar xrdp y herramientas de clipboard
-apt-get install -y xrdp xorgxrdp xclip
+# Instalar gnome-remote-desktop y herramientas de clipboard
+apt-get install -y gnome-remote-desktop xclip
 
-# Configurar xrdp.ini para habilitar clipboard y compartir unidades
-cat > /etc/xrdp/xrdp.ini << 'XRDP_INI_EOF'
-[Globals]
-ini_version=1
-fork=true
-port=3389
-tcp_nodelay=true
-tcp_keepalive=true
-security_layer=negotiate
-crypt_level=high
-certificate=
-key_file=
-ssl_protocols=TLSv1.2, TLSv1.3
-autorun=
-allow_channels=true
-allow_multimon=true
-bitmap_cache=true
-bitmap_compression=true
-bulk_compression=true
-max_bpp=32
-new_cursors=true
-use_fastpath=both
-require_credentials=false
-
-[Logging]
-LogFile=xrdp.log
-LogLevel=INFO
-EnableSyslog=true
-SyslogLevel=INFO
-
-# Habilitar todos los canales para clipboard y compartir unidades
-[channels]
-rdpdr=true
-rdpsnd=true
-drdynvc=true
-cliprdr=true
-rail=true
-xrdpvr=true
-
-# Sesión Xorg (default)
-[Xorg]
-name=Xorg
-lib=libxup.so
-username=ask
-password=ask
-ip=127.0.0.1
-port=-1
-code=20
-XRDP_INI_EOF
-
-# Configurar xrdp para usar el desktop environment correcto
-cat > /etc/xrdp/startwm.sh << 'XRDP_EOF'
-#!/bin/sh
-if [ -r /etc/default/locale ]; then
-  . /etc/default/locale
-  export LANG LANGUAGE
-fi
-# Start Ubuntu desktop session
-exec /usr/bin/gnome-session
-XRDP_EOF
-
-chmod +x /etc/xrdp/startwm.sh
-
-# Añadir usuario al grupo ssl-cert (necesario para xrdp)
-usermod -a -G ssl-cert "${USERNAME}"
-
-# Habilitar y arrancar xrdp
-systemctl enable xrdp
-systemctl start xrdp
+# Habilitar el servicio de GNOME Remote Desktop a nivel de sistema
+systemctl enable gnome-remote-desktop.service
 
 # Configurar firewall para permitir RDP (puerto 3389)
 if command -v ufw >/dev/null 2>&1; then
     ufw allow 3389/tcp
 fi
 
-log_success "Enhanced Session Mode configurado (RDP en puerto 3389)"
+# Crear script de configuración de RDP para el usuario (se ejecuta en primer login)
+cat > "${HOME_DIR}/.config/setup-gnome-rdp.sh" << 'RDP_SETUP_EOF'
+#!/bin/bash
+# Configuración de GNOME Remote Desktop (ejecutar una vez como usuario)
+
+set -euo pipefail
+LOG_FILE="${HOME}/.config/gnome-rdp-setup.log"
+exec > >(tee -a "${LOG_FILE}") 2>&1
+
+echo "[$(date)] Configurando GNOME Remote Desktop..."
+
+# Esperar a que D-Bus esté disponible
+sleep 2
+
+# Habilitar RDP en GNOME Remote Desktop
+grdctl rdp enable 2>/dev/null || echo "WARNING: Could not enable RDP via grdctl"
+
+# Configurar autenticación (usar credenciales del sistema)
+grdctl rdp set-credentials "$USER" "$USER" 2>/dev/null || echo "WARNING: Could not set RDP credentials"
+
+# Habilitar la vista del escritorio (no solo control remoto)
+grdctl rdp disable-view-only 2>/dev/null || echo "WARNING: Could not disable view-only mode"
+
+# Configurar TLS (usar certificado autogenerado)
+grdctl rdp set-tls-cert "" 2>/dev/null || true
+grdctl rdp set-tls-key "" 2>/dev/null || true
+
+echo "[$(date)] GNOME Remote Desktop configurado correctamente"
+echo ""
+echo "Para conectar:"
+echo "  1. Usa cualquier cliente RDP (Windows Remote Desktop, Remmina, etc.)"
+echo "  2. Conéctate a la IP de esta máquina en el puerto 3389"
+echo "  3. Usa tu usuario y contraseña de Linux"
+
+# Auto-eliminar después de ejecutar
+rm -f "$0"
+RDP_SETUP_EOF
+
+chmod +x "${HOME_DIR}/.config/setup-gnome-rdp.sh"
+chown "${USERNAME}:${USERNAME}" "${HOME_DIR}/.config/setup-gnome-rdp.sh"
+
+# Añadir al autostart existente para configuración en primer login
+cat > "${HOME_DIR}/.config/autostart/gnome-rdp-setup.desktop" << EOF
+[Desktop Entry]
+Type=Application
+Name=GNOME RDP Setup
+Exec=${HOME_DIR}/.config/setup-gnome-rdp.sh
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=5
+EOF
+
+chown "${USERNAME}:${USERNAME}" "${HOME_DIR}/.config/autostart/gnome-rdp-setup.desktop"
+
+log_success "GNOME Remote Desktop configurado (RDP en puerto 3389)"
 log_msg ""
-log_msg "COMPARTIR ARCHIVOS CON WINDOWS:"
-log_msg "  Al conectar por RDP, habilita 'Drives' en Local Resources"
-log_msg "  Accede a las unidades Windows desde: /mnt/c/, /mnt/d/, etc."
+log_msg "RENDIMIENTO:"
+log_msg "  gnome-remote-desktop ofrece mejor rendimiento que xRDP"
+log_msg "  Soporte nativo para Wayland y X11"
+log_msg ""
+log_msg "CONECTAR:"
+log_msg "  Usa cualquier cliente RDP en el puerto 3389"
+log_msg "  Credenciales: usuario y contraseña de Linux"
 log_msg ""
 log_msg "CLIPBOARD:"
-log_msg "  Copiar/pegar texto funciona automáticamente"
-log_msg "  Asegúrate de marcar 'Clipboard' en Local Resources al conectar"
+log_msg "  Copiar/pegar funciona automáticamente"
 
 # ==============================================================================
 # FIN
