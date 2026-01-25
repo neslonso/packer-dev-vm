@@ -291,6 +291,16 @@ variable "install_antigravity" {
   description = "Instalar Google Antigravity IDE (AI-powered IDE con agentes autónomos basado en Gemini 3). Requiere: Ubuntu 20.04+, 8GB RAM (16GB recomendado)"
 }
 
+variable "install_cursor" {
+  type        = bool
+  description = "Instalar Cursor (AI-powered code editor basado en VS Code)"
+}
+
+variable "install_sublimemerge" {
+  type        = bool
+  description = "Instalar Sublime Merge (cliente Git visual de alta velocidad)"
+}
+
 variable "install_browser" {
   type        = string
   description = "Navegador a instalar: firefox, chrome, chromium o none"
@@ -388,6 +398,8 @@ locals {
     "VM_DESKTOP_THEME=${var.desktop_theme}",
     "VM_INSTALL_VSCODE=${var.install_vscode}",
     "VM_INSTALL_ANTIGRAVITY=${var.install_antigravity}",
+    "VM_INSTALL_CURSOR=${var.install_cursor}",
+    "VM_INSTALL_SUBLIMEMERGE=${var.install_sublimemerge}",
     "VM_INSTALL_BROWSER=${var.install_browser}",
     # GPG Fingerprints (centralized)
     "GPG_FINGERPRINT_DOCKER=${local.gpg_fingerprints.docker}",

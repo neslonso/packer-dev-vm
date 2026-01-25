@@ -35,6 +35,8 @@ DOCKER_LOG_MAX_FILE="${VM_DOCKER_LOG_MAX_FILE}"
 DESKTOP_THEME="${VM_DESKTOP_THEME}"
 INSTALL_VSCODE="${VM_INSTALL_VSCODE}"
 INSTALL_ANTIGRAVITY="${VM_INSTALL_ANTIGRAVITY}"
+INSTALL_CURSOR="${VM_INSTALL_CURSOR}"
+INSTALL_SUBLIMEMERGE="${VM_INSTALL_SUBLIMEMERGE}"
 INSTALL_BROWSER="${VM_INSTALL_BROWSER}"
 
 # GPG Fingerprints (from centralized configuration in main.pkr.hcl)
@@ -717,6 +719,7 @@ if [[ "${INSTALL_VSCODE}" == "true" ]]; then
     "terminal.integrated.fontSize": 13,
     "files.autoSave": "afterDelay",
     "files.trimTrailingWhitespace": true,
+    "explorer.excludeGitIgnore": false,
     "git.autofetch": true,
     "git.confirmSync": false,
     "docker.showStartPage": false,
@@ -768,6 +771,38 @@ if [[ "${INSTALL_ANTIGRAVITY}" == "true" ]]; then
 
     log_success "Google Antigravity IDE installed successfully"
 
+    # Configure Antigravity settings (similar to VS Code)
+    ANTIGRAVITY_DIR="${HOME_DIR}/.config/antigravity/User"
+    mkdir -p "${ANTIGRAVITY_DIR}"
+
+    # Determine font family based on installed Nerd Font (reuse VSCODE_FONT_FAMILY logic)
+    if [[ "${NERD_FONT}" != "none" ]]; then
+        case "${NERD_FONT}" in
+            "JetBrainsMono") AG_FONT_FAMILY="'JetBrainsMono Nerd Font', 'JetBrains Mono', monospace" ;;
+            "FiraCode") AG_FONT_FAMILY="'FiraCode Nerd Font', 'Fira Code', monospace" ;;
+            "Hack") AG_FONT_FAMILY="'Hack Nerd Font', 'Hack', monospace" ;;
+            "SourceCodePro") AG_FONT_FAMILY="'SauceCodePro Nerd Font', 'Source Code Pro', monospace" ;;
+            "Meslo") AG_FONT_FAMILY="'MesloLGS NF', 'Meslo', monospace" ;;
+            *) AG_FONT_FAMILY="'${NERD_FONT} Nerd Font', monospace" ;;
+        esac
+    else
+        AG_FONT_FAMILY="'Fira Code', 'Consolas', monospace"
+    fi
+
+    cat > "${ANTIGRAVITY_DIR}/settings.json" << EOF
+{
+    "editor.fontFamily": "${AG_FONT_FAMILY}",
+    "editor.fontSize": 14,
+    "editor.fontLigatures": true,
+    "terminal.integrated.fontFamily": "${AG_FONT_FAMILY}",
+    "terminal.integrated.fontSize": 13,
+    "explorer.excludeGitIgnore": false,
+    "telemetry.telemetryLevel": "off"
+}
+EOF
+
+    chown -R "${USERNAME}:${USERNAME}" "${HOME_DIR}/.config/antigravity"
+
     # Configure desktop launcher (optional)
     if [[ -f "/usr/share/applications/antigravity.desktop" ]]; then
         # Make it available for the user (create directory as user to ensure correct ownership)
@@ -777,6 +812,110 @@ if [[ "${INSTALL_ANTIGRAVITY}" == "true" ]]; then
     fi
 else
     log_section "7.5/10 Saltando instalación de Google Antigravity IDE (deshabilitado)..."
+fi
+
+# ==============================================================================
+# 7.6. CURSOR (si está habilitado)
+# ==============================================================================
+
+if [[ "${INSTALL_CURSOR}" == "true" ]]; then
+    log_section "7.6/10 Instalando Cursor..."
+
+    # Download Cursor AppImage
+    CURSOR_URL="https://downloader.cursor.sh/linux/appImage/x64"
+    CURSOR_APPIMAGE="/opt/cursor/cursor.AppImage"
+
+    mkdir -p /opt/cursor
+    log_task "Downloading Cursor AppImage..."
+    if curl --max-time 120 --fail -Lo "${CURSOR_APPIMAGE}" "${CURSOR_URL}" 2>&1; then
+        chmod +x "${CURSOR_APPIMAGE}"
+        log_success "Cursor downloaded successfully"
+
+        # Create desktop entry
+        cat > /usr/share/applications/cursor.desktop << 'CURSOR_DESKTOP_EOF'
+[Desktop Entry]
+Name=Cursor
+Comment=AI-powered code editor
+Exec=/opt/cursor/cursor.AppImage --no-sandbox %F
+Icon=cursor
+Type=Application
+Categories=Development;IDE;
+MimeType=text/plain;
+StartupNotify=true
+StartupWMClass=Cursor
+CURSOR_DESKTOP_EOF
+
+        # Download and install icon
+        curl -fsSL "https://www.cursor.com/assets/images/logo.svg" -o /usr/share/icons/cursor.svg 2>/dev/null || true
+
+        log_success "Cursor installed successfully"
+
+        # Configure Cursor settings (similar to VS Code)
+        CURSOR_DIR="${HOME_DIR}/.config/Cursor/User"
+        mkdir -p "${CURSOR_DIR}"
+
+        # Determine font family
+        if [[ "${NERD_FONT}" != "none" ]]; then
+            case "${NERD_FONT}" in
+                "JetBrainsMono") CURSOR_FONT_FAMILY="'JetBrainsMono Nerd Font', 'JetBrains Mono', monospace" ;;
+                "FiraCode") CURSOR_FONT_FAMILY="'FiraCode Nerd Font', 'Fira Code', monospace" ;;
+                "Hack") CURSOR_FONT_FAMILY="'Hack Nerd Font', 'Hack', monospace" ;;
+                "SourceCodePro") CURSOR_FONT_FAMILY="'SauceCodePro Nerd Font', 'Source Code Pro', monospace" ;;
+                "Meslo") CURSOR_FONT_FAMILY="'MesloLGS NF', 'Meslo', monospace" ;;
+                *) CURSOR_FONT_FAMILY="'${NERD_FONT} Nerd Font', monospace" ;;
+            esac
+        else
+            CURSOR_FONT_FAMILY="'Fira Code', 'Consolas', monospace"
+        fi
+
+        cat > "${CURSOR_DIR}/settings.json" << EOF
+{
+    "editor.fontFamily": "${CURSOR_FONT_FAMILY}",
+    "editor.fontSize": 14,
+    "editor.fontLigatures": true,
+    "editor.formatOnSave": true,
+    "editor.minimap.enabled": false,
+    "editor.bracketPairColorization.enabled": true,
+    "workbench.colorTheme": "Default Dark Modern",
+    "workbench.startupEditor": "none",
+    "terminal.integrated.fontFamily": "${CURSOR_FONT_FAMILY}",
+    "terminal.integrated.fontSize": 13,
+    "files.autoSave": "afterDelay",
+    "files.trimTrailingWhitespace": true,
+    "explorer.excludeGitIgnore": false,
+    "git.autofetch": true,
+    "git.confirmSync": false,
+    "telemetry.telemetryLevel": "off"
+}
+EOF
+
+        chown -R "${USERNAME}:${USERNAME}" "${HOME_DIR}/.config/Cursor"
+    else
+        log_warning "Failed to download Cursor, skipping..."
+    fi
+else
+    log_section "7.6/10 Saltando instalación de Cursor (deshabilitado)..."
+fi
+
+# ==============================================================================
+# 7.7. SUBLIME MERGE (si está habilitado)
+# ==============================================================================
+
+if [[ "${INSTALL_SUBLIMEMERGE}" == "true" ]]; then
+    log_section "7.7/10 Instalando Sublime Merge..."
+
+    # Add Sublime Text/Merge repository
+    # GPG key from https://www.sublimetext.com/docs/linux_repositories.html
+    curl -fsSL https://download.sublimetext.com/sublimehq-pub.gpg | gpg --dearmor -o /etc/apt/keyrings/sublimehq.gpg
+
+    echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/sublimehq.gpg] https://download.sublimetext.com/ apt/stable/" > /etc/apt/sources.list.d/sublime-text.list
+
+    apt-get update
+    apt-get install -y sublime-merge
+
+    log_success "Sublime Merge installed successfully"
+else
+    log_section "7.7/10 Saltando instalación de Sublime Merge (deshabilitado)..."
 fi
 
 # ==============================================================================
@@ -865,21 +1004,34 @@ gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'no
 gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'nothing' || echo "WARNING: Failed to set battery sleep policy"
 
 # Dock favorites - build dynamically based on installed apps
+# Order: Nautilus, Terminal, Antigravity, Cursor, Sublime Merge, Chromium, Firefox
 DOCK_APPS="'org.gnome.Nautilus.desktop', 'org.gnome.Terminal.desktop'"
+
+# IDEs/Editors (in order: Antigravity, Cursor, VS Code, Sublime Merge)
+if [[ "${INSTALL_ANTIGRAVITY}" == "true" ]]; then
+    DOCK_APPS="\${DOCK_APPS}, 'antigravity.desktop'"
+fi
+if [[ "${INSTALL_CURSOR}" == "true" ]]; then
+    DOCK_APPS="\${DOCK_APPS}, 'cursor.desktop'"
+fi
 if [[ "${INSTALL_VSCODE}" == "true" ]]; then
     DOCK_APPS="\${DOCK_APPS}, 'code.desktop'"
 fi
-case "${INSTALL_BROWSER}" in
-    "firefox")
-        DOCK_APPS="\${DOCK_APPS}, 'firefox.desktop'"
-        ;;
-    "chrome")
-        DOCK_APPS="\${DOCK_APPS}, 'google-chrome.desktop'"
-        ;;
-    "chromium")
-        DOCK_APPS="\${DOCK_APPS}, 'chromium.desktop'"
-        ;;
-esac
+if [[ "${INSTALL_SUBLIMEMERGE}" == "true" ]]; then
+    DOCK_APPS="\${DOCK_APPS}, 'sublime_merge.desktop'"
+fi
+
+# Browsers (in order: Chromium, Chrome, Firefox)
+if [[ "${INSTALL_BROWSER}" == "chromium" ]]; then
+    DOCK_APPS="\${DOCK_APPS}, 'chromium.desktop'"
+fi
+if [[ "${INSTALL_BROWSER}" == "chrome" ]]; then
+    DOCK_APPS="\${DOCK_APPS}, 'google-chrome.desktop'"
+fi
+if [[ "${INSTALL_BROWSER}" == "firefox" ]]; then
+    DOCK_APPS="\${DOCK_APPS}, 'firefox.desktop'"
+fi
+
 gsettings set org.gnome.shell favorite-apps "[\${DOCK_APPS}]" || echo "WARNING: Failed to set dock favorites"
 
 echo "[\$(date)] GNOME configuration completed successfully"
