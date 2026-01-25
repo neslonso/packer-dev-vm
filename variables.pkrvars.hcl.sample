@@ -30,8 +30,8 @@ disk_size = 80000                      # Disco en MB
 # ==============================================================================
 # UBUNTU
 # ==============================================================================
-iso_url      = "https://releases.ubuntu.com/24.04.1/ubuntu-24.04.1-desktop-amd64.iso"
-iso_checksum = "sha256:c2e6f4dc37ac944e2ed507f87c6571f4330a63c7f2e9c0aea40fd69a135e6f94"
+iso_url      = "https://releases.ubuntu.com/24.04.3/ubuntu-24.04.3-desktop-amd64.iso"
+iso_checksum = "sha256:faabcf33ae53976d2b8207a001ff32f4e5daae013505ac7188c9ea63988f8328"
 
 # ==============================================================================
 # SISTEMA
