@@ -1237,6 +1237,13 @@ log_task "Configurando RDP en modo sistema..."
 if [[ "${GNOME_RDP_TLS_ENABLED}" == "true" ]]; then
     grdctl --system rdp set-tls-key "${GRD_DIR}/tls.key" || log_warning "Could not set TLS key"
     grdctl --system rdp set-tls-cert "${GRD_DIR}/tls.crt" || log_warning "Could not set TLS cert"
+else
+    if grdctl --system rdp disable-tls >/dev/null 2>&1; then
+        log_success "TLS deshabilitado para RDP (modo sistema)"
+    else
+        grdctl --system rdp set-tls-key "" >/dev/null 2>&1 || log_warning "Could not clear TLS key"
+        grdctl --system rdp set-tls-cert "" >/dev/null 2>&1 || log_warning "Could not clear TLS cert"
+    fi
 fi
 
 # Configurar credenciales del sistema (argumentos directos, no stdin)
