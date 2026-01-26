@@ -1227,10 +1227,9 @@ log_task "Configurando RDP en modo sistema..."
 grdctl --system rdp set-tls-key "${GRD_DIR}/tls.key" || log_warning "Could not set TLS key"
 grdctl --system rdp set-tls-cert "${GRD_DIR}/tls.crt" || log_warning "Could not set TLS cert"
 
-# Configurar credenciales del sistema via stdin
-# Formato: username\npassword
+# Configurar credenciales del sistema (argumentos directos, no stdin)
 log_task "Configurando credenciales RDP..."
-printf '%s\n%s\n' "${USERNAME}" "developer" | grdctl --system rdp set-credentials || log_warning "Could not set system credentials"
+grdctl --system rdp set-credentials "${USERNAME}" "developer" || log_warning "Could not set system credentials"
 
 # Habilitar RDP en modo sistema
 grdctl --system rdp enable || log_warning "Could not enable system RDP"
