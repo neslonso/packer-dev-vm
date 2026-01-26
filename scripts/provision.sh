@@ -1199,8 +1199,9 @@ log_success "Shutdown permissions configured for Packer build"
 
 log_section "10/10 Configurando GNOME Remote Desktop (modo sistema)..."
 
-# Instalar gnome-remote-desktop y herramientas necesarias
-apt-get install -y gnome-remote-desktop xclip openssl
+# Instalar gnome-remote-desktop, avahi (mDNS) y herramientas necesarias
+# avahi-daemon permite resolver el hostname como hostname.local en la red local
+apt-get install -y gnome-remote-desktop avahi-daemon xclip openssl
 
 # El usuario gnome-remote-desktop se crea automáticamente al instalar el paquete
 # Los certificados DEBEN estar en ~gnome-remote-desktop/.local/share/gnome-remote-desktop/
@@ -1219,8 +1220,9 @@ sudo -u "${GRD_USER}" mkdir -p "${GRD_DIR}"
 log_task "Generando certificados TLS para RDP..."
 
 # Crear archivo de configuración temporal para OpenSSL con las extensiones requeridas
+# El CN debe coincidir con el hostname para que mstsc confíe en el certificado
 OPENSSL_CONF_TMP="${GRD_DIR}/openssl.cnf"
-sudo -u "${GRD_USER}" bash -c "cat > '${OPENSSL_CONF_TMP}'" << 'OPENSSL_EOF'
+sudo -u "${GRD_USER}" bash -c "cat > '${OPENSSL_CONF_TMP}'" << OPENSSL_EOF
 [req]
 default_bits = 4096
 prompt = no
@@ -1233,7 +1235,7 @@ C = US
 ST = NONE
 L = NONE
 O = GNOME Remote Desktop
-CN = gnome-remote-desktop
+CN = ${HOSTNAME}.local
 
 [v3_ext]
 basicConstraints = CA:FALSE
@@ -1241,6 +1243,8 @@ keyUsage = critical, digitalSignature, keyEncipherment
 # Incluir tanto serverAuth como el OID específico de Microsoft para Remote Desktop
 extendedKeyUsage = serverAuth, 1.3.6.1.4.1.311.54.1.2
 subjectKeyIdentifier = hash
+# Subject Alternative Names para hostname y hostname.local
+subjectAltName = DNS:${HOSTNAME}, DNS:${HOSTNAME}.local
 OPENSSL_EOF
 
 # Usar 365 días (bien por debajo del límite de 825 días de mstsc)
@@ -1276,19 +1280,77 @@ grdctl --system status 2>/dev/null || true
 systemctl enable gnome-remote-desktop.service
 systemctl restart gnome-remote-desktop.service || true
 
-# Configurar firewall para permitir RDP (puerto 3389)
+# Configurar firewall para permitir RDP (puerto 3389) y mDNS (puerto 5353)
 if command -v ufw >/dev/null 2>&1; then
     ufw allow 3389/tcp
+    ufw allow 5353/udp  # mDNS/Avahi para resolución de hostname.local
 fi
+
+# Habilitar y arrancar Avahi para mDNS
+systemctl enable avahi-daemon.service
+systemctl start avahi-daemon.service || true
+
+# Generar archivo .rdp preconfigurado para conexión fácil desde Windows
+RDP_FILE="/home/${USERNAME}/connect-${HOSTNAME}.rdp"
+log_task "Generando archivo RDP: ${RDP_FILE}"
+cat > "${RDP_FILE}" << RDP_EOF
+full address:s:${HOSTNAME}.local:3389
+username:s:${USERNAME}
+prompt for credentials:i:1
+administrative session:i:1
+screen mode id:i:2
+use multimon:i:0
+desktopwidth:i:1920
+desktopheight:i:1080
+session bpp:i:32
+compression:i:1
+keyboardhook:i:2
+audiocapturemode:i:0
+videoplaybackmode:i:1
+connection type:i:7
+networkautodetect:i:1
+bandwidthautodetect:i:1
+enableworkspacereconnect:i:0
+disable wallpaper:i:0
+allow font smoothing:i:1
+allow desktop composition:i:1
+disable full window drag:i:0
+disable menu anims:i:0
+disable themes:i:0
+disable cursor setting:i:0
+bitmapcachepersistenable:i:1
+audiomode:i:0
+redirectprinters:i:0
+redirectcomports:i:0
+redirectsmartcards:i:0
+redirectclipboard:i:1
+redirectposdevices:i:0
+autoreconnection enabled:i:1
+authentication level:i:2
+negotiate security layer:i:1
+remoteapplicationmode:i:0
+gatewayusagemethod:i:4
+gatewaycredentialssource:i:4
+gatewayprofileusagemethod:i:0
+use redirection server name:i:1
+RDP_EOF
+chown "${USERNAME}:${USERNAME}" "${RDP_FILE}"
+chmod 644 "${RDP_FILE}"
 
 log_success "GNOME Remote Desktop configurado (RDP en puerto 3389)"
 log_msg ""
 log_msg "CONEXIÓN RDP:"
-log_msg "  1. Conectar a la IP de la VM en puerto 3389"
-log_msg "  2. Primera autenticación: ${USERNAME} / developer"
-log_msg "  3. Segunda autenticación: login en pantalla de GNOME"
+log_msg "  Opción 1 - Usar archivo .rdp (recomendado):"
+log_msg "    Copiar ~/connect-${HOSTNAME}.rdp a Windows y ejecutar"
+log_msg ""
+log_msg "  Opción 2 - Conexión manual:"
+log_msg "    Conectar a: ${HOSTNAME}.local (o IP de la VM)"
+log_msg ""
+log_msg "  Credenciales RDP: ${USERNAME} / developer"
+log_msg "  Después: login en pantalla de GNOME"
 log_msg ""
 log_msg "NOTA: Cambiar contraseña tras primer login con: passwd"
+log_msg "NOTA: El hostname ${HOSTNAME}.local se resuelve via mDNS/Avahi"
 
 # ==============================================================================
 # FIN
