@@ -1202,36 +1202,46 @@ log_section "10/10 Configurando GNOME Remote Desktop (modo sistema)..."
 # Instalar gnome-remote-desktop y herramientas necesarias
 apt-get install -y gnome-remote-desktop xclip openssl
 
-# Crear directorio para certificados TLS
-mkdir -p /etc/gnome-remote-desktop
+# El usuario gnome-remote-desktop se crea automáticamente al instalar el paquete
+# Los certificados DEBEN estar en ~gnome-remote-desktop/.local/share/gnome-remote-desktop/
+GRD_USER="gnome-remote-desktop"
+GRD_DIR="/var/lib/gnome-remote-desktop/.local/share/gnome-remote-desktop"
 
-# Generar certificados TLS auto-firmados para RDP
+# Crear directorio de certificados como usuario gnome-remote-desktop
+log_task "Creando directorio para certificados TLS..."
+sudo -u "${GRD_USER}" mkdir -p "${GRD_DIR}"
+
+# Generar certificados TLS como usuario gnome-remote-desktop
 log_task "Generando certificados TLS..."
-openssl req -new -newkey rsa:2048 -days 3650 -nodes -x509 \
-    -keyout /etc/gnome-remote-desktop/rdp-tls.key \
-    -out /etc/gnome-remote-desktop/rdp-tls.crt \
-    -subj "/C=ES/ST=Local/L=Local/O=DevVM/CN=$(hostname)" 2>/dev/null
+sudo -u "${GRD_USER}" openssl req -new -newkey rsa:4096 -days 720 -nodes -x509 \
+    -subj "/C=US/ST=NONE/L=NONE/O=GNOME/CN=gnome.org" \
+    -out "${GRD_DIR}/tls.crt" \
+    -keyout "${GRD_DIR}/tls.key" 2>/dev/null
 
-chmod 600 /etc/gnome-remote-desktop/rdp-tls.key
-chmod 644 /etc/gnome-remote-desktop/rdp-tls.crt
+log_success "Certificados TLS generados en ${GRD_DIR}"
 
 # Configurar GNOME Remote Desktop en modo sistema
-# Esto permite login remoto a través de GDM
 log_task "Configurando RDP en modo sistema..."
 
-# Configurar certificados TLS
-grdctl --system rdp set-tls-key /etc/gnome-remote-desktop/rdp-tls.key 2>/dev/null || log_warning "Could not set TLS key"
-grdctl --system rdp set-tls-cert /etc/gnome-remote-desktop/rdp-tls.crt 2>/dev/null || log_warning "Could not set TLS cert"
+# Configurar certificados TLS (rutas relativas al usuario gnome-remote-desktop)
+grdctl --system rdp set-tls-key "${GRD_DIR}/tls.key" || log_warning "Could not set TLS key"
+grdctl --system rdp set-tls-cert "${GRD_DIR}/tls.crt" || log_warning "Could not set TLS cert"
 
-# Configurar credenciales del sistema (usuario y contraseña conocida: developer)
-# Esto es para acceder a la pantalla de login de GDM
-grdctl --system rdp set-credentials "${USERNAME}" "developer" 2>/dev/null || log_warning "Could not set system credentials"
+# Configurar credenciales del sistema via stdin
+# Formato: username\npassword
+log_task "Configurando credenciales RDP..."
+printf '%s\n%s\n' "${USERNAME}" "developer" | grdctl --system rdp set-credentials || log_warning "Could not set system credentials"
 
 # Habilitar RDP en modo sistema
-grdctl --system rdp enable 2>/dev/null || log_warning "Could not enable system RDP"
+grdctl --system rdp enable || log_warning "Could not enable system RDP"
+
+# Verificar estado de la configuración
+log_task "Verificando configuración..."
+grdctl --system status 2>/dev/null || true
 
 # Habilitar el servicio de GNOME Remote Desktop a nivel de sistema
 systemctl enable gnome-remote-desktop.service
+systemctl restart gnome-remote-desktop.service || true
 
 # Configurar firewall para permitir RDP (puerto 3389)
 if command -v ufw >/dev/null 2>&1; then
