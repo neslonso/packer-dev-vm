@@ -596,6 +596,13 @@ build {
     direction   = "download"
   }
 
+  # --- Descargar archivo .rdp para conexión fácil desde Windows ---
+  provisioner "file" {
+    source      = "/home/${var.username}/connect-${var.hostname}.rdp"
+    destination = "${var.output_directory}/connect-${var.hostname}.rdp"
+    direction   = "download"
+  }
+
   # --- Descargar log en caso de error ---
   error-cleanup-provisioner "file" {
     source      = "/var/log/provision.log"
