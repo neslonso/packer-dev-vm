@@ -1213,8 +1213,13 @@ sudo -u "${GRD_USER}" mkdir -p "${GRD_DIR}"
 
 # Generar certificados TLS como usuario gnome-remote-desktop
 log_task "Generando certificados TLS..."
+GRD_CERT_CN="${HOSTNAME}"
+GRD_CERT_IP="$(hostname -I | awk '{print $1}')"
 sudo -u "${GRD_USER}" openssl req -new -newkey rsa:4096 -days 720 -nodes -x509 \
-    -subj "/C=US/ST=NONE/L=NONE/O=GNOME/CN=gnome.org" \
+    -subj "/C=US/ST=NONE/L=NONE/O=GNOME/CN=${GRD_CERT_CN}" \
+    -addext "subjectAltName=DNS:${GRD_CERT_CN},IP:${GRD_CERT_IP}" \
+    -addext "keyUsage=digitalSignature,keyEncipherment" \
+    -addext "extendedKeyUsage=serverAuth" \
     -out "${GRD_DIR}/tls.crt" \
     -keyout "${GRD_DIR}/tls.key" 2>/dev/null
 
