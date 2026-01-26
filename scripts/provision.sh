@@ -1160,13 +1160,41 @@ fi
 log_success "Shutdown permissions configured for Packer build"
 
 # ==============================================================================
-# GNOME REMOTE DESKTOP (RDP nativo de alto rendimiento)
+# GNOME REMOTE DESKTOP (RDP nativo con modo sistema)
 # ==============================================================================
 
-log_section "10/10 Configurando GNOME Remote Desktop..."
+log_section "10/10 Configurando GNOME Remote Desktop (modo sistema)..."
 
-# Instalar gnome-remote-desktop y herramientas de clipboard
-apt-get install -y gnome-remote-desktop xclip
+# Instalar gnome-remote-desktop y herramientas necesarias
+apt-get install -y gnome-remote-desktop xclip openssl
+
+# Crear directorio para certificados TLS
+mkdir -p /etc/gnome-remote-desktop
+
+# Generar certificados TLS auto-firmados para RDP
+log_task "Generando certificados TLS..."
+openssl req -new -newkey rsa:2048 -days 3650 -nodes -x509 \
+    -keyout /etc/gnome-remote-desktop/rdp-tls.key \
+    -out /etc/gnome-remote-desktop/rdp-tls.crt \
+    -subj "/C=ES/ST=Local/L=Local/O=DevVM/CN=$(hostname)" 2>/dev/null
+
+chmod 600 /etc/gnome-remote-desktop/rdp-tls.key
+chmod 644 /etc/gnome-remote-desktop/rdp-tls.crt
+
+# Configurar GNOME Remote Desktop en modo sistema
+# Esto permite login remoto a través de GDM
+log_task "Configurando RDP en modo sistema..."
+
+# Configurar certificados TLS
+grdctl --system rdp set-tls-key /etc/gnome-remote-desktop/rdp-tls.key 2>/dev/null || log_warning "Could not set TLS key"
+grdctl --system rdp set-tls-cert /etc/gnome-remote-desktop/rdp-tls.crt 2>/dev/null || log_warning "Could not set TLS cert"
+
+# Configurar credenciales del sistema (usuario y contraseña conocida: developer)
+# Esto es para acceder a la pantalla de login de GDM
+grdctl --system rdp set-credentials "${USERNAME}" "developer" 2>/dev/null || log_warning "Could not set system credentials"
+
+# Habilitar RDP en modo sistema
+grdctl --system rdp enable 2>/dev/null || log_warning "Could not enable system RDP"
 
 # Habilitar el servicio de GNOME Remote Desktop a nivel de sistema
 systemctl enable gnome-remote-desktop.service
@@ -1176,73 +1204,14 @@ if command -v ufw >/dev/null 2>&1; then
     ufw allow 3389/tcp
 fi
 
-# Crear script de configuración de RDP para el usuario (se ejecuta en primer login)
-cat > "${HOME_DIR}/.config/setup-gnome-rdp.sh" << 'RDP_SETUP_EOF'
-#!/bin/bash
-# Configuración de GNOME Remote Desktop (ejecutar una vez como usuario)
-
-set -euo pipefail
-LOG_FILE="${HOME}/.config/gnome-rdp-setup.log"
-exec > >(tee -a "${LOG_FILE}") 2>&1
-
-echo "[$(date)] Configurando GNOME Remote Desktop..."
-
-# Esperar a que D-Bus esté disponible
-sleep 2
-
-# Habilitar RDP en GNOME Remote Desktop
-grdctl rdp enable 2>/dev/null || echo "WARNING: Could not enable RDP via grdctl"
-
-# Configurar autenticación (usar credenciales del sistema)
-grdctl rdp set-credentials "$USER" "$USER" 2>/dev/null || echo "WARNING: Could not set RDP credentials"
-
-# Habilitar la vista del escritorio (no solo control remoto)
-grdctl rdp disable-view-only 2>/dev/null || echo "WARNING: Could not disable view-only mode"
-
-# Configurar TLS (usar certificado autogenerado)
-grdctl rdp set-tls-cert "" 2>/dev/null || true
-grdctl rdp set-tls-key "" 2>/dev/null || true
-
-echo "[$(date)] GNOME Remote Desktop configurado correctamente"
-echo ""
-echo "Para conectar:"
-echo "  1. Usa cualquier cliente RDP (Windows Remote Desktop, Remmina, etc.)"
-echo "  2. Conéctate a la IP de esta máquina en el puerto 3389"
-echo "  3. Usa tu usuario y contraseña de Linux"
-
-# Auto-eliminar después de ejecutar
-rm -f "$0"
-RDP_SETUP_EOF
-
-chmod +x "${HOME_DIR}/.config/setup-gnome-rdp.sh"
-chown "${USERNAME}:${USERNAME}" "${HOME_DIR}/.config/setup-gnome-rdp.sh"
-
-# Añadir al autostart existente para configuración en primer login
-cat > "${HOME_DIR}/.config/autostart/gnome-rdp-setup.desktop" << EOF
-[Desktop Entry]
-Type=Application
-Name=GNOME RDP Setup
-Exec=${HOME_DIR}/.config/setup-gnome-rdp.sh
-Hidden=false
-NoDisplay=false
-X-GNOME-Autostart-enabled=true
-X-GNOME-Autostart-Delay=5
-EOF
-
-chown "${USERNAME}:${USERNAME}" "${HOME_DIR}/.config/autostart/gnome-rdp-setup.desktop"
-
 log_success "GNOME Remote Desktop configurado (RDP en puerto 3389)"
 log_msg ""
-log_msg "RENDIMIENTO:"
-log_msg "  gnome-remote-desktop ofrece mejor rendimiento que xRDP"
-log_msg "  Soporte nativo para Wayland y X11"
+log_msg "CONEXIÓN RDP:"
+log_msg "  1. Conectar a la IP de la VM en puerto 3389"
+log_msg "  2. Primera autenticación: ${USERNAME} / developer"
+log_msg "  3. Segunda autenticación: login en pantalla de GNOME"
 log_msg ""
-log_msg "CONECTAR:"
-log_msg "  Usa cualquier cliente RDP en el puerto 3389"
-log_msg "  Credenciales: usuario y contraseña de Linux"
-log_msg ""
-log_msg "CLIPBOARD:"
-log_msg "  Copiar/pegar funciona automáticamente"
+log_msg "NOTA: Cambiar contraseña tras primer login con: passwd"
 
 # ==============================================================================
 # FIN
