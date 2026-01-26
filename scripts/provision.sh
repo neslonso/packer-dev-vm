@@ -1238,6 +1238,12 @@ grdctl --system rdp enable || log_warning "Could not enable system RDP"
 log_task "Verificando configuración..."
 grdctl --system status 2>/dev/null || true
 
+# Preconfigurar Desktop Sharing (modo usuario) para evitar cuelgue en gnome-control-center
+log_task "Preconfigurando Desktop Sharing (modo usuario)..."
+run_as_user "dbus-run-session gsettings set org.gnome.desktop.remote-desktop.rdp enable false" || log_warning "Could not disable user RDP sharing"
+run_as_user "dbus-run-session gsettings set org.gnome.desktop.remote-desktop.vnc enable false" || log_warning "Could not disable user VNC sharing"
+run_as_user "rm -rf ${HOME_DIR}/.cache/gnome-control-center" || log_warning "Could not reset gnome-control-center cache"
+
 # Habilitar el servicio de GNOME Remote Desktop a nivel de sistema
 systemctl enable gnome-remote-desktop.service
 systemctl restart gnome-remote-desktop.service || true
