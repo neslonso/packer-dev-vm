@@ -39,6 +39,7 @@ INSTALL_ANTIGRAVITY="${VM_INSTALL_ANTIGRAVITY}"
 INSTALL_CURSOR="${VM_INSTALL_CURSOR}"
 INSTALL_SUBLIMEMERGE="${VM_INSTALL_SUBLIMEMERGE}"
 INSTALL_BROWSER="${VM_INSTALL_BROWSER}"
+WELCOME_HTML="${VM_WELCOME_HTML}"
 
 # Red
 NETWORK_MODE="${VM_NETWORK_MODE}"
@@ -1397,6 +1398,35 @@ log_msg "  - Navegador: ${INSTALL_BROWSER}"
 log_msg "  - Nerd Font: ${NERD_FONT}"
 log_msg "  - Red: ${NETWORK_MODE} - IP: $(hostname -I | awk '{print $1}')"
 log_msg ""
+
+# ==============================================================================
+# WELCOME DOCUMENT
+# ==============================================================================
+log_section "Finalizando: Documento de bienvenida..."
+
+# Guardar el HTML de bienvenida
+WELCOME_FILE="${HOME_DIR}/welcome.html"
+log_task "Creando ${WELCOME_FILE}..."
+echo "${WELCOME_HTML}" > "${WELCOME_FILE}"
+chown "${USERNAME}:${USERNAME}" "${WELCOME_FILE}"
+chmod 644 "${WELCOME_FILE}"
+
+# Crear lanzador para autostart (abrir en el browser predeterminado)
+AUTOSTART_DIR="${HOME_DIR}/.config/autostart"
+mkdir -p "${AUTOSTART_DIR}"
+cat > "${AUTOSTART_DIR}/welcome-html.desktop" << EOF
+[Desktop Entry]
+Type=Application
+Name=Welcome Guide
+Exec=xdg-open ${WELCOME_FILE}
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+EOF
+
+chown -R "${USERNAME}:${USERNAME}" "${AUTOSTART_DIR}"
+log_success "Documento de bienvenida configurado para abrirse al iniciar sesión."
+
 log_msg "Detalles completos en: $PROVISION_LOG"
 
 # Restore stdout/stderr

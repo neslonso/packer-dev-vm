@@ -460,7 +460,20 @@ locals {
     "GPG_FINGERPRINT_GITHUB=${local.gpg_fingerprints.github}",
     "GPG_FINGERPRINT_MICROSOFT=${local.gpg_fingerprints.microsoft}",
     "GPG_FINGERPRINT_GOOGLE=${local.gpg_fingerprints.google}",
+    "VM_WELCOME_HTML=${local.welcome_html_content}",
   ]
+
+  # Welcome HTML Rendered
+  welcome_html_content = templatefile("${path.root}/templates/user-welcome.html.pkrtpl", {
+    hostname           = var.hostname
+    username           = var.username
+    ssh_port           = var.ssh_port
+    install_browser    = var.install_browser
+    install_vscode     = tostring(var.install_vscode)
+    install_cursor     = tostring(var.install_cursor)
+    install_antigravity = tostring(var.install_antigravity)
+    timestamp          = local.timestamp
+  })
 }
 
 # ==============================================================================
