@@ -155,6 +155,47 @@ variable "sudo_nopassword" {
   description = "Sudo sin contraseña"
 }
 
+# --- Red ---
+variable "network_mode" {
+  type        = string
+  description = "Modo de red tras provisioning: 'dhcp' para obtener IP automáticamente, 'static' para mantener IP fija"
+  default     = "dhcp"
+  validation {
+    condition     = contains(["dhcp", "static"], var.network_mode)
+    error_message = "La variable network_mode debe ser 'dhcp' o 'static'."
+  }
+}
+
+variable "static_ip" {
+  type        = string
+  description = "IP estática (solo si network_mode=static). Formato: '192.168.1.100/24'"
+  default     = "172.20.144.100/20"
+  validation {
+    condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+/[0-9]+$", var.static_ip))
+    error_message = "La variable static_ip debe tener formato CIDR válido (ej: '192.168.1.100/24')."
+  }
+}
+
+variable "static_gateway" {
+  type        = string
+  description = "Gateway (solo si network_mode=static). Ejemplo: '192.168.1.1'"
+  default     = "172.20.144.1"
+  validation {
+    condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$", var.static_gateway))
+    error_message = "La variable static_gateway debe ser una IP válida."
+  }
+}
+
+variable "static_dns" {
+  type        = string
+  description = "Servidores DNS separados por coma (solo si network_mode=static). Ejemplo: '8.8.8.8,8.8.4.4'"
+  default     = "8.8.8.8,8.8.4.4"
+  validation {
+    condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+(,[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)*$", var.static_dns))
+    error_message = "La variable static_dns debe ser una lista de IPs separadas por coma."
+  }
+}
+
 # --- Shell y Prompt ---
 variable "shell" {
   type        = string
@@ -383,6 +424,10 @@ locals {
     "VM_SSH_PORT=${var.ssh_port}",
     "VM_SSH_ALLOW_PASSWORD=${var.ssh_allow_password}",
     "VM_SUDO_NOPASSWORD=${var.sudo_nopassword}",
+    "VM_NETWORK_MODE=${var.network_mode}",
+    "VM_STATIC_IP=${var.static_ip}",
+    "VM_STATIC_GATEWAY=${var.static_gateway}",
+    "VM_STATIC_DNS=${var.static_dns}",
     "VM_SHELL=${var.shell}",
     "VM_PROMPT_THEME=${var.prompt_theme}",
     "VM_OHMYZSH_THEME=${var.ohmyzsh_theme}",

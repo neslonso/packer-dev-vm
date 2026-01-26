@@ -39,6 +39,12 @@ INSTALL_CURSOR="${VM_INSTALL_CURSOR}"
 INSTALL_SUBLIMEMERGE="${VM_INSTALL_SUBLIMEMERGE}"
 INSTALL_BROWSER="${VM_INSTALL_BROWSER}"
 
+# Red
+NETWORK_MODE="${VM_NETWORK_MODE}"
+STATIC_IP="${VM_STATIC_IP}"
+STATIC_GATEWAY="${VM_STATIC_GATEWAY}"
+STATIC_DNS="${VM_STATIC_DNS}"
+
 # GPG Fingerprints (from centralized configuration in main.pkr.hcl)
 DOCKER_GPG_FINGERPRINT="${GPG_FINGERPRINT_DOCKER}"
 GITHUB_CLI_GPG_FINGERPRINT="${GPG_FINGERPRINT_GITHUB}"
@@ -312,13 +318,15 @@ download_and_verify_gpg_key() {
 
 log_section "1/10 Configurando sistema base..."
 
-# Cambiar red de IP estática (usada para build) a DHCP (para uso normal)
-log_task "Configurando red a DHCP..."
+# Configurar red según network_mode
+log_task "Configurando red (modo: ${NETWORK_MODE})..."
 
 # Remove ALL old netplan configs to avoid warnings (permissions, deprecated gateway4, etc.)
 rm -f /etc/netplan/*.yaml
 
-cat > /etc/netplan/00-installer-config.yaml << 'NETPLAN_EOF'
+if [[ "${NETWORK_MODE}" == "dhcp" ]]; then
+    # Configuración DHCP
+    cat > /etc/netplan/00-installer-config.yaml << 'NETPLAN_EOF'
 network:
   version: 2
   ethernets:
@@ -329,18 +337,44 @@ network:
       dhcp6: false
 NETPLAN_EOF
 
-# Set correct permissions to avoid netplan warnings
-chmod 600 /etc/netplan/00-installer-config.yaml
+    chmod 600 /etc/netplan/00-installer-config.yaml
+    netplan apply
 
-netplan apply
+    # Forzar renovación DHCP para obtener IP inmediatamente
+    sleep 2
+    dhclient -r eth0 2>/dev/null || true
+    dhclient eth0 2>/dev/null || true
+    sleep 2
 
-# Forzar renovación DHCP para obtener IP inmediatamente
-sleep 2
-dhclient -r eth0 2>/dev/null || true
-dhclient eth0 2>/dev/null || true
-sleep 2
+    log_success "Red configurada (DHCP) - IP: $(hostname -I | awk '{print $1}')"
+else
+    # Configuración IP estática
+    # Convertir DNS de "8.8.8.8,8.8.4.4" a formato YAML "[8.8.8.8, 8.8.4.4]"
+    DNS_YAML=$(echo "${STATIC_DNS}" | sed 's/,/, /g')
 
-log_success "Red configurada - IP DHCP: $(hostname -I | awk '{print $1}')"
+    cat > /etc/netplan/00-installer-config.yaml << NETPLAN_EOF
+network:
+  version: 2
+  ethernets:
+    eth0:
+      match:
+        name: "eth*"
+      addresses:
+        - ${STATIC_IP}
+      routes:
+        - to: default
+          via: ${STATIC_GATEWAY}
+      nameservers:
+        addresses: [${DNS_YAML}]
+      dhcp4: false
+      dhcp6: false
+NETPLAN_EOF
+
+    chmod 600 /etc/netplan/00-installer-config.yaml
+    netplan apply
+
+    log_success "Red configurada (estática) - IP: ${STATIC_IP}"
+fi
 
 # Actualizar sistema
 log_task "Actualizar sistema..."
@@ -1228,7 +1262,7 @@ log_msg "  - VS Code: ${INSTALL_VSCODE}"
 log_msg "  - Google Antigravity IDE: ${INSTALL_ANTIGRAVITY}"
 log_msg "  - Navegador: ${INSTALL_BROWSER}"
 log_msg "  - Nerd Font: ${NERD_FONT}"
-log_msg "  - IP (DHCP): $(hostname -I | awk '{print $1}')"
+log_msg "  - Red: ${NETWORK_MODE} - IP: $(hostname -I | awk '{print $1}')"
 log_msg ""
 log_msg "Detalles completos en: $PROVISION_LOG"
 

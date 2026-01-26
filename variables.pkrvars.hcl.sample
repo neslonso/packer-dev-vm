@@ -42,6 +42,20 @@ ssh_allow_password = true              # Permitir auth por password
 sudo_nopassword    = true              # Sudo sin password
 
 # ==============================================================================
+# RED (configuración tras provisioning)
+# ==============================================================================
+# network_mode: 'dhcp' obtiene IP automáticamente, 'static' mantiene IP fija
+# Si network_mode='static', se usan las siguientes variables:
+#   - static_ip: IP con máscara CIDR (ej: '192.168.1.100/24')
+#   - static_gateway: Gateway por defecto
+#   - static_dns: Servidores DNS separados por coma
+# ==============================================================================
+network_mode   = "dhcp"                # dhcp | static
+static_ip      = "172.20.144.100/20"   # IP fija (solo si network_mode=static)
+static_gateway = "172.20.144.1"        # Gateway (solo si network_mode=static)
+static_dns     = "8.8.8.8,8.8.4.4"     # DNS (solo si network_mode=static)
+
+# ==============================================================================
 # SHELL Y PROMPT
 # ==============================================================================
 # Combinaciones válidas:
