@@ -30,8 +30,8 @@ disk_size = 80000                      # Disco en MB
 # ==============================================================================
 # UBUNTU
 # ==============================================================================
-iso_url      = "https://releases.ubuntu.com/24.04.1/ubuntu-24.04.1-desktop-amd64.iso"
-iso_checksum = "sha256:c2e6f4dc37ac944e2ed507f87c6571f4330a63c7f2e9c0aea40fd69a135e6f94"
+iso_url      = "https://releases.ubuntu.com/24.04.3/ubuntu-24.04.3-desktop-amd64.iso"
+iso_checksum = "sha256:faabcf33ae53976d2b8207a001ff32f4e5daae013505ac7188c9ea63988f8328"
 
 # ==============================================================================
 # SISTEMA
@@ -40,6 +40,24 @@ autologin          = true              # Login automático en el desktop
 ssh_port           = 22                # Puerto SSH
 ssh_allow_password = true              # Permitir auth por password
 sudo_nopassword    = true              # Sudo sin password
+
+# ==============================================================================
+# RED
+# ==============================================================================
+# IMPORTANTE: static_ip, static_gateway y static_dns se usan SIEMPRE durante
+# el build de Packer (para que SSH funcione con IP conocida).
+#
+# Después del build, network_mode determina la configuración final:
+#   - 'dhcp': cambia a DHCP (obtiene IP del servidor DHCP)
+#   - 'static': mantiene la IP configurada (static_ip, static_gateway, static_dns)
+#
+# NOTA: La IP debe ser alcanzable desde el host durante el build.
+# En Hyper-V con "Default Switch", usar una IP del rango 172.20.144.0/20
+# ==============================================================================
+network_mode   = "dhcp"                # dhcp | static
+static_ip      = "172.20.144.100/20"   # IP para build (y final si network_mode=static)
+static_gateway = "172.20.144.1"        # Gateway
+static_dns     = "8.8.8.8,8.8.4.4"     # Servidores DNS (separados por coma)
 
 # ==============================================================================
 # SHELL Y PROMPT
@@ -105,10 +123,12 @@ docker_log_max_file = 3                # Número de archivos de log a mantener
 # ==============================================================================
 # DESKTOP
 # ==============================================================================
-desktop_theme       = "dark"           # dark | light
-install_vscode      = true             # Instalar VS Code
-install_antigravity = false            # Instalar Google Antigravity IDE (en preview, puede fallar)
-install_browser     = "firefox"        # firefox | chrome | chromium | none
+desktop_theme        = "dark"           # dark | light
+install_vscode       = true             # Instalar VS Code
+install_antigravity  = false            # Instalar Google Antigravity IDE (en preview, puede fallar)
+install_cursor       = true             # Instalar Cursor (AI-powered code editor)
+install_sublimemerge = true             # Instalar Sublime Merge (cliente Git visual)
+install_browser      = "firefox"        # firefox | chrome | chromium | none
 
 # ==============================================================================
 # BUILD

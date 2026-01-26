@@ -39,7 +39,8 @@ autoinstall:
       size: 0
   
   # ==========================================================================
-  # Red (IP estática para build de Packer, luego se cambia a DHCP)
+  # Red (IP estática para build, configurable via variables)
+  # Después del build, provision.sh puede cambiar a DHCP según network_mode
   # ==========================================================================
   network:
     network:
@@ -49,10 +50,12 @@ autoinstall:
           match:
             name: "eth*"
           addresses:
-            - 172.20.144.100/20
-          gateway4: 172.20.144.1
+            - ${static_ip}
+          routes:
+            - to: default
+              via: ${static_gateway}
           nameservers:
-            addresses: [8.8.8.8, 8.8.4.4]
+            addresses: [${replace(static_dns, ",", ", ")}]
           dhcp4: false
           dhcp6: false
   

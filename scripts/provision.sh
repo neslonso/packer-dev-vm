@@ -35,7 +35,15 @@ DOCKER_LOG_MAX_FILE="${VM_DOCKER_LOG_MAX_FILE}"
 DESKTOP_THEME="${VM_DESKTOP_THEME}"
 INSTALL_VSCODE="${VM_INSTALL_VSCODE}"
 INSTALL_ANTIGRAVITY="${VM_INSTALL_ANTIGRAVITY}"
+INSTALL_CURSOR="${VM_INSTALL_CURSOR}"
+INSTALL_SUBLIMEMERGE="${VM_INSTALL_SUBLIMEMERGE}"
 INSTALL_BROWSER="${VM_INSTALL_BROWSER}"
+
+# Red
+NETWORK_MODE="${VM_NETWORK_MODE}"
+STATIC_IP="${VM_STATIC_IP}"
+STATIC_GATEWAY="${VM_STATIC_GATEWAY}"
+STATIC_DNS="${VM_STATIC_DNS}"
 
 # GPG Fingerprints (from centralized configuration in main.pkr.hcl)
 DOCKER_GPG_FINGERPRINT="${GPG_FINGERPRINT_DOCKER}"
@@ -310,13 +318,15 @@ download_and_verify_gpg_key() {
 
 log_section "1/10 Configurando sistema base..."
 
-# Cambiar red de IP estática (usada para build) a DHCP (para uso normal)
-log_task "Configurando red a DHCP..."
+# Configurar red según network_mode
+log_task "Configurando red (modo: ${NETWORK_MODE})..."
 
 # Remove ALL old netplan configs to avoid warnings (permissions, deprecated gateway4, etc.)
 rm -f /etc/netplan/*.yaml
 
-cat > /etc/netplan/00-installer-config.yaml << 'NETPLAN_EOF'
+if [[ "${NETWORK_MODE}" == "dhcp" ]]; then
+    # Configuración DHCP
+    cat > /etc/netplan/00-installer-config.yaml << 'NETPLAN_EOF'
 network:
   version: 2
   ethernets:
@@ -327,10 +337,44 @@ network:
       dhcp6: false
 NETPLAN_EOF
 
-# Set correct permissions to avoid netplan warnings
-chmod 600 /etc/netplan/00-installer-config.yaml
+    chmod 600 /etc/netplan/00-installer-config.yaml
+    netplan apply
 
-netplan apply
+    # Forzar renovación DHCP para obtener IP inmediatamente
+    sleep 2
+    dhclient -r eth0 2>/dev/null || true
+    dhclient eth0 2>/dev/null || true
+    sleep 2
+
+    log_success "Red configurada (DHCP) - IP: $(hostname -I | awk '{print $1}')"
+else
+    # Configuración IP estática
+    # Convertir DNS de "8.8.8.8,8.8.4.4" a formato YAML "[8.8.8.8, 8.8.4.4]"
+    DNS_YAML=$(echo "${STATIC_DNS}" | sed 's/,/, /g')
+
+    cat > /etc/netplan/00-installer-config.yaml << NETPLAN_EOF
+network:
+  version: 2
+  ethernets:
+    eth0:
+      match:
+        name: "eth*"
+      addresses:
+        - ${STATIC_IP}
+      routes:
+        - to: default
+          via: ${STATIC_GATEWAY}
+      nameservers:
+        addresses: [${DNS_YAML}]
+      dhcp4: false
+      dhcp6: false
+NETPLAN_EOF
+
+    chmod 600 /etc/netplan/00-installer-config.yaml
+    netplan apply
+
+    log_success "Red configurada (estática) - IP: ${STATIC_IP}"
+fi
 
 # Actualizar sistema
 log_task "Actualizar sistema..."
@@ -717,6 +761,7 @@ if [[ "${INSTALL_VSCODE}" == "true" ]]; then
     "terminal.integrated.fontSize": 13,
     "files.autoSave": "afterDelay",
     "files.trimTrailingWhitespace": true,
+    "explorer.excludeGitIgnore": false,
     "git.autofetch": true,
     "git.confirmSync": false,
     "docker.showStartPage": false,
@@ -768,6 +813,38 @@ if [[ "${INSTALL_ANTIGRAVITY}" == "true" ]]; then
 
     log_success "Google Antigravity IDE installed successfully"
 
+    # Configure Antigravity settings (similar to VS Code)
+    ANTIGRAVITY_DIR="${HOME_DIR}/.config/antigravity/User"
+    mkdir -p "${ANTIGRAVITY_DIR}"
+
+    # Determine font family based on installed Nerd Font (reuse VSCODE_FONT_FAMILY logic)
+    if [[ "${NERD_FONT}" != "none" ]]; then
+        case "${NERD_FONT}" in
+            "JetBrainsMono") AG_FONT_FAMILY="'JetBrainsMono Nerd Font', 'JetBrains Mono', monospace" ;;
+            "FiraCode") AG_FONT_FAMILY="'FiraCode Nerd Font', 'Fira Code', monospace" ;;
+            "Hack") AG_FONT_FAMILY="'Hack Nerd Font', 'Hack', monospace" ;;
+            "SourceCodePro") AG_FONT_FAMILY="'SauceCodePro Nerd Font', 'Source Code Pro', monospace" ;;
+            "Meslo") AG_FONT_FAMILY="'MesloLGS NF', 'Meslo', monospace" ;;
+            *) AG_FONT_FAMILY="'${NERD_FONT} Nerd Font', monospace" ;;
+        esac
+    else
+        AG_FONT_FAMILY="'Fira Code', 'Consolas', monospace"
+    fi
+
+    cat > "${ANTIGRAVITY_DIR}/settings.json" << EOF
+{
+    "editor.fontFamily": "${AG_FONT_FAMILY}",
+    "editor.fontSize": 14,
+    "editor.fontLigatures": true,
+    "terminal.integrated.fontFamily": "${AG_FONT_FAMILY}",
+    "terminal.integrated.fontSize": 13,
+    "explorer.excludeGitIgnore": false,
+    "telemetry.telemetryLevel": "off"
+}
+EOF
+
+    chown -R "${USERNAME}:${USERNAME}" "${HOME_DIR}/.config/antigravity"
+
     # Configure desktop launcher (optional)
     if [[ -f "/usr/share/applications/antigravity.desktop" ]]; then
         # Make it available for the user (create directory as user to ensure correct ownership)
@@ -777,6 +854,132 @@ if [[ "${INSTALL_ANTIGRAVITY}" == "true" ]]; then
     fi
 else
     log_section "7.5/10 Saltando instalación de Google Antigravity IDE (deshabilitado)..."
+fi
+
+# ==============================================================================
+# 7.6. CURSOR (si está habilitado)
+# ==============================================================================
+
+if [[ "${INSTALL_CURSOR}" == "true" ]]; then
+    log_section "7.6/10 Instalando Cursor..."
+
+    # Instalar libfuse2 (necesario para AppImages)
+    apt-get install -y libfuse2
+
+    # Download Cursor AppImage (con fallback URLs)
+    CURSOR_APPIMAGE="/opt/cursor/cursor.AppImage"
+    mkdir -p /opt/cursor
+
+    log_task "Downloading Cursor AppImage..."
+    CURSOR_DOWNLOADED=false
+
+    # Intentar múltiples URLs
+    CURSOR_URLS=(
+        "https://download.cursor.sh/linux/appImage/x64"
+        "https://downloader.cursor.sh/linux/appImage/x64"
+        "https://api2.cursor.sh/updates/download-latest?platform=linux-x64&releaseTrack=stable"
+    )
+
+    for url in "${CURSOR_URLS[@]}"; do
+        log_task "Trying: ${url}"
+        if curl --max-time 180 --fail -L -o "${CURSOR_APPIMAGE}" "${url}" 2>&1; then
+            CURSOR_DOWNLOADED=true
+            log_success "Downloaded from ${url}"
+            break
+        fi
+        log_warning "Failed: ${url}"
+    done
+
+    if [[ "${CURSOR_DOWNLOADED}" == "true" ]]; then
+        chmod +x "${CURSOR_APPIMAGE}"
+        log_success "Cursor downloaded successfully"
+
+        # Create desktop entry
+        cat > /usr/share/applications/cursor.desktop << 'CURSOR_DESKTOP_EOF'
+[Desktop Entry]
+Name=Cursor
+Comment=AI-powered code editor
+Exec=/opt/cursor/cursor.AppImage --no-sandbox %F
+Icon=cursor
+Type=Application
+Categories=Development;IDE;
+MimeType=text/plain;
+StartupNotify=true
+StartupWMClass=Cursor
+CURSOR_DESKTOP_EOF
+
+        # Download and install icon
+        curl -fsSL "https://www.cursor.com/assets/images/logo.svg" -o /usr/share/icons/cursor.svg 2>/dev/null || true
+
+        log_success "Cursor installed successfully"
+
+        # Configure Cursor settings (similar to VS Code)
+        CURSOR_DIR="${HOME_DIR}/.config/Cursor/User"
+        mkdir -p "${CURSOR_DIR}"
+
+        # Determine font family
+        if [[ "${NERD_FONT}" != "none" ]]; then
+            case "${NERD_FONT}" in
+                "JetBrainsMono") CURSOR_FONT_FAMILY="'JetBrainsMono Nerd Font', 'JetBrains Mono', monospace" ;;
+                "FiraCode") CURSOR_FONT_FAMILY="'FiraCode Nerd Font', 'Fira Code', monospace" ;;
+                "Hack") CURSOR_FONT_FAMILY="'Hack Nerd Font', 'Hack', monospace" ;;
+                "SourceCodePro") CURSOR_FONT_FAMILY="'SauceCodePro Nerd Font', 'Source Code Pro', monospace" ;;
+                "Meslo") CURSOR_FONT_FAMILY="'MesloLGS NF', 'Meslo', monospace" ;;
+                *) CURSOR_FONT_FAMILY="'${NERD_FONT} Nerd Font', monospace" ;;
+            esac
+        else
+            CURSOR_FONT_FAMILY="'Fira Code', 'Consolas', monospace"
+        fi
+
+        cat > "${CURSOR_DIR}/settings.json" << EOF
+{
+    "editor.fontFamily": "${CURSOR_FONT_FAMILY}",
+    "editor.fontSize": 14,
+    "editor.fontLigatures": true,
+    "editor.formatOnSave": true,
+    "editor.minimap.enabled": false,
+    "editor.bracketPairColorization.enabled": true,
+    "workbench.colorTheme": "Default Dark Modern",
+    "workbench.startupEditor": "none",
+    "terminal.integrated.fontFamily": "${CURSOR_FONT_FAMILY}",
+    "terminal.integrated.fontSize": 13,
+    "files.autoSave": "afterDelay",
+    "files.trimTrailingWhitespace": true,
+    "explorer.excludeGitIgnore": false,
+    "git.autofetch": true,
+    "git.confirmSync": false,
+    "telemetry.telemetryLevel": "off"
+}
+EOF
+
+        chown -R "${USERNAME}:${USERNAME}" "${HOME_DIR}/.config/Cursor"
+    else
+        log_error "Failed to download Cursor from all URLs, skipping..."
+        rm -rf /opt/cursor
+    fi
+else
+    log_section "7.6/10 Saltando instalación de Cursor (deshabilitado)..."
+fi
+
+# ==============================================================================
+# 7.7. SUBLIME MERGE (si está habilitado)
+# ==============================================================================
+
+if [[ "${INSTALL_SUBLIMEMERGE}" == "true" ]]; then
+    log_section "7.7/10 Instalando Sublime Merge..."
+
+    # Add Sublime Text/Merge repository
+    # GPG key from https://www.sublimetext.com/docs/linux_repositories.html
+    curl -fsSL https://download.sublimetext.com/sublimehq-pub.gpg | gpg --dearmor -o /etc/apt/keyrings/sublimehq.gpg
+
+    echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/sublimehq.gpg] https://download.sublimetext.com/ apt/stable/" > /etc/apt/sources.list.d/sublime-text.list
+
+    apt-get update
+    apt-get install -y sublime-merge
+
+    log_success "Sublime Merge installed successfully"
+else
+    log_section "7.7/10 Saltando instalación de Sublime Merge (deshabilitado)..."
 fi
 
 # ==============================================================================
@@ -865,21 +1068,34 @@ gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'no
 gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'nothing' || echo "WARNING: Failed to set battery sleep policy"
 
 # Dock favorites - build dynamically based on installed apps
+# Order: Nautilus, Terminal, Antigravity, Cursor, Sublime Merge, Chromium, Firefox
 DOCK_APPS="'org.gnome.Nautilus.desktop', 'org.gnome.Terminal.desktop'"
+
+# IDEs/Editors (in order: Antigravity, Cursor, VS Code, Sublime Merge)
+if [[ "${INSTALL_ANTIGRAVITY}" == "true" ]]; then
+    DOCK_APPS="\${DOCK_APPS}, 'antigravity.desktop'"
+fi
+if [[ "${INSTALL_CURSOR}" == "true" ]]; then
+    DOCK_APPS="\${DOCK_APPS}, 'cursor.desktop'"
+fi
 if [[ "${INSTALL_VSCODE}" == "true" ]]; then
     DOCK_APPS="\${DOCK_APPS}, 'code.desktop'"
 fi
-case "${INSTALL_BROWSER}" in
-    "firefox")
-        DOCK_APPS="\${DOCK_APPS}, 'firefox.desktop'"
-        ;;
-    "chrome")
-        DOCK_APPS="\${DOCK_APPS}, 'google-chrome.desktop'"
-        ;;
-    "chromium")
-        DOCK_APPS="\${DOCK_APPS}, 'chromium.desktop'"
-        ;;
-esac
+if [[ "${INSTALL_SUBLIMEMERGE}" == "true" ]]; then
+    DOCK_APPS="\${DOCK_APPS}, 'sublime_merge.desktop'"
+fi
+
+# Browsers (in order: Chromium, Chrome, Firefox)
+if [[ "${INSTALL_BROWSER}" == "chromium" ]]; then
+    DOCK_APPS="\${DOCK_APPS}, 'chromium.desktop'"
+fi
+if [[ "${INSTALL_BROWSER}" == "chrome" ]]; then
+    DOCK_APPS="\${DOCK_APPS}, 'google-chrome.desktop'"
+fi
+if [[ "${INSTALL_BROWSER}" == "firefox" ]]; then
+    DOCK_APPS="\${DOCK_APPS}, 'firefox.desktop'"
+fi
+
 gsettings set org.gnome.shell favorite-apps "[\${DOCK_APPS}]" || echo "WARNING: Failed to set dock favorites"
 
 echo "[\$(date)] GNOME configuration completed successfully"
@@ -978,98 +1194,67 @@ fi
 log_success "Shutdown permissions configured for Packer build"
 
 # ==============================================================================
-# HYPER-V ENHANCED SESSION MODE (RDP para portapapeles compartido)
+# GNOME REMOTE DESKTOP (RDP nativo con modo sistema)
 # ==============================================================================
 
-log_section "10/10 Configurando Enhanced Session Mode (xrdp)..."
+log_section "10/10 Configurando GNOME Remote Desktop (modo sistema)..."
 
-# Instalar xrdp y herramientas de clipboard
-apt-get install -y xrdp xorgxrdp xclip
+# Instalar gnome-remote-desktop y herramientas necesarias
+apt-get install -y gnome-remote-desktop xclip openssl
 
-# Configurar xrdp.ini para habilitar clipboard y compartir unidades
-cat > /etc/xrdp/xrdp.ini << 'XRDP_INI_EOF'
-[Globals]
-ini_version=1
-fork=true
-port=3389
-tcp_nodelay=true
-tcp_keepalive=true
-security_layer=negotiate
-crypt_level=high
-certificate=
-key_file=
-ssl_protocols=TLSv1.2, TLSv1.3
-autorun=
-allow_channels=true
-allow_multimon=true
-bitmap_cache=true
-bitmap_compression=true
-bulk_compression=true
-max_bpp=32
-new_cursors=true
-use_fastpath=both
-require_credentials=false
+# El usuario gnome-remote-desktop se crea automáticamente al instalar el paquete
+# Los certificados DEBEN estar en ~gnome-remote-desktop/.local/share/gnome-remote-desktop/
+GRD_USER="gnome-remote-desktop"
+GRD_DIR="/var/lib/gnome-remote-desktop/.local/share/gnome-remote-desktop"
 
-[Logging]
-LogFile=xrdp.log
-LogLevel=INFO
-EnableSyslog=true
-SyslogLevel=INFO
+# Crear directorio de certificados como usuario gnome-remote-desktop
+log_task "Creando directorio para certificados TLS..."
+sudo -u "${GRD_USER}" mkdir -p "${GRD_DIR}"
 
-# Habilitar todos los canales para clipboard y compartir unidades
-[channels]
-rdpdr=true
-rdpsnd=true
-drdynvc=true
-cliprdr=true
-rail=true
-xrdpvr=true
+# Generar certificados TLS como usuario gnome-remote-desktop
+log_task "Generando certificados TLS..."
+sudo -u "${GRD_USER}" openssl req -new -newkey rsa:4096 -days 720 -nodes -x509 \
+    -subj "/C=US/ST=NONE/L=NONE/O=GNOME/CN=gnome.org" \
+    -out "${GRD_DIR}/tls.crt" \
+    -keyout "${GRD_DIR}/tls.key" 2>/dev/null
 
-# Sesión Xorg (default)
-[Xorg]
-name=Xorg
-lib=libxup.so
-username=ask
-password=ask
-ip=127.0.0.1
-port=-1
-code=20
-XRDP_INI_EOF
+log_success "Certificados TLS generados en ${GRD_DIR}"
 
-# Configurar xrdp para usar el desktop environment correcto
-cat > /etc/xrdp/startwm.sh << 'XRDP_EOF'
-#!/bin/sh
-if [ -r /etc/default/locale ]; then
-  . /etc/default/locale
-  export LANG LANGUAGE
-fi
-# Start Ubuntu desktop session
-exec /usr/bin/gnome-session
-XRDP_EOF
+# Configurar GNOME Remote Desktop en modo sistema
+log_task "Configurando RDP en modo sistema..."
 
-chmod +x /etc/xrdp/startwm.sh
+# Configurar certificados TLS (rutas relativas al usuario gnome-remote-desktop)
+grdctl --system rdp set-tls-key "${GRD_DIR}/tls.key" || log_warning "Could not set TLS key"
+grdctl --system rdp set-tls-cert "${GRD_DIR}/tls.crt" || log_warning "Could not set TLS cert"
 
-# Añadir usuario al grupo ssl-cert (necesario para xrdp)
-usermod -a -G ssl-cert "${USERNAME}"
+# Configurar credenciales del sistema (argumentos directos, no stdin)
+log_task "Configurando credenciales RDP..."
+grdctl --system rdp set-credentials "${USERNAME}" "developer" || log_warning "Could not set system credentials"
 
-# Habilitar y arrancar xrdp
-systemctl enable xrdp
-systemctl start xrdp
+# Habilitar RDP en modo sistema
+grdctl --system rdp enable || log_warning "Could not enable system RDP"
+
+# Verificar estado de la configuración
+log_task "Verificando configuración..."
+grdctl --system status 2>/dev/null || true
+
+# Habilitar el servicio de GNOME Remote Desktop a nivel de sistema
+systemctl enable gnome-remote-desktop.service
+systemctl restart gnome-remote-desktop.service || true
 
 # Configurar firewall para permitir RDP (puerto 3389)
 if command -v ufw >/dev/null 2>&1; then
     ufw allow 3389/tcp
 fi
 
-log_success "Enhanced Session Mode configurado (RDP en puerto 3389)"
+log_success "GNOME Remote Desktop configurado (RDP en puerto 3389)"
 log_msg ""
-log_msg "COMPARTIR ARCHIVOS CON WINDOWS:"
-log_msg "  Al conectar por RDP, habilita 'Drives' en Local Resources"
-log_msg "  Accede a las unidades Windows desde: /mnt/c/, /mnt/d/, etc."
+log_msg "CONEXIÓN RDP:"
+log_msg "  1. Conectar a la IP de la VM en puerto 3389"
+log_msg "  2. Primera autenticación: ${USERNAME} / developer"
+log_msg "  3. Segunda autenticación: login en pantalla de GNOME"
 log_msg ""
-log_msg "CLIPBOARD:"
-log_msg "  Copiar/pegar texto funciona automáticamente"
-log_msg "  Asegúrate de marcar 'Clipboard' en Local Resources al conectar"
+log_msg "NOTA: Cambiar contraseña tras primer login con: passwd"
 
 # ==============================================================================
 # FIN
@@ -1086,7 +1271,7 @@ log_msg "  - VS Code: ${INSTALL_VSCODE}"
 log_msg "  - Google Antigravity IDE: ${INSTALL_ANTIGRAVITY}"
 log_msg "  - Navegador: ${INSTALL_BROWSER}"
 log_msg "  - Nerd Font: ${NERD_FONT}"
-log_msg "  - IP (DHCP): $(hostname -I | awk '{print $1}')"
+log_msg "  - Red: ${NETWORK_MODE} - IP: $(hostname -I | awk '{print $1}')"
 log_msg ""
 log_msg "Detalles completos en: $PROVISION_LOG"
 
