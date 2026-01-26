@@ -315,6 +315,11 @@ variable "docker_log_max_file" {
   }
 }
 
+variable "install_portainer" {
+  type        = bool
+  description = "Instalar Portainer CE (Web UI para gestión de contenedores Docker). Accesible en https://localhost:9443"
+}
+
 # --- Desktop ---
 variable "desktop_theme" {
   type        = string
@@ -443,6 +448,7 @@ locals {
     "VM_GIT_DEFAULT_BRANCH=${var.git_default_branch}",
     "VM_DOCKER_LOG_MAX_SIZE=${var.docker_log_max_size}",
     "VM_DOCKER_LOG_MAX_FILE=${var.docker_log_max_file}",
+    "VM_INSTALL_PORTAINER=${var.install_portainer}",
     "VM_DESKTOP_THEME=${var.desktop_theme}",
     "VM_INSTALL_VSCODE=${var.install_vscode}",
     "VM_INSTALL_ANTIGRAVITY=${var.install_antigravity}",

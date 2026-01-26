@@ -32,6 +32,7 @@ GIT_EMAIL="${VM_GIT_EMAIL}"
 GIT_DEFAULT_BRANCH="${VM_GIT_DEFAULT_BRANCH}"
 DOCKER_LOG_MAX_SIZE="${VM_DOCKER_LOG_MAX_SIZE}"
 DOCKER_LOG_MAX_FILE="${VM_DOCKER_LOG_MAX_FILE}"
+INSTALL_PORTAINER="${VM_INSTALL_PORTAINER}"
 DESKTOP_THEME="${VM_DESKTOP_THEME}"
 INSTALL_VSCODE="${VM_INSTALL_VSCODE}"
 INSTALL_ANTIGRAVITY="${VM_INSTALL_ANTIGRAVITY}"
@@ -100,6 +101,7 @@ log_msg "  - Git Email: ${GIT_EMAIL}"
 log_msg "  - Git Default Branch: ${GIT_DEFAULT_BRANCH}"
 log_msg "  - Docker Log Max Size: ${DOCKER_LOG_MAX_SIZE}"
 log_msg "  - Docker Log Max File: ${DOCKER_LOG_MAX_FILE}"
+log_msg "  - Install Portainer: ${INSTALL_PORTAINER}"
 log_msg ""
 
 # ==============================================================================
@@ -476,6 +478,31 @@ if curl --max-time 60 --fail -Lo /tmp/lazydocker.tar.gz "https://github.com/jess
     rm /tmp/lazydocker.tar.gz
 else
     log_warning "Failed to download lazydocker, skipping..."
+fi
+
+# Portainer (Web UI para Docker)
+if [[ "${INSTALL_PORTAINER}" == "true" ]]; then
+    log_task "Instalando Portainer CE..."
+
+    # Crear volumen para datos persistentes
+    docker volume create portainer_data
+
+    # Ejecutar Portainer como contenedor
+    # Puerto 9443: HTTPS (recomendado)
+    # Puerto 9000: HTTP (legacy, deshabilitado por defecto)
+    if docker run -d \
+        -p 9443:9443 \
+        --name portainer \
+        --restart=always \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        -v portainer_data:/data \
+        portainer/portainer-ce:lts; then
+        log_success "Portainer CE instalado (https://localhost:9443)"
+    else
+        log_error "Failed to start Portainer container"
+    fi
+else
+    log_task "Saltando instalación de Portainer (deshabilitado)"
 fi
 
 # ==============================================================================
@@ -1363,6 +1390,7 @@ log_msg "  - Usuario: ${USERNAME}"
 log_msg "  - Shell: ${SHELL_TYPE}"
 log_msg "  - Prompt: ${PROMPT_THEME}"
 log_msg "  - Docker: instalado"
+log_msg "  - Portainer: ${INSTALL_PORTAINER}"
 log_msg "  - VS Code: ${INSTALL_VSCODE}"
 log_msg "  - Google Antigravity IDE: ${INSTALL_ANTIGRAVITY}"
 log_msg "  - Navegador: ${INSTALL_BROWSER}"

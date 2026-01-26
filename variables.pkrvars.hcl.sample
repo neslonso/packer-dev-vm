@@ -119,6 +119,7 @@ git_default_branch = "main"                     # Branch por defecto
 # ==============================================================================
 docker_log_max_size = "10m"            # Tamaño máximo de logs por contenedor
 docker_log_max_file = 3                # Número de archivos de log a mantener
+install_portainer   = true             # Instalar Portainer (Web UI para Docker en https://localhost:9443)
 
 # ==============================================================================
 # DESKTOP
