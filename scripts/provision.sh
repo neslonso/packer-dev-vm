@@ -1212,11 +1212,45 @@ log_task "Creando directorio para certificados TLS..."
 sudo -u "${GRD_USER}" mkdir -p "${GRD_DIR}"
 
 # Generar certificados TLS como usuario gnome-remote-desktop
-log_task "Generando certificados TLS..."
-sudo -u "${GRD_USER}" openssl req -new -newkey rsa:4096 -days 720 -nodes -x509 \
-    -subj "/C=US/ST=NONE/L=NONE/O=GNOME/CN=gnome.org" \
+# IMPORTANTE: El certificado DEBE tener Extended Key Usage con los OIDs correctos para mstsc.exe:
+# - serverAuth (1.3.6.1.5.5.7.3.1) - Autenticación de servidor TLS estándar
+# - Remote Desktop Authentication (1.3.6.1.4.1.311.54.1.2) - OID específico de Microsoft para RDP
+# La validez debe ser <= 825 días o mstsc rechazará el certificado con error 0x907
+log_task "Generando certificados TLS para RDP..."
+
+# Crear archivo de configuración temporal para OpenSSL con las extensiones requeridas
+OPENSSL_CONF_TMP="${GRD_DIR}/openssl.cnf"
+sudo -u "${GRD_USER}" bash -c "cat > '${OPENSSL_CONF_TMP}'" << 'OPENSSL_EOF'
+[req]
+default_bits = 4096
+prompt = no
+default_md = sha256
+distinguished_name = dn
+x509_extensions = v3_ext
+
+[dn]
+C = US
+ST = NONE
+L = NONE
+O = GNOME Remote Desktop
+CN = gnome-remote-desktop
+
+[v3_ext]
+basicConstraints = CA:FALSE
+keyUsage = critical, digitalSignature, keyEncipherment
+# Incluir tanto serverAuth como el OID específico de Microsoft para Remote Desktop
+extendedKeyUsage = serverAuth, 1.3.6.1.4.1.311.54.1.2
+subjectKeyIdentifier = hash
+OPENSSL_EOF
+
+# Usar 365 días (bien por debajo del límite de 825 días de mstsc)
+sudo -u "${GRD_USER}" openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 \
+    -config "${OPENSSL_CONF_TMP}" \
     -out "${GRD_DIR}/tls.crt" \
     -keyout "${GRD_DIR}/tls.key" 2>/dev/null
+
+# Limpiar archivo de configuración temporal
+rm -f "${OPENSSL_CONF_TMP}"
 
 log_success "Certificados TLS generados en ${GRD_DIR}"
 
