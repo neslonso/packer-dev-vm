@@ -829,13 +829,34 @@ fi
 if [[ "${INSTALL_CURSOR}" == "true" ]]; then
     log_section "7.6/10 Instalando Cursor..."
 
-    # Download Cursor AppImage
-    CURSOR_URL="https://downloader.cursor.sh/linux/appImage/x64"
-    CURSOR_APPIMAGE="/opt/cursor/cursor.AppImage"
+    # Instalar libfuse2 (necesario para AppImages)
+    apt-get install -y libfuse2
 
+    # Download Cursor AppImage (con fallback URLs)
+    CURSOR_APPIMAGE="/opt/cursor/cursor.AppImage"
     mkdir -p /opt/cursor
+
     log_task "Downloading Cursor AppImage..."
-    if curl --max-time 120 --fail -Lo "${CURSOR_APPIMAGE}" "${CURSOR_URL}" 2>&1; then
+    CURSOR_DOWNLOADED=false
+
+    # Intentar múltiples URLs
+    CURSOR_URLS=(
+        "https://download.cursor.sh/linux/appImage/x64"
+        "https://downloader.cursor.sh/linux/appImage/x64"
+        "https://api2.cursor.sh/updates/download-latest?platform=linux-x64&releaseTrack=stable"
+    )
+
+    for url in "${CURSOR_URLS[@]}"; do
+        log_task "Trying: ${url}"
+        if curl --max-time 180 --fail -L -o "${CURSOR_APPIMAGE}" "${url}" 2>&1; then
+            CURSOR_DOWNLOADED=true
+            log_success "Downloaded from ${url}"
+            break
+        fi
+        log_warning "Failed: ${url}"
+    done
+
+    if [[ "${CURSOR_DOWNLOADED}" == "true" ]]; then
         chmod +x "${CURSOR_APPIMAGE}"
         log_success "Cursor downloaded successfully"
 
@@ -899,7 +920,8 @@ EOF
 
         chown -R "${USERNAME}:${USERNAME}" "${HOME_DIR}/.config/Cursor"
     else
-        log_warning "Failed to download Cursor, skipping..."
+        log_error "Failed to download Cursor from all URLs, skipping..."
+        rm -rf /opt/cursor
     fi
 else
     log_section "7.6/10 Saltando instalación de Cursor (deshabilitado)..."
