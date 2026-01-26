@@ -610,6 +610,36 @@ if [[ "${NERD_FONT}" != "none" ]]; then
 else
     log_section "4/10 Saltando instalación de Nerd Font (nerd_font=none)..."
 fi
+# ==============================================================================
+# 4.5. GLOBAL FONT FAMILY (Mapping para editores)
+# ==============================================================================
+
+# Determine global font family based on installed Nerd Font (used by VS Code, Antigravity, Cursor, etc.)
+if [[ "${NERD_FONT}" != "none" ]]; then
+    case "${NERD_FONT}" in
+        "JetBrainsMono")
+            GLOBAL_FONT_FAMILY="'JetBrainsMono Nerd Font', 'JetBrains Mono', monospace"
+            ;;
+        "FiraCode")
+            GLOBAL_FONT_FAMILY="'FiraCode Nerd Font', 'Fira Code', monospace"
+            ;;
+        "Hack")
+            GLOBAL_FONT_FAMILY="'Hack Nerd Font', 'Hack', monospace"
+            ;;
+        "SourceCodePro")
+            GLOBAL_FONT_FAMILY="'SauceCodePro Nerd Font', 'Source Code Pro', monospace"
+            ;;
+        "Meslo")
+            GLOBAL_FONT_FAMILY="'MesloLGS NF', 'Meslo', monospace"
+            ;;
+        *)
+            GLOBAL_FONT_FAMILY="'${NERD_FONT} Nerd Font', monospace"
+            ;;
+    esac
+else
+    GLOBAL_FONT_FAMILY="'Fira Code', 'Consolas', monospace"
+fi
+
 
 # ==============================================================================
 # 5. SHELL Y PROMPT
@@ -743,41 +773,14 @@ if [[ "${INSTALL_VSCODE}" == "true" ]]; then
     apt-get update
     apt-get install -y code
     
-    # Configurar VS Code
-    VSCODE_DIR="${HOME_DIR}/.config/Code/User"
-    mkdir -p "${VSCODE_DIR}"
-
-    # Determine font family based on installed Nerd Font (if any)
-    if [[ "${NERD_FONT}" != "none" ]]; then
-        # Map font names to their VS Code font family names
-        case "${NERD_FONT}" in
-            "JetBrainsMono")
-                VSCODE_FONT_FAMILY="'JetBrainsMono Nerd Font', 'JetBrains Mono', monospace"
-                ;;
-            "FiraCode")
-                VSCODE_FONT_FAMILY="'FiraCode Nerd Font', 'Fira Code', monospace"
-                ;;
-            "Hack")
-                VSCODE_FONT_FAMILY="'Hack Nerd Font', 'Hack', monospace"
-                ;;
-            "SourceCodePro")
-                VSCODE_FONT_FAMILY="'SauceCodePro Nerd Font', 'Source Code Pro', monospace"
-                ;;
-            "Meslo")
-                VSCODE_FONT_FAMILY="'MesloLGS NF', 'Meslo', monospace"
-                ;;
-            *)
-                VSCODE_FONT_FAMILY="'${NERD_FONT} Nerd Font', monospace"
-                ;;
-        esac
-    else
-        # No Nerd Font installed, use system defaults
-        VSCODE_FONT_FAMILY="'Fira Code', 'Consolas', monospace"
-    fi
-
-    cat > "${VSCODE_DIR}/settings.json" << EOF
+    # Function to apply common VS Code-based settings
+    apply_vscode_settings() {
+        local config_dir=$1
+        local user_dir="${HOME_DIR}/.config/${config_dir}/User"
+        mkdir -p "${user_dir}"
+        cat > "${user_dir}/settings.json" << EOF
 {
-    "editor.fontFamily": "${VSCODE_FONT_FAMILY}",
+    "editor.fontFamily": "${GLOBAL_FONT_FAMILY}",
     "editor.fontSize": 14,
     "editor.fontLigatures": true,
     "editor.formatOnSave": true,
@@ -785,7 +788,7 @@ if [[ "${INSTALL_VSCODE}" == "true" ]]; then
     "editor.bracketPairColorization.enabled": true,
     "workbench.colorTheme": "Default Dark Modern",
     "workbench.startupEditor": "none",
-    "terminal.integrated.fontFamily": "${VSCODE_FONT_FAMILY}",
+    "terminal.integrated.fontFamily": "${GLOBAL_FONT_FAMILY}",
     "terminal.integrated.fontSize": 13,
     "files.autoSave": "afterDelay",
     "files.trimTrailingWhitespace": true,
@@ -796,9 +799,11 @@ if [[ "${INSTALL_VSCODE}" == "true" ]]; then
     "telemetry.telemetryLevel": "off"
 }
 EOF
+        chown -R "${USERNAME}:${USERNAME}" "${HOME_DIR}/.config/${config_dir}"
+    }
 
-    # Fix ownership so user can install extensions
-    chown -R "${USERNAME}:${USERNAME}" "${HOME_DIR}/.config/Code"
+    # Apply settings to VS Code
+    apply_vscode_settings "Code"
 
     # Instalar extensiones básicas
     EXTENSIONS=(
@@ -841,37 +846,8 @@ if [[ "${INSTALL_ANTIGRAVITY}" == "true" ]]; then
 
     log_success "Google Antigravity IDE installed successfully"
 
-    # Configure Antigravity settings (similar to VS Code)
-    ANTIGRAVITY_DIR="${HOME_DIR}/.config/antigravity/User"
-    mkdir -p "${ANTIGRAVITY_DIR}"
-
-    # Determine font family based on installed Nerd Font (reuse VSCODE_FONT_FAMILY logic)
-    if [[ "${NERD_FONT}" != "none" ]]; then
-        case "${NERD_FONT}" in
-            "JetBrainsMono") AG_FONT_FAMILY="'JetBrainsMono Nerd Font', 'JetBrains Mono', monospace" ;;
-            "FiraCode") AG_FONT_FAMILY="'FiraCode Nerd Font', 'Fira Code', monospace" ;;
-            "Hack") AG_FONT_FAMILY="'Hack Nerd Font', 'Hack', monospace" ;;
-            "SourceCodePro") AG_FONT_FAMILY="'SauceCodePro Nerd Font', 'Source Code Pro', monospace" ;;
-            "Meslo") AG_FONT_FAMILY="'MesloLGS NF', 'Meslo', monospace" ;;
-            *) AG_FONT_FAMILY="'${NERD_FONT} Nerd Font', monospace" ;;
-        esac
-    else
-        AG_FONT_FAMILY="'Fira Code', 'Consolas', monospace"
-    fi
-
-    cat > "${ANTIGRAVITY_DIR}/settings.json" << EOF
-{
-    "editor.fontFamily": "${AG_FONT_FAMILY}",
-    "editor.fontSize": 14,
-    "editor.fontLigatures": true,
-    "terminal.integrated.fontFamily": "${AG_FONT_FAMILY}",
-    "terminal.integrated.fontSize": 13,
-    "explorer.excludeGitIgnore": false,
-    "telemetry.telemetryLevel": "off"
-}
-EOF
-
-    chown -R "${USERNAME}:${USERNAME}" "${HOME_DIR}/.config/antigravity"
+    # Configure Antigravity settings
+    apply_vscode_settings "antigravity"
 
     # Configure desktop launcher (optional)
     if [[ -f "/usr/share/applications/antigravity.desktop" ]]; then
@@ -941,46 +917,8 @@ CURSOR_DESKTOP_EOF
 
         log_success "Cursor installed successfully"
 
-        # Configure Cursor settings (similar to VS Code)
-        CURSOR_DIR="${HOME_DIR}/.config/Cursor/User"
-        mkdir -p "${CURSOR_DIR}"
-
-        # Determine font family
-        if [[ "${NERD_FONT}" != "none" ]]; then
-            case "${NERD_FONT}" in
-                "JetBrainsMono") CURSOR_FONT_FAMILY="'JetBrainsMono Nerd Font', 'JetBrains Mono', monospace" ;;
-                "FiraCode") CURSOR_FONT_FAMILY="'FiraCode Nerd Font', 'Fira Code', monospace" ;;
-                "Hack") CURSOR_FONT_FAMILY="'Hack Nerd Font', 'Hack', monospace" ;;
-                "SourceCodePro") CURSOR_FONT_FAMILY="'SauceCodePro Nerd Font', 'Source Code Pro', monospace" ;;
-                "Meslo") CURSOR_FONT_FAMILY="'MesloLGS NF', 'Meslo', monospace" ;;
-                *) CURSOR_FONT_FAMILY="'${NERD_FONT} Nerd Font', monospace" ;;
-            esac
-        else
-            CURSOR_FONT_FAMILY="'Fira Code', 'Consolas', monospace"
-        fi
-
-        cat > "${CURSOR_DIR}/settings.json" << EOF
-{
-    "editor.fontFamily": "${CURSOR_FONT_FAMILY}",
-    "editor.fontSize": 14,
-    "editor.fontLigatures": true,
-    "editor.formatOnSave": true,
-    "editor.minimap.enabled": false,
-    "editor.bracketPairColorization.enabled": true,
-    "workbench.colorTheme": "Default Dark Modern",
-    "workbench.startupEditor": "none",
-    "terminal.integrated.fontFamily": "${CURSOR_FONT_FAMILY}",
-    "terminal.integrated.fontSize": 13,
-    "files.autoSave": "afterDelay",
-    "files.trimTrailingWhitespace": true,
-    "explorer.excludeGitIgnore": false,
-    "git.autofetch": true,
-    "git.confirmSync": false,
-    "telemetry.telemetryLevel": "off"
-}
-EOF
-
-        chown -R "${USERNAME}:${USERNAME}" "${HOME_DIR}/.config/Cursor"
+        # Configure Cursor settings
+        apply_vscode_settings "Cursor"
     else
         log_error "Failed to download Cursor from all URLs, skipping..."
         rm -rf /opt/cursor
