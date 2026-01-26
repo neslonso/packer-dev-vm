@@ -40,6 +40,7 @@ autologin          = true              # Login automático en el desktop
 ssh_port           = 22                # Puerto SSH
 ssh_allow_password = true              # Permitir auth por password
 sudo_nopassword    = true              # Sudo sin password
+gnome_rdp_tls_enabled = true           # Habilitar TLS explícito para GNOME Remote Desktop
 
 # ==============================================================================
 # RED

@@ -155,6 +155,11 @@ variable "sudo_nopassword" {
   description = "Sudo sin contraseña"
 }
 
+variable "gnome_rdp_tls_enabled" {
+  type        = bool
+  description = "Habilitar TLS explícito para GNOME Remote Desktop (RDP en modo sistema)"
+}
+
 # --- Red ---
 # NOTA: static_ip/gateway/dns se usan SIEMPRE durante el build (cloud-init + SSH).
 # network_mode determina si después del build se cambia a DHCP o se mantiene estática.
@@ -427,6 +432,7 @@ locals {
     "VM_SSH_PORT=${var.ssh_port}",
     "VM_SSH_ALLOW_PASSWORD=${var.ssh_allow_password}",
     "VM_SUDO_NOPASSWORD=${var.sudo_nopassword}",
+    "VM_GNOME_RDP_TLS_ENABLED=${var.gnome_rdp_tls_enabled}",
     "VM_NETWORK_MODE=${var.network_mode}",
     "VM_STATIC_IP=${var.static_ip}",
     "VM_STATIC_GATEWAY=${var.static_gateway}",

@@ -38,6 +38,7 @@ INSTALL_ANTIGRAVITY="${VM_INSTALL_ANTIGRAVITY}"
 INSTALL_CURSOR="${VM_INSTALL_CURSOR}"
 INSTALL_SUBLIMEMERGE="${VM_INSTALL_SUBLIMEMERGE}"
 INSTALL_BROWSER="${VM_INSTALL_BROWSER}"
+GNOME_RDP_TLS_ENABLED="${VM_GNOME_RDP_TLS_ENABLED}"
 
 # Red
 NETWORK_MODE="${VM_NETWORK_MODE}"
@@ -1211,26 +1212,32 @@ GRD_DIR="/var/lib/gnome-remote-desktop/.local/share/gnome-remote-desktop"
 log_task "Creando directorio para certificados TLS..."
 sudo -u "${GRD_USER}" mkdir -p "${GRD_DIR}"
 
-# Generar certificados TLS como usuario gnome-remote-desktop
-log_task "Generando certificados TLS..."
-GRD_CERT_CN="${HOSTNAME}"
-GRD_CERT_IP="$(hostname -I | awk '{print $1}')"
-sudo -u "${GRD_USER}" openssl req -new -newkey rsa:4096 -days 720 -nodes -x509 \
-    -subj "/C=US/ST=NONE/L=NONE/O=GNOME/CN=${GRD_CERT_CN}" \
-    -addext "subjectAltName=DNS:${GRD_CERT_CN},IP:${GRD_CERT_IP}" \
-    -addext "keyUsage=digitalSignature,keyEncipherment" \
-    -addext "extendedKeyUsage=serverAuth" \
-    -out "${GRD_DIR}/tls.crt" \
-    -keyout "${GRD_DIR}/tls.key" 2>/dev/null
+# Generar certificados TLS como usuario gnome-remote-desktop (opcional)
+if [[ "${GNOME_RDP_TLS_ENABLED}" == "true" ]]; then
+    log_task "Generando certificados TLS..."
+    GRD_CERT_CN="${HOSTNAME}"
+    GRD_CERT_IP="$(hostname -I | awk '{print $1}')"
+    sudo -u "${GRD_USER}" openssl req -new -newkey rsa:4096 -days 720 -nodes -x509 \
+        -subj "/C=US/ST=NONE/L=NONE/O=GNOME/CN=${GRD_CERT_CN}" \
+        -addext "subjectAltName=DNS:${GRD_CERT_CN},IP:${GRD_CERT_IP}" \
+        -addext "keyUsage=digitalSignature,keyEncipherment" \
+        -addext "extendedKeyUsage=serverAuth" \
+        -out "${GRD_DIR}/tls.crt" \
+        -keyout "${GRD_DIR}/tls.key" 2>/dev/null
 
-log_success "Certificados TLS generados en ${GRD_DIR}"
+    log_success "Certificados TLS generados en ${GRD_DIR}"
+else
+    log_warning "TLS para RDP deshabilitado por configuración (VM_GNOME_RDP_TLS_ENABLED=false)"
+fi
 
 # Configurar GNOME Remote Desktop en modo sistema
 log_task "Configurando RDP en modo sistema..."
 
 # Configurar certificados TLS (rutas relativas al usuario gnome-remote-desktop)
-grdctl --system rdp set-tls-key "${GRD_DIR}/tls.key" || log_warning "Could not set TLS key"
-grdctl --system rdp set-tls-cert "${GRD_DIR}/tls.crt" || log_warning "Could not set TLS cert"
+if [[ "${GNOME_RDP_TLS_ENABLED}" == "true" ]]; then
+    grdctl --system rdp set-tls-key "${GRD_DIR}/tls.key" || log_warning "Could not set TLS key"
+    grdctl --system rdp set-tls-cert "${GRD_DIR}/tls.crt" || log_warning "Could not set TLS cert"
+fi
 
 # Configurar credenciales del sistema (argumentos directos, no stdin)
 log_task "Configurando credenciales RDP..."
