@@ -156,9 +156,12 @@ variable "sudo_nopassword" {
 }
 
 # --- Red ---
+# NOTA: static_ip/gateway/dns se usan SIEMPRE durante el build (cloud-init + SSH).
+# network_mode determina si después del build se cambia a DHCP o se mantiene estática.
+
 variable "network_mode" {
   type        = string
-  description = "Modo de red tras provisioning: 'dhcp' para obtener IP automáticamente, 'static' para mantener IP fija"
+  description = "Modo de red FINAL (tras provisioning): 'dhcp' cambia a DHCP, 'static' mantiene la IP configurada"
   default     = "dhcp"
   validation {
     condition     = contains(["dhcp", "static"], var.network_mode)
@@ -168,7 +171,7 @@ variable "network_mode" {
 
 variable "static_ip" {
   type        = string
-  description = "IP estática (solo si network_mode=static). Formato: '192.168.1.100/24'"
+  description = "IP para build y final (si network_mode=static). Debe ser alcanzable desde el host. Formato CIDR: '192.168.1.100/24'"
   default     = "172.20.144.100/20"
   validation {
     condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+/[0-9]+$", var.static_ip))
@@ -178,7 +181,7 @@ variable "static_ip" {
 
 variable "static_gateway" {
   type        = string
-  description = "Gateway (solo si network_mode=static). Ejemplo: '192.168.1.1'"
+  description = "Gateway para build y final (si network_mode=static)"
   default     = "172.20.144.1"
   validation {
     condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$", var.static_gateway))
@@ -188,7 +191,7 @@ variable "static_gateway" {
 
 variable "static_dns" {
   type        = string
-  description = "Servidores DNS separados por coma (solo si network_mode=static). Ejemplo: '8.8.8.8,8.8.4.4'"
+  description = "Servidores DNS separados por coma para build y final (si network_mode=static)"
   default     = "8.8.8.8,8.8.4.4"
   validation {
     condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+(,[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)*$", var.static_dns))
@@ -498,18 +501,22 @@ source "hyperv-iso" "ubuntu" {
       autologin          = var.autologin
       ssh_allow_password = var.ssh_allow_password
       sudo_nopassword    = var.sudo_nopassword
+      # Red (usada durante build y opcionalmente después si network_mode=static)
+      static_ip          = var.static_ip
+      static_gateway     = var.static_gateway
+      static_dns         = var.static_dns
     })
     "/meta-data" = templatefile("${path.root}/templates/meta-data.pkrtpl", {
       hostname = var.hostname
     })
   }
-  
+
   # --- SSH ---
   # Contraseña fija "developer" para que Packer se conecte durante el build
   # Si cambias password_hash, debes cambiar también este valor aquí
-  # IP estática fija para evitar problemas de detección de Hyper-V
+  # IP extraída de static_ip (sin máscara CIDR) para conexión SSH
   communicator     = "ssh"
-  ssh_host         = "172.20.144.100"
+  ssh_host         = split("/", var.static_ip)[0]
   ssh_username     = var.username
   ssh_password     = "developer"
   ssh_port         = var.ssh_port

@@ -42,18 +42,22 @@ ssh_allow_password = true              # Permitir auth por password
 sudo_nopassword    = true              # Sudo sin password
 
 # ==============================================================================
-# RED (configuración tras provisioning)
+# RED
 # ==============================================================================
-# network_mode: 'dhcp' obtiene IP automáticamente, 'static' mantiene IP fija
-# Si network_mode='static', se usan las siguientes variables:
-#   - static_ip: IP con máscara CIDR (ej: '192.168.1.100/24')
-#   - static_gateway: Gateway por defecto
-#   - static_dns: Servidores DNS separados por coma
+# IMPORTANTE: static_ip, static_gateway y static_dns se usan SIEMPRE durante
+# el build de Packer (para que SSH funcione con IP conocida).
+#
+# Después del build, network_mode determina la configuración final:
+#   - 'dhcp': cambia a DHCP (obtiene IP del servidor DHCP)
+#   - 'static': mantiene la IP configurada (static_ip, static_gateway, static_dns)
+#
+# NOTA: La IP debe ser alcanzable desde el host durante el build.
+# En Hyper-V con "Default Switch", usar una IP del rango 172.20.144.0/20
 # ==============================================================================
 network_mode   = "dhcp"                # dhcp | static
-static_ip      = "172.20.144.100/20"   # IP fija (solo si network_mode=static)
-static_gateway = "172.20.144.1"        # Gateway (solo si network_mode=static)
-static_dns     = "8.8.8.8,8.8.4.4"     # DNS (solo si network_mode=static)
+static_ip      = "172.20.144.100/20"   # IP para build (y final si network_mode=static)
+static_gateway = "172.20.144.1"        # Gateway
+static_dns     = "8.8.8.8,8.8.4.4"     # Servidores DNS (separados por coma)
 
 # ==============================================================================
 # SHELL Y PROMPT
