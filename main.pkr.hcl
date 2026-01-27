@@ -650,7 +650,15 @@ build {
     ]
   }
 
-  # --- Descargar log de provisioning al host (siempre, no solo en error) ---
+  # --- Asegurar que los archivos a descargar existen ---
+  provisioner "shell" {
+    inline = [
+      "sudo touch /var/log/provision.log || true",
+      "touch /home/${var.username}/connect-${var.hostname}.rdp 2>/dev/null || sudo touch /home/${var.username}/connect-${var.hostname}.rdp || true"
+    ]
+  }
+
+  # --- Descargar log de provisioning al host ---
   provisioner "file" {
     source      = "/var/log/provision.log"
     destination = "${var.output_directory}/provision.log"
