@@ -22,19 +22,37 @@ install_cursor() {
     log_task "Downloading Cursor AppImage..."
     CURSOR_DOWNLOADED=false
 
+    # URLs oficiales de Cursor (pueden cambiar)
     CURSOR_URLS=(
-        "https://download.cursor.sh/linux/appImage/x64"
         "https://downloader.cursor.sh/linux/appImage/x64"
-        "https://api2.cursor.sh/updates/download-latest?platform=linux-x64&releaseTrack=stable"
+        "https://download.cursor.sh/linux/appImage/x64"
+        "https://downloads.cursor.sh/production/client/linux/x64/appimage/latest"
     )
 
+    # Intentar cada URL con reintentos
     for url in "${CURSOR_URLS[@]}"; do
         log_task "Trying: ${url}"
-        if curl --max-time 180 --fail -L -o "${CURSOR_APPIMAGE}" "${url}" 2>&1; then
-            CURSOR_DOWNLOADED=true
-            log_success "Downloaded from ${url}"
-            break
-        fi
+
+        # Reintentar hasta 3 veces con espera
+        for attempt in 1 2 3; do
+            if curl --max-time 180 --retry 2 --retry-delay 5 -fSL -o "${CURSOR_APPIMAGE}" "${url}" 2>&1; then
+                # Verificar que el archivo descargado es válido (> 50MB)
+                if [[ -f "${CURSOR_APPIMAGE}" ]] && [[ $(stat -f%z "${CURSOR_APPIMAGE}" 2>/dev/null || stat -c%s "${CURSOR_APPIMAGE}" 2>/dev/null) -gt 50000000 ]]; then
+                    CURSOR_DOWNLOADED=true
+                    log_success "Downloaded from ${url}"
+                    break 2
+                else
+                    log_warning "Downloaded file too small or invalid, retrying..."
+                    rm -f "${CURSOR_APPIMAGE}"
+                fi
+            fi
+
+            if [[ $attempt -lt 3 ]]; then
+                log_task "Attempt $attempt failed, waiting 5s before retry..."
+                sleep 5
+            fi
+        done
+
         log_warning "Failed: ${url}"
     done
 

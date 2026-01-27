@@ -92,18 +92,28 @@ XSESSION_EOF
     log_success "Certificados TLS generados"
 
     # -------------------------------------------------------------------------
-    # Configurar Polkit para permitir color management
+    # Configurar Polkit para permitir color management (Ubuntu 24.04+)
     # -------------------------------------------------------------------------
+    # Ubuntu 24.04 usa polkit con archivos .rules (JavaScript), no .pkla
     log_task "Configurando Polkit para xrdp..."
 
-    cat > /etc/polkit-1/localauthority/50-local.d/45-allow-colord.pkla << 'POLKIT_EOF'
-[Allow Colord all Users]
-Identity=unix-user:*
-Action=org.freedesktop.color-manager.create-device;org.freedesktop.color-manager.create-profile;org.freedesktop.color-manager.delete-device;org.freedesktop.color-manager.delete-profile;org.freedesktop.color-manager.modify-device;org.freedesktop.color-manager.modify-profile
-ResultAny=no
-ResultInactive=no
-ResultActive=yes
+    mkdir -p /etc/polkit-1/rules.d
+
+    cat > /etc/polkit-1/rules.d/45-allow-colord.rules << 'POLKIT_EOF'
+// Allow colord for all users (needed for xrdp sessions)
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.color-manager.create-device" ||
+         action.id == "org.freedesktop.color-manager.create-profile" ||
+         action.id == "org.freedesktop.color-manager.delete-device" ||
+         action.id == "org.freedesktop.color-manager.delete-profile" ||
+         action.id == "org.freedesktop.color-manager.modify-device" ||
+         action.id == "org.freedesktop.color-manager.modify-profile")) {
+        return polkit.Result.YES;
+    }
+});
 POLKIT_EOF
+
+    chmod 644 /etc/polkit-1/rules.d/45-allow-colord.rules
 
     # -------------------------------------------------------------------------
     # Firewall y Avahi
