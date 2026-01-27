@@ -617,6 +617,8 @@ build {
   provisioner "shell" {
     environment_vars = local.provision_env_vars
     inline = [
+      # Convertir CRLF a LF (por si los scripts vienen de Windows)
+      "find /tmp/provision -type f -name '*.sh' -exec sed -i 's/\\r$//' {} \\;",
       "chmod -R +x /tmp/provision/",
       "sudo -E /tmp/provision/provision-${var.vm_flavor}.sh 2>&1 | tee -a /var/log/provision.log"
     ]

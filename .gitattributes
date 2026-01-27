@@ -1,0 +1,34 @@
+# ==============================================================================
+# Git Attributes - Line Ending Configuration
+# ==============================================================================
+# Forzar LF en scripts para evitar errores en Linux
+# ==============================================================================
+
+# Default behavior
+* text=auto
+
+# Shell scripts - SIEMPRE LF (Unix line endings)
+*.sh text eol=lf
+
+# Packer templates - SIEMPRE LF
+*.pkrtpl text eol=lf
+
+# YAML - SIEMPRE LF
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# JSON
+*.json text eol=lf
+
+# HCL (Packer/Terraform)
+*.hcl text eol=lf
+*.pkr.hcl text eol=lf
+*.pkrvars.hcl text eol=lf
+
+# Markdown
+*.md text eol=lf
+
+# Keep Windows batch files with CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
