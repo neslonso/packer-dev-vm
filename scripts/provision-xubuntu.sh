@@ -122,8 +122,8 @@ log_msg "  - Red: ${NETWORK_MODE} - IP: $(hostname -I | awk '{print $1}')"
 log_msg ""
 log_msg "Detalles completos en: $PROVISION_LOG"
 
-# Restore stdout/stderr
-exec 1>&3 2>&4 3>&- 4>&-
+# Restore stdout/stderr (ignorar errores si los file descriptors no existen)
+exec 1>&3 2>&4 3>&- 4>&- 2>/dev/null || true
 
 # Salir con éxito
 exit 0
