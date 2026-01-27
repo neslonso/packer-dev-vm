@@ -3,159 +3,329 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bienvenida a tu Entorno de Desarrollo</title>
+    <title>Bienvenido a tu Entorno de Desarrollo</title>
     <style>
         :root {
-            --primary: #4f46e5;
-            --bg: #0f172a;
-            --card-bg: #1e293b;
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent: #10b981;
+            --bg-color: #0c0e14;
+            --glass-bg: rgba(23, 27, 41, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.3);
+            --secondary: #10b981;
+            --text-main: #f1f5f9;
+            --text-dim: #94a3b8;
+            --accent: #f43f5e;
+            --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
+
+        * {
             margin: 0;
-            padding: 2rem;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 40%);
+            color: var(--text-main);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 40px 20px;
             display: flex;
             justify-content: center;
         }
+
         .container {
-            max-width: 800px;
+            max-width: 1000px;
             width: 100%;
         }
+
         header {
             text-align: center;
-            margin-bottom: 3rem;
+            margin-bottom: 50px;
         }
+
         h1 {
-            color: var(--primary);
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--text-main) 0%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            letter-spacing: -0.02em;
         }
+
         .subtitle {
-            color: var(--text-muted);
-            font-size: 1.1rem;
+            color: var(--text-dim);
+            font-size: 1.2rem;
+            font-weight: 400;
         }
+
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
         }
+
         .card {
-            background: var(--card-bg);
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-            border: 1px solid rgba(255,255,255,0.05);
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s ease, border-color 0.3s ease;
         }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
         .card h2 {
-            margin-top: 0;
-            color: var(--accent);
             font-size: 1.25rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding-bottom: 0.5rem;
+            color: var(--primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
+
+        .card-content {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
         .info-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 0.5rem;
+            align-items: center;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
         }
+
         .info-label {
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-        .info-value {
-            font-family: 'Cascadia Code', 'Fira Code', monospace;
-            background: rgba(0,0,0,0.2);
-            padding: 0.1rem 0.4rem;
-            border-radius: 4px;
-        }
-        ul {
-            padding-left: 1.2rem;
-            margin-bottom: 0;
-        }
-        li {
-            margin-bottom: 0.3rem;
-        }
-        .footer {
-            margin-top: 3rem;
-            text-align: center;
-            color: var(--text-muted);
+            color: var(--text-dim);
             font-size: 0.9rem;
         }
-        code {
-            color: #ec4899;
+
+        .info-value {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--secondary);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .service-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 14px 0 var(--primary-glow);
+            margin-top: 10px;
+        }
+
+        .service-link:hover {
+            background: #4f46e5;
+            transform: scale(1.02);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .alias-table-container {
+            margin-top: 40px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .alias-table-container h2 {
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px;
+            color: var(--text-dim);
+            border-bottom: 2px solid var(--glass-border);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.75rem;
+        }
+
+        td {
+            padding: 14px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .alias-name {
+            color: var(--secondary);
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .alias-cmd {
+            color: var(--text-main);
+            font-family: 'JetBrains Mono', monospace;
+            opacity: 0.8;
+        }
+
+        .alias-desc {
+            color: var(--text-dim);
+        }
+
+        .footer {
+            margin-top: 60px;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            padding-bottom: 40px;
+        }
+
+        .tag {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            vertical-align: middle;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-color);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2rem; }
+            .grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>¡Bienvenido a tu VM de Desarrollo!</h1>
-            <p class="subtitle">Este entorno ha sido provisionado automáticamente con Packer.</p>
+            <h1>VM Development Environment</h1>
+            <p class="subtitle">Provisionada automáticamente el ${timestamp}</p>
         </header>
 
         <div class="grid">
+            <!-- Info del Sistema -->
             <div class="card">
-                <h2>Información del Sistema</h2>
-                <div class="info-row">
-                    <span class="info-label">Hostname:</span>
-                    <span class="info-value">${hostname}</span>
+                <h2>Infraestructura</h2>
+                <div class="card-content">
+                    <div class="info-row">
+                        <span class="info-label">Hostname</span>
+                        <span class="info-value">${hostname}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Usuario</span>
+                        <span class="info-value">${username}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Password</span>
+                        <span class="info-value">developer</span>
+                    </div>
+                    <p style="font-size: 0.75rem; color: var(--accent); margin-top: 5px;">
+                        Cambia tu contraseña ejecutando: <code>passwd</code>
+                    </p>
                 </div>
-                <div class="info-row">
-                    <span class="info-label">Usuario:</span>
-                    <span class="info-value">${username}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Password:</span>
-                    <span class="info-value">developer</span>
-                </div>
-                <p><small style="color: var(--text-muted)">* Se recomienda cambiar la contraseña con el comando <code>passwd</code></small></p>
             </div>
 
+            <!-- Acceso Remoto -->
             <div class="card">
-                <h2>Conectividad</h2>
-                <div class="info-row">
-                    <span class="info-label">Puerto SSH:</span>
-                    <span class="info-value">${ssh_port}</span>
+                <h2>Acceso Remoto</h2>
+                <div class="card-content">
+                    <div class="info-row">
+                        <span class="info-label">SSH Port</span>
+                        <span class="info-value">${ssh_port}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">RDP Port</span>
+                        <span class="info-value">3389</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Network IP</span>
+                        <span class="info-value">172.x.x.x</span>
+                    </div>
+                    <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 5px;">
+                        Accede vía RDP: <code>${hostname}.local</code>
+                    </p>
                 </div>
-                <div class="info-row">
-                    <span class="info-label">Puerto RDP:</span>
-                    <span class="info-value">3389</span>
-                </div>
-                <p>Puedes conectar via RDP usando el nombre:<br><code>${hostname}.local</code></p>
             </div>
 
+            <!-- Herramientas -->
             <div class="card">
-                <h2>Herramientas Instaladas</h2>
-                <ul>
-                    <li><strong>Docker:</strong> Engine, Compose, LazyDocker</li>
-                    <li><strong>Git:</strong> CLI, LazyGit, GitHub CLI</li>
-                    %{ if install_vscode == "true" }<li><strong>VS Code:</strong> Con extensiones básicas</li>%{ endif }
-                    %{ if install_cursor == "true" }<li><strong>Cursor:</strong> AI-powered editor</li>%{ endif }
-                    %{ if install_antigravity == "true" }<li><strong>Antigravity:</strong> Google AI IDE</li>%{ endif }
-                    <li><strong>Navegador:</strong> ${install_browser}</li>
-                </ul>
-            </div>
-
-            <div class="card">
-                <h2>Atajos Útiles (Shell)</h2>
-                <ul>
-                    <li><code>d</code>: docker</li>
-                    <li><code>dc</code>: docker compose</li>
-                    <li><code>lg</code>: lazygit</li>
-                    <li><code>lzd</code>: lazydocker</li>
-                    <li><code>ll</code>: ls -la</li>
-                </ul>
+                <h2>Software Core</h2>
+                <div class="card-content" style="font-size: 0.85rem;">
+                    <p>• <strong>Docker:</strong> Engine, Compose, LZD</p>
+                    <p>• <strong>Git:</strong> CLI, LG, GitHub CLI</p>
+                    %{ if install_vscode == "true" }<p>• <strong>VS Code:</strong> Ext. básicas</p>%{ endif }
+                    %{ if install_cursor == "true" }<p>• <strong>Cursor AI:</strong> Editor avanzado</p>%{ endif }
+                    %{ if install_browser != "none" }<p>• <strong>Navegador:</strong> ${install_browser}</p>%{ endif }
+                </div>
             </div>
         </div>
 
+        <!-- DYNAMIC_SERVICES -->
+        <h2 style="margin: 40px 0 20px; color: var(--text-main);">Servicios Web</h2>
+        <div class="grid" id="services-grid">
+            <!-- Los servicios se inyectan aquí -->
+            <!-- DYNAMIC_SERVICES_PLACEHOLDER -->
+        </div>
+
+        <!-- DYNAMIC_ALIASES -->
+        <div class="alias-table-container">
+            <h2>Aliases de Terminal</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th width="15%">Alias</th>
+                        <th width="35%">Comando</th>
+                        <th width="50%">Descripción</th>
+                    </tr>
+                </thead>
+                <tbody id="aliases-tbody">
+                    <!-- Los aliases se inyectan aquí -->
+                    <!-- DYNAMIC_ALIASES_PLACEHOLDER -->
+                </tbody>
+            </table>
+        </div>
+
         <div class="footer">
-            Generado el: ${timestamp}
+            Entorno de desarrollo optimizado • Built with Antigravity
         </div>
     </div>
 </body>

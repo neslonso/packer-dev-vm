@@ -111,22 +111,14 @@ variable "disk_size" {
   }
 }
 
-# --- Ubuntu ---
-variable "iso_url" {
+# --- VM Flavor ---
+variable "vm_flavor" {
   type        = string
-  description = "URL de la ISO de Ubuntu (HTTP/HTTPS o file://)"
+  default     = "xubuntu"
+  description = "Flavor de la VM: 'xubuntu' (XFCE, ligero, ideal para VM), 'ubuntu' (GNOME, completo)"
   validation {
-    condition     = can(regex("^(https?|file)://", var.iso_url))
-    error_message = "La variable iso_url debe comenzar con http://, https:// o file://."
-  }
-}
-
-variable "iso_checksum" {
-  type        = string
-  description = "Checksum de la ISO (formato: sha256:HEXSTRING)"
-  validation {
-    condition     = can(regex("^(md5|sha1|sha256|sha512):[a-fA-F0-9]+$", var.iso_checksum))
-    error_message = "La variable iso_checksum debe tener formato válido: 'sha256:HEXSTRING' (también soporta md5, sha1, sha512)."
+    condition     = contains(["ubuntu", "xubuntu"], var.vm_flavor)
+    error_message = "La variable vm_flavor debe ser 'ubuntu' o 'xubuntu'."
   }
 }
 
@@ -412,6 +404,30 @@ locals {
   # Timestamp para nombres únicos
   timestamp = formatdate("YYYYMMDD-hhmm", timestamp())
 
+  # ===========================================================================
+  # FLAVORS - Configuración de ISOs y scripts por flavor
+  # ===========================================================================
+  # NOTA: xubuntu usa Ubuntu Server ISO + paquete xubuntu-desktop porque
+  # la ISO de Xubuntu Desktop no soporta autoinstall de forma confiable.
+  # ===========================================================================
+  flavors = {
+    xubuntu = {
+      iso_url       = "https://releases.ubuntu.com/24.04.3/ubuntu-24.04.3-live-server-amd64.iso"
+      iso_checksum  = "sha256:c3514bf0056180d09376462a7a1b4f213c1d6e8ea67fae5c25099c6fd3d8274b"
+      user_data_tpl = "${path.root}/templates/user-data-xubuntu.pkrtpl"
+      description   = "Ubuntu Server 24.04.3 + xubuntu-desktop (XFCE) - Ligero, ideal para VM"
+    }
+    ubuntu = {
+      iso_url       = "https://releases.ubuntu.com/24.04.3/ubuntu-24.04.3-desktop-amd64.iso"
+      iso_checksum  = "sha256:faabcf33ae53976d2b8207a001ff32f4e5daae013505ac7188c9ea63988f8328"
+      user_data_tpl = "${path.root}/templates/user-data-ubuntu.pkrtpl"
+      description   = "Ubuntu 24.04.3 LTS (GNOME) - Completo"
+    }
+  }
+
+  # Flavor seleccionado
+  flavor = local.flavors[var.vm_flavor]
+
   # GPG Key Fingerprints (centralized for easy maintenance)
   # These fingerprints are verified during package repository setup
   gpg_fingerprints = {
@@ -469,9 +485,9 @@ locals {
     username           = var.username
     ssh_port           = var.ssh_port
     install_browser    = var.install_browser
-    install_vscode     = tostring(var.install_vscode)
-    install_cursor     = tostring(var.install_cursor)
-    install_antigravity = tostring(var.install_antigravity)
+    install_vscode      = var.install_vscode ? "true" : "false"
+    install_cursor      = var.install_cursor ? "true" : "false"
+    install_antigravity = var.install_antigravity ? "true" : "false"
     timestamp          = local.timestamp
   })
 }
@@ -494,23 +510,33 @@ source "hyperv-iso" "ubuntu" {
   # Nested virtualization para Docker
   enable_virtualization_extensions = true
   enable_dynamic_memory            = false
+  enable_mac_spoofing              = true
   
-  # --- ISO ---
-  iso_url      = var.iso_url
-  iso_checksum = var.iso_checksum
+  # --- ISO (desde flavor) ---
+  iso_url      = local.flavor.iso_url
+  iso_checksum = local.flavor.iso_checksum
   
   # --- Boot ---
-  boot_wait = "10s"
+  # boot_wait: tiempo de espera antes de enviar boot_command
+  # Para Ubuntu Server: seleccionar opción de instalación y añadir parámetros autoinstall
+  boot_wait = "5s"
   boot_command = [
-    "<wait>e<wait>",
+    # Esperar a que GRUB cargue y seleccionar la primera opción
+    "<wait3>",
+    # Presionar 'e' para editar la entrada de GRUB
+    "e",
+    "<wait>",
+    # Navegar hasta la línea del kernel (linux)
     "<down><down><down><end>",
+    # Añadir parámetros de autoinstall
     " autoinstall ds=nocloud-net\\;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/",
+    # Arrancar con F10
     "<f10>"
   ]
   
-  # --- HTTP Server for cloud-init ---
+  # --- HTTP Server for cloud-init (template desde flavor) ---
   http_content = {
-    "/user-data" = templatefile("${path.root}/templates/user-data.pkrtpl", {
+    "/user-data" = templatefile(local.flavor.user_data_tpl, {
       hostname           = var.hostname
       username           = var.username
       password_hash      = local.password_hash
@@ -577,29 +603,47 @@ build {
     ]
   }
 
+  # --- Crear directorio para scripts ---
+  provisioner "shell" {
+    inline = ["mkdir -p /tmp/provision"]
+  }
+
+  # --- Subir scripts de provisioning a la VM ---
+  provisioner "file" {
+    source      = "${path.root}/scripts/"
+    destination = "/tmp/provision/"
+  }
+
   # --- Ejecutar provisioning con todas las variables ---
   provisioner "shell" {
     environment_vars = local.provision_env_vars
-    script           = "${path.root}/scripts/provision.sh"
-    execute_command  = "{{ .Vars }} sudo -E bash '{{ .Path }}'"
+    inline = [
+      # Convertir CRLF a LF (por si los scripts vienen de Windows)
+      "find /tmp/provision -type f -name '*.sh' -exec sed -i 's/\\r$//' {} \\;",
+      "chmod -R +x /tmp/provision/",
+      # El script escribe al log internamente, no usar tee para evitar problemas con pipefail
+      "sudo -E /tmp/provision/provision-${var.vm_flavor}.sh"
+    ]
   }
 
   # --- Limpieza final ---
   provisioner "shell" {
     inline = [
       "echo 'Limpieza final...'",
-      "sudo apt-get autoremove -y",
-      "sudo apt-get clean",
-      "sudo rm -rf /var/lib/apt/lists/*",
-      "sudo rm -rf /tmp/*",
-      "sudo rm -rf /var/tmp/*",
-      "sudo truncate -s 0 /etc/machine-id",
-      "sudo rm -f /var/lib/dbus/machine-id",
-      "rm -f ~/.bash_history",
+      "sudo rm -rf /tmp/provision || true",
+      "sudo apt-get autoremove -y || true",
+      "sudo apt-get clean || true",
+      "sudo rm -rf /var/lib/apt/lists/* || true",
+      "sudo rm -rf /tmp/* || true",
+      "sudo rm -rf /var/tmp/* || true",
+      "sudo truncate -s 0 /etc/machine-id || true",
+      "sudo rm -f /var/lib/dbus/machine-id || true",
+      "rm -f ~/.bash_history || true",
       "echo ''",
       "echo '============================================================'",
       "echo 'BUILD COMPLETADO EXITOSAMENTE'",
       "echo '============================================================'",
+      "echo 'Flavor: ${var.vm_flavor}'",
       "echo 'Credenciales: ${var.username} / developer'",
       "echo 'Recuerda: Cambiar password tras login (passwd)'",
       "echo 'Recuerda: Habilitar MAC spoofing si Docker falla'",
@@ -608,7 +652,15 @@ build {
     ]
   }
 
-  # --- Descargar log de provisioning al host (siempre, no solo en error) ---
+  # --- Asegurar que los archivos a descargar existen ---
+  provisioner "shell" {
+    inline = [
+      "sudo touch /var/log/provision.log || true",
+      "touch /home/${var.username}/connect-${var.hostname}.rdp 2>/dev/null || sudo touch /home/${var.username}/connect-${var.hostname}.rdp || true"
+    ]
+  }
+
+  # --- Descargar log de provisioning al host ---
   provisioner "file" {
     source      = "/var/log/provision.log"
     destination = "${var.output_directory}/provision.log"
