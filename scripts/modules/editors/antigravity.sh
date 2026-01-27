@@ -25,7 +25,7 @@ install_antigravity() {
     log_success "Google Antigravity IDE installed successfully"
 
     # Configure Antigravity settings
-    apply_vscode_settings "antigravity"
+    apply_vscode_settings "Antigravity"
 
     # Configure desktop launcher
     if [[ -f "/usr/share/applications/antigravity.desktop" ]]; then
