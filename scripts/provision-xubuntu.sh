@@ -124,3 +124,6 @@ log_msg "Detalles completos en: $PROVISION_LOG"
 
 # Restore stdout/stderr
 exec 1>&3 2>&4 3>&- 4>&-
+
+# Salir con éxito
+exit 0
