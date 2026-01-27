@@ -343,11 +343,12 @@ variable "install_sublimemerge" {
 }
 
 variable "install_browser" {
-  type        = string
-  description = "Navegador a instalar: firefox, chrome, chromium o none"
+  type        = list(string)
+  default     = ["firefox"]
+  description = "Lista de navegadores a instalar: firefox, chrome, chromium, all o none"
   validation {
-    condition     = contains(["firefox", "chrome", "chromium", "none"], var.install_browser)
-    error_message = "La variable install_browser debe ser 'firefox', 'chrome', 'chromium' o 'none'."
+    condition     = alltrue([for b in var.install_browser : contains(["firefox", "chrome", "chromium", "all", "none"], b)])
+    error_message = "Cada elemento de install_browser debe ser 'firefox', 'chrome', 'chromium', 'all' o 'none'."
   }
 }
 
@@ -470,7 +471,7 @@ locals {
     "VM_INSTALL_ANTIGRAVITY=${var.install_antigravity}",
     "VM_INSTALL_CURSOR=${var.install_cursor}",
     "VM_INSTALL_SUBLIMEMERGE=${var.install_sublimemerge}",
-    "VM_INSTALL_BROWSER=${var.install_browser}",
+    "VM_INSTALL_BROWSER=${join(",", var.install_browser)}",
     # GPG Fingerprints (centralized)
     "GPG_FINGERPRINT_DOCKER=${local.gpg_fingerprints.docker}",
     "GPG_FINGERPRINT_GITHUB=${local.gpg_fingerprints.github}",
@@ -484,7 +485,7 @@ locals {
     hostname           = var.hostname
     username           = var.username
     ssh_port           = var.ssh_port
-    install_browser    = var.install_browser
+    install_browser    = join(", ", var.install_browser)
     install_vscode      = var.install_vscode ? "true" : "false"
     install_cursor      = var.install_cursor ? "true" : "false"
     install_antigravity = var.install_antigravity ? "true" : "false"
@@ -506,16 +507,16 @@ source "hyperv-iso" "ubuntu" {
   disk_size        = var.disk_size
   enable_secure_boot    = var.hyperv_secure_boot
   secure_boot_template  = "MicrosoftUEFICertificateAuthority"
-  
+
   # Nested virtualization para Docker
   enable_virtualization_extensions = true
   enable_dynamic_memory            = false
   enable_mac_spoofing              = true
-  
+
   # --- ISO (desde flavor) ---
   iso_url      = local.flavor.iso_url
   iso_checksum = local.flavor.iso_checksum
-  
+
   # --- Boot ---
   # boot_wait: tiempo de espera antes de enviar boot_command
   # Para Ubuntu Server: seleccionar opción de instalación y añadir parámetros autoinstall
@@ -533,7 +534,7 @@ source "hyperv-iso" "ubuntu" {
     # Arrancar con F10
     "<f10>"
   ]
-  
+
   # --- HTTP Server for cloud-init (template desde flavor) ---
   http_content = {
     "/user-data" = templatefile(local.flavor.user_data_tpl, {
@@ -566,7 +567,7 @@ source "hyperv-iso" "ubuntu" {
   ssh_password     = "developer"
   ssh_port         = var.ssh_port
   ssh_timeout      = "45m"
-  
+
   # --- Output ---
   output_directory = "${var.output_directory}/hyperv-${var.vm_name}"
   headless         = var.headless
@@ -589,11 +590,11 @@ source "hyperv-iso" "ubuntu" {
 
 build {
   name = "dev-vm"
-  
+
   sources = [
     "source.hyperv-iso.ubuntu"
   ]
-  
+
   # --- Esperar a que cloud-init termine ---
   provisioner "shell" {
     inline = [

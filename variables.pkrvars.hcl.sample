@@ -145,7 +145,7 @@ install_vscode       = true             # Instalar VS Code
 install_antigravity  = false            # Instalar Google Antigravity IDE (en preview, puede fallar)
 install_cursor       = true             # Instalar Cursor (AI-powered code editor)
 install_sublimemerge = true             # Instalar Sublime Merge (cliente Git visual)
-install_browser      = "firefox"        # firefox | chrome | chromium | none
+install_browser      = ["firefox"]       # firefox, chrome, chromium, all, none (ej: ["firefox", "chrome"])
 
 # ==============================================================================
 # BUILD
