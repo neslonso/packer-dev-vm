@@ -48,6 +48,8 @@ EOF
     systemctl enable docker
     systemctl start docker
 
+    wait_for_docker
+
     # -------------------------------------------------------------------------
     # lazydocker
     # -------------------------------------------------------------------------
@@ -76,6 +78,33 @@ EOF
     log_success "Docker instalado"
 }
 
+wait_for_docker() {
+    log_task "Esperando a que el socket de Docker esté disponible..."
+    local counter=0
+    local max_wait=30
+    while [ ! -S /var/run/docker.sock ]; do
+        sleep 1
+        counter=$((counter + 1))
+        if [ $counter -ge $max_wait ]; then
+            log_error "Timed out waiting for Docker socket"
+            return 1
+        fi
+    done
+    log_success "Docker socket detectado"
+
+    # Adicionalmente, verificar que el daemon responde
+    until docker info >/dev/null 2>&1; do
+        sleep 1
+        counter=$((counter + 1))
+        if [ $counter -ge $max_wait ]; then
+            log_error "Timed out waiting for Docker daemon to respond"
+            return 1
+        fi
+    done
+    log_success "Docker daemon respondiendo"
+    return 0
+}
+
 install_portainer() {
     if [[ "${INSTALL_PORTAINER}" != "true" ]]; then
         log_task "Saltando instalación de Portainer (deshabilitado)"
@@ -84,8 +113,25 @@ install_portainer() {
 
     log_task "Instalando Portainer CE..."
 
-    docker volume create portainer_data
+    wait_for_docker || {
+        log_error "No se puede instalar Portainer: Docker no responde"
+        return 1
+    }
 
+    log_task "Limpiando instalaciones previas de Portainer..."
+    docker stop portainer >/dev/null 2>&1 || true
+    docker rm portainer >/dev/null 2>&1 || true
+
+    log_task "Creando volumen portainer_data..."
+    docker volume create portainer_data >/dev/null 2>&1 || true
+
+    log_task "Descargando imagen de Portainer..."
+    if ! docker pull portainer/portainer-ce:lts; then
+        log_error "Error al descargar imagen de Portainer"
+        return 1
+    fi
+
+    log_task "Arrancando contenedor de Portainer..."
     if docker run -d \
         -p 9443:9443 \
         --name portainer \
@@ -93,7 +139,15 @@ install_portainer() {
         -v /var/run/docker.sock:/var/run/docker.sock \
         -v portainer_data:/data \
         portainer/portainer-ce:lts; then
-        log_success "Portainer CE instalado (https://localhost:9443)"
+
+        # Verificar que el contenedor está corriendo
+        sleep 2
+        if docker ps | grep -q portainer; then
+            log_success "Portainer CE instalado y ejecutándose (https://localhost:9443)"
+        else
+            log_warning "Portainer se creó pero no parece estar en ejecución inmediata"
+            docker logs portainer | tail -n 5 || true
+        fi
     else
         log_error "Failed to start Portainer container"
     fi
