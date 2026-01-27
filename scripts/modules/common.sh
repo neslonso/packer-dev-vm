@@ -303,7 +303,7 @@ apply_vscode_settings() {
     "workbench.startupEditor": "none",
     "terminal.integrated.fontFamily": "${GLOBAL_FONT_FAMILY}",
     "terminal.integrated.fontSize": 13,
-    "files.autoSave": "afterDelay",
+    "files.autoSave":"off",
     "files.trimTrailingWhitespace": true,
     "explorer.excludeGitIgnore": false,
     "git.autofetch": true,
