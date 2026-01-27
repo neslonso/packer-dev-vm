@@ -482,9 +482,9 @@ locals {
     username           = var.username
     ssh_port           = var.ssh_port
     install_browser    = var.install_browser
-    install_vscode     = tostring(var.install_vscode)
-    install_cursor     = tostring(var.install_cursor)
-    install_antigravity = tostring(var.install_antigravity)
+    install_vscode      = var.install_vscode ? "true" : "false"
+    install_cursor      = var.install_cursor ? "true" : "false"
+    install_antigravity = var.install_antigravity ? "true" : "false"
     timestamp          = local.timestamp
   })
 }
