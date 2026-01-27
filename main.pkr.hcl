@@ -510,6 +510,7 @@ source "hyperv-iso" "ubuntu" {
   # Nested virtualization para Docker
   enable_virtualization_extensions = true
   enable_dynamic_memory            = false
+  enable_mac_spoofing              = true
   
   # --- ISO (desde flavor) ---
   iso_url      = local.flavor.iso_url
