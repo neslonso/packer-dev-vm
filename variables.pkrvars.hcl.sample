@@ -28,10 +28,26 @@ cpus      = 4                          # Número de CPUs
 disk_size = 80000                      # Disco en MB
 
 # ==============================================================================
-# UBUNTU
+# VM FLAVOR
 # ==============================================================================
-iso_url      = "https://releases.ubuntu.com/24.04.3/ubuntu-24.04.3-desktop-amd64.iso"
-iso_checksum = "sha256:faabcf33ae53976d2b8207a001ff32f4e5daae013505ac7188c9ea63988f8328"
+# Selecciona el "sabor" de la VM. Cada flavor incluye una ISO diferente y
+# configuración optimizada para su entorno de escritorio.
+#
+# Opciones disponibles:
+#   - "xubuntu" (default): Xubuntu 24.04.3 LTS con XFCE
+#       * Ligero (~400MB RAM en reposo)
+#       * Ideal para VMs sin GPU
+#       * RDP via xrdp (muy compatible)
+#       * Compositor desactivado por defecto
+#
+#   - "ubuntu": Ubuntu Desktop 24.04.3 LTS con GNOME
+#       * Más pesado (~1.5GB RAM en reposo)
+#       * Mejor experiencia visual
+#       * RDP via gnome-remote-desktop
+#       * Requiere más vCPUs para buen rendimiento
+#
+# ==============================================================================
+vm_flavor = "xubuntu"
 
 # ==============================================================================
 # SISTEMA

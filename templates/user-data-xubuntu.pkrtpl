@@ -1,0 +1,118 @@
+#cloud-config
+# ==============================================================================
+# XUBUNTU AUTOINSTALL CLOUD-INIT TEMPLATE
+# ==============================================================================
+# Este archivo usa Packer HCL Template Syntax para inyectar variables.
+# Configuración específica para Xubuntu con XFCE y LightDM.
+# ==============================================================================
+autoinstall:
+  version: 1
+
+  # ==========================================================================
+  # Locale y Teclado (desde variables)
+  # ==========================================================================
+  locale: ${locale}
+  keyboard:
+    layout: ${keyboard}
+    variant: ""
+
+  # ==========================================================================
+  # Identidad (desde variables)
+  # ==========================================================================
+  identity:
+    hostname: ${hostname}
+    username: ${username}
+    password: "${password_hash}"
+
+  # ==========================================================================
+  # Almacenamiento
+  # ==========================================================================
+  storage:
+    layout:
+      name: lvm
+      sizing-policy: all
+    swap:
+      size: 0
+
+  # ==========================================================================
+  # Red (IP estática para build)
+  # ==========================================================================
+  network:
+    network:
+      version: 2
+      ethernets:
+        eth0:
+          match:
+            name: "eth*"
+          addresses:
+            - ${static_ip}
+          routes:
+            - to: default
+              via: ${static_gateway}
+          nameservers:
+            addresses: [${replace(static_dns, ",", ", ")}]
+          dhcp4: false
+          dhcp6: false
+
+  # ==========================================================================
+  # SSH
+  # ==========================================================================
+  ssh:
+    install-server: true
+    allow-pw: ${ssh_allow_password}
+
+  # ==========================================================================
+  # Paquetes base para Xubuntu (XFCE)
+  # ==========================================================================
+  packages:
+    - xubuntu-desktop
+    - openssh-server
+    - linux-tools-virtual
+    - linux-cloud-tools-virtual
+    - git
+    - curl
+    - wget
+    - vim
+    - htop
+    - jq
+    - unzip
+    - ca-certificates
+    - gnupg
+    - lsb-release
+    - qemu-guest-agent
+    - spice-vdagent
+
+  # ==========================================================================
+  # Comandos post-instalación
+  # ==========================================================================
+  late-commands:
+%{ if sudo_nopassword ~}
+    # Sudo sin password
+    - echo '${username} ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/${username}
+    - chmod 440 /target/etc/sudoers.d/${username}
+%{ endif ~}
+
+%{ if autologin ~}
+    # Autologin en LightDM (Xubuntu usa LightDM, no GDM)
+    - |
+      mkdir -p /target/etc/lightdm/lightdm.conf.d
+      cat > /target/etc/lightdm/lightdm.conf.d/50-autologin.conf << 'LIGHTDMEOF'
+      [Seat:*]
+      autologin-user=${username}
+      autologin-user-timeout=0
+      LIGHTDMEOF
+%{ endif ~}
+
+    # Timezone
+    - curtin in-target --target=/target -- timedatectl set-timezone ${timezone}
+
+    # SSH config
+%{ if ssh_allow_password ~}
+    - sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /target/etc/ssh/sshd_config
+    - sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /target/etc/ssh/sshd_config
+%{ endif ~}
+    - curtin in-target --target=/target -- systemctl enable ssh
+
+    # GRUB timeout reducido
+    - sed -i 's/GRUB_TIMEOUT=.*/GRUB_TIMEOUT=2/' /target/etc/default/grub
+    - curtin in-target --target=/target -- update-grub

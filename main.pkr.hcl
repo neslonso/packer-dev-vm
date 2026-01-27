@@ -111,22 +111,14 @@ variable "disk_size" {
   }
 }
 
-# --- Ubuntu ---
-variable "iso_url" {
+# --- VM Flavor ---
+variable "vm_flavor" {
   type        = string
-  description = "URL de la ISO de Ubuntu (HTTP/HTTPS o file://)"
+  default     = "xubuntu"
+  description = "Flavor de la VM: 'xubuntu' (XFCE, ligero, ideal para VM), 'ubuntu' (GNOME, completo)"
   validation {
-    condition     = can(regex("^(https?|file)://", var.iso_url))
-    error_message = "La variable iso_url debe comenzar con http://, https:// o file://."
-  }
-}
-
-variable "iso_checksum" {
-  type        = string
-  description = "Checksum de la ISO (formato: sha256:HEXSTRING)"
-  validation {
-    condition     = can(regex("^(md5|sha1|sha256|sha512):[a-fA-F0-9]+$", var.iso_checksum))
-    error_message = "La variable iso_checksum debe tener formato válido: 'sha256:HEXSTRING' (también soporta md5, sha1, sha512)."
+    condition     = contains(["ubuntu", "xubuntu"], var.vm_flavor)
+    error_message = "La variable vm_flavor debe ser 'ubuntu' o 'xubuntu'."
   }
 }
 
@@ -412,6 +404,27 @@ locals {
   # Timestamp para nombres únicos
   timestamp = formatdate("YYYYMMDD-hhmm", timestamp())
 
+  # ===========================================================================
+  # FLAVORS - Configuración de ISOs y scripts por flavor
+  # ===========================================================================
+  flavors = {
+    xubuntu = {
+      iso_url       = "https://cdimage.ubuntu.com/xubuntu/releases/24.04.3/release/xubuntu-24.04.3-desktop-amd64.iso"
+      iso_checksum  = "sha256:b61e083d8a5ab003bad6ef7ea31ec21d7bfdf19b99d75987ab3fa3bbe85ec1bf"
+      user_data_tpl = "${path.root}/templates/user-data-xubuntu.pkrtpl"
+      description   = "Xubuntu 24.04.3 LTS (XFCE) - Ligero, ideal para VM"
+    }
+    ubuntu = {
+      iso_url       = "https://releases.ubuntu.com/24.04.3/ubuntu-24.04.3-desktop-amd64.iso"
+      iso_checksum  = "sha256:faabcf33ae53976d2b8207a001ff32f4e5daae013505ac7188c9ea63988f8328"
+      user_data_tpl = "${path.root}/templates/user-data-ubuntu.pkrtpl"
+      description   = "Ubuntu 24.04.3 LTS (GNOME) - Completo"
+    }
+  }
+
+  # Flavor seleccionado
+  flavor = local.flavors[var.vm_flavor]
+
   # GPG Key Fingerprints (centralized for easy maintenance)
   # These fingerprints are verified during package repository setup
   gpg_fingerprints = {
@@ -495,9 +508,9 @@ source "hyperv-iso" "ubuntu" {
   enable_virtualization_extensions = true
   enable_dynamic_memory            = false
   
-  # --- ISO ---
-  iso_url      = var.iso_url
-  iso_checksum = var.iso_checksum
+  # --- ISO (desde flavor) ---
+  iso_url      = local.flavor.iso_url
+  iso_checksum = local.flavor.iso_checksum
   
   # --- Boot ---
   boot_wait = "10s"
@@ -508,9 +521,9 @@ source "hyperv-iso" "ubuntu" {
     "<f10>"
   ]
   
-  # --- HTTP Server for cloud-init ---
+  # --- HTTP Server for cloud-init (template desde flavor) ---
   http_content = {
-    "/user-data" = templatefile("${path.root}/templates/user-data.pkrtpl", {
+    "/user-data" = templatefile(local.flavor.user_data_tpl, {
       hostname           = var.hostname
       username           = var.username
       password_hash      = local.password_hash
@@ -577,17 +590,26 @@ build {
     ]
   }
 
+  # --- Subir scripts de provisioning a la VM ---
+  provisioner "file" {
+    source      = "${path.root}/scripts/"
+    destination = "/tmp/provision"
+  }
+
   # --- Ejecutar provisioning con todas las variables ---
   provisioner "shell" {
     environment_vars = local.provision_env_vars
-    script           = "${path.root}/scripts/provision.sh"
-    execute_command  = "{{ .Vars }} sudo -E bash '{{ .Path }}'"
+    inline = [
+      "chmod -R +x /tmp/provision/",
+      "sudo -E /tmp/provision/provision-${var.vm_flavor}.sh 2>&1 | tee -a /var/log/provision.log"
+    ]
   }
 
   # --- Limpieza final ---
   provisioner "shell" {
     inline = [
       "echo 'Limpieza final...'",
+      "sudo rm -rf /tmp/provision",
       "sudo apt-get autoremove -y",
       "sudo apt-get clean",
       "sudo rm -rf /var/lib/apt/lists/*",
@@ -600,6 +622,7 @@ build {
       "echo '============================================================'",
       "echo 'BUILD COMPLETADO EXITOSAMENTE'",
       "echo '============================================================'",
+      "echo 'Flavor: ${var.vm_flavor}'",
       "echo 'Credenciales: ${var.username} / developer'",
       "echo 'Recuerda: Cambiar password tras login (passwd)'",
       "echo 'Recuerda: Habilitar MAC spoofing si Docker falla'",
