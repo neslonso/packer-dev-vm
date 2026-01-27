@@ -1,9 +1,10 @@
 #cloud-config
 # ==============================================================================
-# XUBUNTU AUTOINSTALL CLOUD-INIT TEMPLATE
+# XUBUNTU AUTOINSTALL CLOUD-INIT TEMPLATE (Ubuntu Server + xubuntu-desktop)
 # ==============================================================================
 # Este archivo usa Packer HCL Template Syntax para inyectar variables.
-# Configuración específica para Xubuntu con XFCE y LightDM.
+# Usa Ubuntu Server ISO con xubuntu-desktop instalado durante cloud-init.
+# XFCE + LightDM se configuran en late-commands.
 # ==============================================================================
 autoinstall:
   version: 1
@@ -38,21 +39,20 @@ autoinstall:
   # Red (IP estática para build)
   # ==========================================================================
   network:
-    network:
-      version: 2
-      ethernets:
-        eth0:
-          match:
-            name: "eth*"
-          addresses:
-            - ${static_ip}
-          routes:
-            - to: default
-              via: ${static_gateway}
-          nameservers:
-            addresses: [${replace(static_dns, ",", ", ")}]
-          dhcp4: false
-          dhcp6: false
+    version: 2
+    ethernets:
+      eth0:
+        match:
+          name: "eth*"
+        addresses:
+          - ${static_ip}
+        routes:
+          - to: default
+            via: ${static_gateway}
+        nameservers:
+          addresses: [${replace(static_dns, ",", ", ")}]
+        dhcp4: false
+        dhcp6: false
 
   # ==========================================================================
   # SSH
@@ -62,10 +62,12 @@ autoinstall:
     allow-pw: ${ssh_allow_password}
 
   # ==========================================================================
-  # Paquetes base para Xubuntu (XFCE)
+  # Paquetes - XFCE Desktop + herramientas base
   # ==========================================================================
   packages:
     - xubuntu-desktop
+    - lightdm
+    - lightdm-gtk-greeter
     - openssh-server
     - linux-tools-virtual
     - linux-cloud-tools-virtual
@@ -79,8 +81,6 @@ autoinstall:
     - ca-certificates
     - gnupg
     - lsb-release
-    - qemu-guest-agent
-    - spice-vdagent
 
   # ==========================================================================
   # Comandos post-instalación
@@ -93,14 +93,14 @@ autoinstall:
 %{ endif ~}
 
 %{ if autologin ~}
-    # Autologin en LightDM (Xubuntu usa LightDM, no GDM)
+    # Autologin en LightDM
+    - mkdir -p /target/etc/lightdm/lightdm.conf.d
     - |
-      mkdir -p /target/etc/lightdm/lightdm.conf.d
-      cat > /target/etc/lightdm/lightdm.conf.d/50-autologin.conf << 'LIGHTDMEOF'
+      cat > /target/etc/lightdm/lightdm.conf.d/50-autologin.conf << EOF
       [Seat:*]
       autologin-user=${username}
       autologin-user-timeout=0
-      LIGHTDMEOF
+      EOF
 %{ endif ~}
 
     # Timezone
@@ -112,6 +112,10 @@ autoinstall:
     - sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /target/etc/ssh/sshd_config
 %{ endif ~}
     - curtin in-target --target=/target -- systemctl enable ssh
+
+    # Configurar LightDM como display manager por defecto
+    - curtin in-target --target=/target -- systemctl set-default graphical.target
+    - echo "/usr/sbin/lightdm" > /target/etc/X11/default-display-manager
 
     # GRUB timeout reducido
     - sed -i 's/GRUB_TIMEOUT=.*/GRUB_TIMEOUT=2/' /target/etc/default/grub

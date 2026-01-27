@@ -407,12 +407,15 @@ locals {
   # ===========================================================================
   # FLAVORS - Configuración de ISOs y scripts por flavor
   # ===========================================================================
+  # NOTA: xubuntu usa Ubuntu Server ISO + paquete xubuntu-desktop porque
+  # la ISO de Xubuntu Desktop no soporta autoinstall de forma confiable.
+  # ===========================================================================
   flavors = {
     xubuntu = {
-      iso_url       = "https://cdimage.ubuntu.com/xubuntu/releases/24.04.3/release/xubuntu-24.04.3-desktop-amd64.iso"
-      iso_checksum  = "sha256:b61e083d8a5ab003bad6ef7ea31ec21d7bfdf19b99d75987ab3fa3bbe85ec1bf"
+      iso_url       = "https://releases.ubuntu.com/24.04.3/ubuntu-24.04.3-live-server-amd64.iso"
+      iso_checksum  = "sha256:c3514bf0056180d09376462a7a1b4f213c1d6e8ea67fae5c25099c6fd3d8274b"
       user_data_tpl = "${path.root}/templates/user-data-xubuntu.pkrtpl"
-      description   = "Xubuntu 24.04.3 LTS (XFCE) - Ligero, ideal para VM"
+      description   = "Ubuntu Server 24.04.3 + xubuntu-desktop (XFCE) - Ligero, ideal para VM"
     }
     ubuntu = {
       iso_url       = "https://releases.ubuntu.com/24.04.3/ubuntu-24.04.3-desktop-amd64.iso"
@@ -513,11 +516,20 @@ source "hyperv-iso" "ubuntu" {
   iso_checksum = local.flavor.iso_checksum
   
   # --- Boot ---
-  boot_wait = "10s"
+  # boot_wait: tiempo de espera antes de enviar boot_command
+  # Para Ubuntu Server: seleccionar opción de instalación y añadir parámetros autoinstall
+  boot_wait = "5s"
   boot_command = [
-    "<wait>e<wait>",
+    # Esperar a que GRUB cargue y seleccionar la primera opción
+    "<wait3>",
+    # Presionar 'e' para editar la entrada de GRUB
+    "e",
+    "<wait>",
+    # Navegar hasta la línea del kernel (linux)
     "<down><down><down><end>",
+    # Añadir parámetros de autoinstall
     " autoinstall ds=nocloud-net\\;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/",
+    # Arrancar con F10
     "<f10>"
   ]
   
