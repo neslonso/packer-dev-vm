@@ -65,7 +65,9 @@ autoinstall:
   # Paquetes - XFCE Desktop + herramientas base
   # ==========================================================================
   packages:
-    - xubuntu-desktop
+    - xubuntu-desktop-minimal
+    - xfce4-terminal
+    - mousepad
     - lightdm
     - lightdm-gtk-greeter
     - openssh-server
