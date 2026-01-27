@@ -602,10 +602,15 @@ build {
     ]
   }
 
+  # --- Crear directorio para scripts ---
+  provisioner "shell" {
+    inline = ["mkdir -p /tmp/provision"]
+  }
+
   # --- Subir scripts de provisioning a la VM ---
   provisioner "file" {
     source      = "${path.root}/scripts/"
-    destination = "/tmp/provision"
+    destination = "/tmp/provision/"
   }
 
   # --- Ejecutar provisioning con todas las variables ---
