@@ -3,7 +3,6 @@
 [![Packer](https://img.shields.io/badge/packer-%3E%3D1.9.0-blue.svg)](https://www.packer.io/)
 [![Ubuntu](https://img.shields.io/badge/ubuntu-24.04-orange.svg)](https://ubuntu.com/)
 [![Hyper-V](https://img.shields.io/badge/hyperv-generation--2-green.svg)](https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/hyper-v-on-windows)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Una solución de infraestructura como código (IaC) para crear entornos de desarrollo portables, consistentes y totalmente configurados en Hyper-V. Centraliza toda la configuración en un único archivo y obtén una VM lista para producir en minutos.
 
@@ -20,8 +19,6 @@ Una solución de infraestructura como código (IaC) para crear entornos de desar
 - [Sabores (Flavors)](#-sabores-flavors)
 - [Personalización de la Shell](#-personalización-de-la-shell)
 - [Troubleshooting](#-troubleshooting)
-- [CI/CD Readiness](#-cicd-readiness)
-- [Licencia](#-licencia)
 
 ---
 
@@ -44,7 +41,7 @@ graph TD
 
 - 🐳 **Docker ready**: Engine, Compose, BuildKit, Lazydocker y Portainer (opcional).
 - 🐚 **Shell Premium**: Soporte para Zsh/Bash con Oh My Zsh, Oh My Bash o Starship.
-- 👨‍💻 **IDE-ready**: Instalación automatizada de VS Code, Cursor, o Sublime Merge.
+- 👨‍💻 **IDE-ready**: Instalación automatizada de VS Code, Antigravity IDE, Cursor o Sublime Merge.
 - 🎨 **Estética Cuidada**: Soporte para Nerd Fonts (JetBrains Mono) y temas Dark/Light.
 - 🔌 **Conectividad**: Generación automática de archivo `.rdp` para acceso instantáneo desde Windows.
 - 🛠️ **Swiss Army Knife**: Git, GitHub CLI, fzf, ripgrep, bat, htop, y clientes de BD incluidos por defecto.
@@ -96,8 +93,8 @@ packer build -var-file=variables.pkrvars.hcl main.pkr.hcl
 
 - `main.pkr.hcl`: El corazón del proyecto. Define el build de Packer.
 - `variables.pkrvars.hcl`: Tu configuración personal (no se sube al repo si usas `.gitignore`).
-- `templates/`: Plantillas para `cloud-init` (User-data) y archivos de configuración.
-- `scripts/`: Módulos de Bash para el provisioning (Docker, Git, Editores, etc).
+- `templates/`: Plantillas para `cloud-init`, archivos de metadata y bienvenida HTML.
+- `scripts/`: Scripts de provisioning organizados por módulos (Docker, Git, Editores, etc).
 - `output/`: (Generado) Contiene el disco virtual exportado, logs y el acceso RDP.
 
 ---
@@ -113,8 +110,12 @@ packer build -var-file=variables.pkrvars.hcl main.pkr.hcl
 | | `disk_size` | Tamaño disco (MB) | `80000` |
 | **Software** | `install_vscode` | ¿Instalar VS Code? | `true` |
 | | `install_cursor` | ¿Instalar Cursor IDE?| `false` |
+| | `install_antigravity`| ¿Instalar Antigravity IDE?| `false` |
+| | `install_sublimemerge`| ¿Instalar Sublime Merge?| `false` |
 | | `install_portainer`| ¿Instalar Portainer?| `false` |
 | | `install_browser` | `firefox`, `chrome`, `none`| `firefox` |
+| **Avanzado**| `network_mode` | `dhcp` o `static` | `dhcp` |
+| | `static_ip` | IP estática (formato CIDR) | `172.20.144.100/20` |
 | **Personalización**| `shell` | `bash` o `zsh` | `zsh` |
 | | `prompt_theme` | `ohmyzsh`, `starship`, `none`| `ohmyzsh` |
 | | `nerd_font` | Fuente para terminal | `JetBrainsMono` |
@@ -158,22 +159,6 @@ Get-VMNetworkAdapter -VMName "tu-vm-name" | Set-VMNetworkAdapter -MacAddressSpoo
 Si Packer no logra conectar por SSH tras la instalación:
 1. Verifica que el "Default Switch" de Hyper-V esté funcionando.
 2. Asegúrate de no tener un Firewall bloqueando el puerto configurado (default 22).
-
----
-
-## ☁️ CI/CD Readiness
-
-Aunque este proyecto está optimizado para uso local, es **compatible con entornos de CI/CD**:
-- Soporta modo `headless` (sin interfaz gráfica durante el build).
-- Las variables pueden inyectarse mediante archivos `.pkrvars.hcl` o variables de entorno.
-- Puede integrarse en GitHub Actions o Azure DevOps utilizando "Self-hosted runners" que tengan Hyper-V habilitado.
-- **Nota**: No se incluye Travis/CI por defecto para mantener el enfoque en desarrollo local ágil.
-
----
-
-## 📜 Licencia
-
-Distribuido bajo la Licencia **MIT**. Consulta `LICENSE` para más información.
 
 ---
 Creado con ❤️ para desarrolladores que valoran su tiempo.
