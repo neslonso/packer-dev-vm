@@ -29,7 +29,8 @@ install_api_tools() {
                 DEB_URL="https://github.com/usebruno/bruno/releases/download/${BRUNO_VERSION}/bruno_${BR_VER_CLEAN}_amd64_linux.deb"
                 TEMP_DEB="/tmp/bruno.deb"
 
-                if curl --max-time 60 --fail -Lo "$TEMP_DEB" "$DEB_URL" 2>&1; then
+                # Descargar con reintentos (GitHub a veces tarda en redirigir)
+                if curl --retry 3 --retry-delay 2 --max-time 120 --fail -Lo "$TEMP_DEB" "$DEB_URL"; then
                     apt-get install -y "$TEMP_DEB"
                     rm -f "$TEMP_DEB"
                     log_success "Bruno ${BRUNO_VERSION} instalado correctamente"
