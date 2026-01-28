@@ -41,9 +41,9 @@ install_api_tools() {
             "insomnia")
                 log_task "Instalando Insomnia..."
 
-                # Usar el script de configuración oficial de Kong
+                # Usar el script de configuración oficial de Kong (auto-detecta distro)
                 # Ref: https://docs.insomnia.rest/insomnia/install
-                if curl -1sLf 'https://packages.konghq.com/public/insomnia/setup.deb.sh' | distro=ubuntu codename=focal bash; then
+                if curl -1sLf 'https://packages.konghq.com/public/insomnia/setup.deb.sh' | bash; then
                     apt-get update
                     if apt-get install -y insomnia; then
                         log_success "Insomnia instalado correctamente"
