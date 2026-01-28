@@ -45,6 +45,7 @@ EOF
 
     usermod -aG docker "${USERNAME}"
 
+    systemctl enable containerd
     systemctl enable docker
     systemctl start docker
 
@@ -151,6 +152,29 @@ install_portainer() {
     else
         log_error "Failed to start Portainer container"
     fi
+
+    # Crear servicio systemd para garantizar que Portainer arranque tras reboot
+    # (Docker restart policy no siempre persiste tras export de Packer)
+    log_task "Creando servicio systemd para Portainer..."
+    cat > /etc/systemd/system/portainer.service << 'SYSTEMD_EOF'
+[Unit]
+Description=Portainer Container
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/bash -c 'docker start portainer 2>/dev/null || docker run -d -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:lts'
+ExecStop=/usr/bin/docker stop portainer
+
+[Install]
+WantedBy=multi-user.target
+SYSTEMD_EOF
+
+    systemctl daemon-reload
+    systemctl enable portainer.service
+    log_success "Servicio portainer.service habilitado"
 }
 
 # Ejecutar

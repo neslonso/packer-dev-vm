@@ -14,37 +14,22 @@ setup_welcome_document() {
     echo "${WELCOME_HTML}" > "${WELCOME_FILE}"
 
     # -------------------------------------------------------------------------
-    # Inyectar Servicios Web Dinámicos
+    # Inyectar Servicios Web Dinámicos (usando awk para evitar problemas con sed)
     # -------------------------------------------------------------------------
-    SERVICES_HTML=""
     if [[ "${INSTALL_PORTAINER}" == "true" ]]; then
-        SERVICES_HTML+='<div class="card">
-                <h2>Portainer CE <span class="tag">Docker TUI</span></h2>
-                <div class="card-content">
-                    <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 10px;">
-                        Gestión visual de contenedores, volúmenes y redes.
-                    </p>
-                    <a href="https://localhost:9443" target="_blank" class="service-link">Abrir Portainer</a>
-                </div>
-            </div>'
-    fi
-
-    if [[ -n "${SERVICES_HTML}" ]]; then
-        # Usamos un delimitador diferente para sed (ex: |) ya que el HTML tiene /
-        sed -i "s|<!-- DYNAMIC_SERVICES_PLACEHOLDER -->|${SERVICES_HTML}|g" "${WELCOME_FILE}"
+        SERVICES_HTML='<div class="card"><h2>Portainer CE <span class="tag">Docker TUI</span></h2><div class="card-content"><p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 10px;">Gestión visual de contenedores, volúmenes y redes.</p><a href="https://localhost:9443" target="_blank" class="service-link">Abrir Portainer</a></div></div>'
+        awk -v html="${SERVICES_HTML}" '{gsub(/<!-- DYNAMIC_SERVICES_PLACEHOLDER -->/, html)}1' "${WELCOME_FILE}" > "${WELCOME_FILE}.tmp" && mv "${WELCOME_FILE}.tmp" "${WELCOME_FILE}"
     fi
 
     # -------------------------------------------------------------------------
-    # Parsear y Inyectar Aliases
+    # Parsear y Inyectar Aliases (escapando caracteres especiales)
     # -------------------------------------------------------------------------
     ALIASES_FILE="/tmp/provision/modules/aliases.sh"
     if [[ -f "${ALIASES_FILE}" ]]; then
         log_task "Parseando aliases desde ${ALIASES_FILE}..."
         TABLE_ROWS=""
-
-        # Leer el archivo buscando parejas description + alias
-        # Usamos un loop while para procesar el archivo
         DESC=""
+
         while IFS= read -r line; do
             if [[ "$line" =~ ^#\ description:\ (.*) ]]; then
                 DESC="${BASH_REMATCH[1]}"
@@ -52,15 +37,17 @@ setup_welcome_document() {
                 NAME="${BASH_REMATCH[1]}"
                 CMD="${BASH_REMATCH[2]}"
                 if [[ -n "$DESC" ]]; then
-                    TABLE_ROWS+="<tr><td><span class='alias-name'>$NAME</span></td><td><code class='alias-cmd'>$CMD</code></td><td class='alias-desc'>$DESC</td></tr>"
-                    DESC="" # Reset description
+                    # Escapar caracteres especiales para HTML
+                    CMD_ESCAPED=$(echo "$CMD" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g; s/"/\&quot;/g')
+                    TABLE_ROWS+="<tr><td><span class='alias-name'>${NAME}</span></td><td><code class='alias-cmd'>${CMD_ESCAPED}</code></td><td class='alias-desc'>${DESC}</td></tr>"
+                    DESC=""
                 fi
             fi
         done < "${ALIASES_FILE}"
 
         if [[ -n "${TABLE_ROWS}" ]]; then
-            # Inyectar en el tbody
-            sed -i "s|<!-- DYNAMIC_ALIASES_PLACEHOLDER -->|${TABLE_ROWS}|g" "${WELCOME_FILE}"
+            # Usar awk para reemplazo seguro
+            awk -v rows="${TABLE_ROWS}" '{gsub(/<!-- DYNAMIC_ALIASES_PLACEHOLDER -->/, rows)}1' "${WELCOME_FILE}" > "${WELCOME_FILE}.tmp" && mv "${WELCOME_FILE}.tmp" "${WELCOME_FILE}"
         fi
     fi
 

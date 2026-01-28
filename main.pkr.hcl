@@ -493,14 +493,17 @@ locals {
 
   # Welcome HTML Rendered
   welcome_html_content = templatefile("${path.root}/templates/user-welcome.html.pkrtpl", {
-    hostname           = var.hostname
-    username           = var.username
-    ssh_port           = var.ssh_port
-    install_browser    = join(", ", var.install_browser)
+    hostname            = var.hostname
+    username            = var.username
+    ssh_port            = var.ssh_port
+    install_browser     = join(", ", var.install_browser)
     install_vscode      = var.install_vscode ? "true" : "false"
     install_cursor      = var.install_cursor ? "true" : "false"
     install_antigravity = var.install_antigravity ? "true" : "false"
-    timestamp          = local.timestamp
+    install_portainer   = var.install_portainer ? "true" : "false"
+    install_sublimemerge = var.install_sublimemerge ? "true" : "false"
+    install_api_tools   = join(", ", var.install_api_tools)
+    timestamp           = local.timestamp
   })
 }
 
@@ -667,15 +670,15 @@ build {
   # --- Asegurar que los archivos a descargar existen ---
   provisioner "shell" {
     inline = [
-      "sudo touch /var/log/provision.log || true",
+      "sudo touch /var/log/provision-${var.hostname}.log || true",
       "touch /home/${var.username}/connect-${var.hostname}.rdp 2>/dev/null || sudo touch /home/${var.username}/connect-${var.hostname}.rdp || true"
     ]
   }
 
   # --- Descargar log de provisioning al host ---
   provisioner "file" {
-    source      = "/var/log/provision.log"
-    destination = "${var.output_directory}/provision.log"
+    source      = "/var/log/provision-${var.hostname}.log"
+    destination = "${var.output_directory}/provision-${var.hostname}.log"
     direction   = "download"
   }
 
@@ -688,14 +691,8 @@ build {
 
   # --- Descargar log en caso de error ---
   error-cleanup-provisioner "file" {
-    source      = "/var/log/provision.log"
-    destination = "${var.output_directory}/provision.log"
+    source      = "/var/log/provision-${var.hostname}.log"
+    destination = "${var.output_directory}/provision-${var.hostname}.log"
     direction   = "download"
-  }
-
-  # --- Post-processors ---
-  post-processor "manifest" {
-    output     = "${var.output_directory}/manifest.json"
-    strip_path = true
   }
 }

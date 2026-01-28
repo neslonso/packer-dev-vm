@@ -61,7 +61,7 @@ export DEBIAN_FRONTEND=noninteractive
 # ==============================================================================
 # LOGGING
 # ==============================================================================
-PROVISION_LOG="/var/log/provision.log"
+PROVISION_LOG="/var/log/provision-${HOSTNAME}.log"
 touch "$PROVISION_LOG"
 chmod 644 "$PROVISION_LOG"
 

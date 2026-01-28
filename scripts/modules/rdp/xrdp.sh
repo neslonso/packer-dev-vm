@@ -198,7 +198,7 @@ RDP_EOF
     log_msg "  Credenciales: ${USERNAME} / developer"
     log_msg ""
     log_msg "NOTA: Cambiar contraseña tras primer login con: passwd"
-    log_msg "NOTA: El hostname ${HOSTNAME}.local se resuelve via mDNS/Avahi"
+    log_msg "NOTA: El hostname ${HOSTNAME}.local se resuelve via mDNS (requiere Bonjour en Windows)"
 }
 
 # Ejecutar

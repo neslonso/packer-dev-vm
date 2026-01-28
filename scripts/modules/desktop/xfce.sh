@@ -107,6 +107,17 @@ ColorPalette=#21222c;#ff5555;#50fa7b;#f1fa8c;#bd93f9;#ff79c6;#8be9fd;#f8f8f2;#62
 EOF
 
     # -------------------------------------------------------------------------
+    # Establecer xfce4-terminal como terminal predeterminada
+    # -------------------------------------------------------------------------
+    update-alternatives --set x-terminal-emulator /usr/bin/xfce4-terminal.wrapper 2>/dev/null || true
+
+    # Configurar exo-preferred-applications
+    run_as_user "mkdir -p '${HOME_DIR}/.config/xfce4'"
+    cat > "${HOME_DIR}/.config/xfce4/helpers.rc" << EOF
+TerminalEmulator=xfce4-terminal
+EOF
+
+    # -------------------------------------------------------------------------
     # Desactivar power management / screen blanking
     # -------------------------------------------------------------------------
     cat > "${HOME_DIR}/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-power-manager.xml" << EOF

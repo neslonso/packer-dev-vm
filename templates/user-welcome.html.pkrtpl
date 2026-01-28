@@ -102,6 +102,12 @@
             gap: 12px;
         }
 
+        .card-content.scrollable {
+            max-height: 200px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
         .info-row {
             display: flex;
             justify-content: space-between;
@@ -145,19 +151,9 @@
             box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
         }
 
-        .alias-table-container {
-            margin-top: 40px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            padding: 30px;
-            box-shadow: var(--card-shadow);
-        }
-
-        .alias-table-container h2 {
-            margin-bottom: 20px;
-            color: var(--primary);
+        .alias-table-wrapper {
+            max-height: 250px;
+            overflow-y: auto;
         }
 
         table {
@@ -288,13 +284,36 @@
 
             <!-- Herramientas -->
             <div class="card">
-                <h2>Software Core</h2>
-                <div class="card-content" style="font-size: 0.85rem;">
-                    <p>• <strong>Docker:</strong> Engine, Compose, LZD</p>
-                    <p>• <strong>Git:</strong> CLI, LG, GitHub CLI</p>
-                    %{ if install_vscode == "true" }<p>• <strong>VS Code:</strong> Ext. básicas</p>%{ endif }
-                    %{ if install_cursor == "true" }<p>• <strong>Cursor AI:</strong> Editor avanzado</p>%{ endif }
-                    %{ if install_browser != "none" }<p>• <strong>Navegador:</strong> ${install_browser}</p>%{ endif }
+                <h2>Software Instalado</h2>
+                <div class="card-content scrollable" style="font-size: 0.85rem;">
+                    <p>• <strong>Docker:</strong> Engine, Compose, lazydocker</p>
+                    <p>• <strong>Git:</strong> CLI, lazygit, GitHub CLI</p>
+                    %{ if install_vscode == "true" }<p>• <strong>VS Code:</strong> Editor + extensiones</p>%{ endif }
+                    %{ if install_cursor == "true" }<p>• <strong>Cursor AI:</strong> Editor IA</p>%{ endif }
+                    %{ if install_sublimemerge == "true" }<p>• <strong>Sublime Merge:</strong> Git GUI</p>%{ endif }
+                    %{ if install_browser != "none" && install_browser != "" }<p>• <strong>Navegador:</strong> ${install_browser}</p>%{ endif }
+                    %{ if install_api_tools != "none" && install_api_tools != "" }<p>• <strong>API Tools:</strong> ${install_api_tools}</p>%{ endif }
+                    %{ if install_portainer == "true" }<p>• <strong>Portainer:</strong> Docker UI (puerto 9443)</p>%{ endif }
+                    %{ if install_antigravity == "true" }<p>• <strong>Antigravity:</strong> Custom tooling</p>%{ endif }
+                </div>
+            </div>
+
+            <!-- Aliases de Terminal -->
+            <div class="card">
+                <h2>Aliases de Terminal</h2>
+                <div class="alias-table-wrapper">
+                    <table style="font-size: 0.85rem;">
+                        <thead>
+                            <tr>
+                                <th width="20%">Alias</th>
+                                <th width="40%">Comando</th>
+                                <th width="40%">Descripción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="aliases-tbody">
+                            <!-- DYNAMIC_ALIASES_PLACEHOLDER -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -302,29 +321,15 @@
         <!-- DYNAMIC_SERVICES -->
         <h2 style="margin: 40px 0 20px; color: var(--text-main);">Servicios Web</h2>
         <div class="grid" id="services-grid">
-            <!-- Los servicios se inyectan aquí -->
             <!-- DYNAMIC_SERVICES_PLACEHOLDER -->
         </div>
 
-        <!-- DYNAMIC_ALIASES -->
-        <div class="alias-table-container">
-            <h2>Aliases de Terminal</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th width="15%">Alias</th>
-                        <th width="35%">Comando</th>
-                        <th width="50%">Descripción</th>
-                    </tr>
-                </thead>
-                <tbody id="aliases-tbody">
-                    <!-- Los aliases se inyectan aquí -->
-                    <!-- DYNAMIC_ALIASES_PLACEHOLDER -->
-                </tbody>
-            </table>
-        </div>
-
         <div class="footer">
+            <p style="margin-bottom: 10px;">
+                <a href="file:///var/log/provision-${hostname}.log" style="color: var(--primary); text-decoration: none;">
+                    📄 Ver log de provisión
+                </a>
+            </p>
             Entorno de desarrollo optimizado • Built with Antigravity
         </div>
     </div>
