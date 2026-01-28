@@ -139,7 +139,8 @@ install_portainer() {
         --restart=always \
         -v /var/run/docker.sock:/var/run/docker.sock \
         -v portainer_data:/data \
-        portainer/portainer-ce:lts; then
+        portainer/portainer-ce:lts \
+        --tunnel-port=0; then
 
         # Verificar que el contenedor está corriendo
         sleep 2
@@ -165,7 +166,7 @@ Requires=docker.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/bin/bash -c 'docker start portainer 2>/dev/null || docker run -d -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:lts'
+ExecStart=/bin/bash -c 'docker start portainer 2>/dev/null || docker run -d -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:lts --tunnel-port=0'
 ExecStop=/usr/bin/docker stop portainer
 
 [Install]
