@@ -51,48 +51,52 @@ log_msg ""
 # ==============================================================================
 
 # 1. Sistema base (red, locale, herramientas)
-log_section "1/10 Sistema base"
+log_section "1/11 Sistema base"
 source "${MODULES_DIR}/system-base.sh"
 
 # 2. Docker
-log_section "2/10 Docker"
+log_section "2/11 Docker"
 source "${MODULES_DIR}/docker.sh"
 
 # 3. Git
-log_section "3/10 Git"
+log_section "3/11 Git"
 source "${MODULES_DIR}/git.sh"
 
 # 4. Nerd Fonts
-log_section "4/10 Nerd Fonts"
+log_section "4/11 Nerd Fonts"
 source "${MODULES_DIR}/fonts.sh"
 
 # 5. Shell y Prompt
-log_section "5/10 Shell y Prompt"
+log_section "5/11 Shell y Prompt"
 source "${MODULES_DIR}/shell.sh"
 
 # 6. Clientes de base de datos
-log_section "6/10 Clientes de BD"
+log_section "6/11 Clientes de BD"
 source "${MODULES_DIR}/databases.sh"
 
 # 7. Editores
-log_section "7/10 Editores"
+log_section "7/11 Editores"
 source "${MODULES_DIR}/editors/vscode.sh"
 source "${MODULES_DIR}/editors/antigravity.sh"
 source "${MODULES_DIR}/editors/cursor.sh"
 source "${MODULES_DIR}/editors/sublime-merge.sh"
 
 # 8. Navegador
-log_section "8/10 Navegador"
+log_section "8/11 Navegador"
 source "${MODULES_DIR}/browsers.sh"
 
-# 9. Desktop GNOME + Aliases
-log_section "9/10 Desktop GNOME"
+# 9. Herramientas de API (Bruno, Insomnia)
+log_section "9/11 Herramientas de API"
+source "${MODULES_DIR}/api-tools.sh"
+
+# 10. Desktop GNOME + Aliases
+log_section "10/11 Desktop GNOME"
 source "${MODULES_DIR}/desktop/gnome.sh"
 source "${MODULES_DIR}/aliases.sh"
 source "${MODULES_DIR}/packer-shutdown.sh"
 
-# 10. RDP (GNOME Remote Desktop)
-log_section "10/10 GNOME Remote Desktop"
+# 11. RDP (GNOME Remote Desktop)
+log_section "11/11 GNOME Remote Desktop"
 source "${MODULES_DIR}/rdp/gnome-rd.sh"
 
 # Welcome document
