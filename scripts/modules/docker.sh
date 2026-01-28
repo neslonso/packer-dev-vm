@@ -152,6 +152,29 @@ install_portainer() {
     else
         log_error "Failed to start Portainer container"
     fi
+
+    # Crear servicio systemd para garantizar que Portainer arranque tras reboot
+    # (Docker restart policy no siempre persiste tras export de Packer)
+    log_task "Creando servicio systemd para Portainer..."
+    cat > /etc/systemd/system/portainer.service << 'SYSTEMD_EOF'
+[Unit]
+Description=Portainer Container
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/docker start portainer
+ExecStop=/usr/bin/docker stop portainer
+
+[Install]
+WantedBy=multi-user.target
+SYSTEMD_EOF
+
+    systemctl daemon-reload
+    systemctl enable portainer.service
+    log_success "Servicio portainer.service habilitado"
 }
 
 # Ejecutar
