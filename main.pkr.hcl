@@ -342,6 +342,16 @@ variable "install_sublimemerge" {
   description = "Instalar Sublime Merge (cliente Git visual de alta velocidad)"
 }
 
+variable "install_api_tools" {
+  type        = list(string)
+  default     = ["none"]
+  description = "Lista de herramientas de API a instalar: bruno, insomnia o none"
+  validation {
+    condition     = alltrue([for t in var.install_api_tools : contains(["bruno", "insomnia", "none"], t)])
+    error_message = "Cada elemento de install_api_tools debe ser 'bruno', 'insomnia' o 'none'."
+  }
+}
+
 variable "install_browser" {
   type        = list(string)
   default     = ["firefox"]
@@ -472,6 +482,7 @@ locals {
     "VM_INSTALL_CURSOR=${var.install_cursor}",
     "VM_INSTALL_SUBLIMEMERGE=${var.install_sublimemerge}",
     "VM_INSTALL_BROWSER=${join(",", var.install_browser)}",
+    "VM_INSTALL_API_TOOLS=${join(",", var.install_api_tools)}",
     # GPG Fingerprints (centralized)
     "GPG_FINGERPRINT_DOCKER=${local.gpg_fingerprints.docker}",
     "GPG_FINGERPRINT_GITHUB=${local.gpg_fingerprints.github}",
@@ -622,6 +633,7 @@ build {
       # Convertir CRLF a LF (por si los scripts vienen de Windows)
       "find /tmp/provision -type f -name '*.sh' -exec sed -i 's/\\r$//' {} \\;",
       "chmod -R +x /tmp/provision/",
+      "sudo -E /tmp/provision/modules/api-tools.sh",
       # El script escribe al log internamente, no usar tee para evitar problemas con pipefail
       "sudo -E /tmp/provision/provision-${var.vm_flavor}.sh"
     ]

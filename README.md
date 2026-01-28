@@ -42,6 +42,7 @@ graph TD
 - 🐳 **Docker ready**: Engine, Compose, BuildKit, Lazydocker y Portainer (opcional).
 - 🐚 **Shell Premium**: Soporte para Zsh/Bash con Oh My Zsh, Oh My Bash o Starship.
 - 👨‍💻 **IDE-ready**: Instalación automatizada de VS Code, Antigravity IDE, Cursor o Sublime Merge.
+- 🚀 **API Testing**: Clientes modernos como Bruno e Insomnia incluidos.
 - 🎨 **Estética Cuidada**: Soporte para Nerd Fonts (JetBrains Mono) y temas Dark/Light.
 - 🔌 **Conectividad**: Generación automática de archivo `.rdp` para acceso instantáneo desde Windows.
 - 🛠️ **Swiss Army Knife**: Git, GitHub CLI, fzf, ripgrep, bat, htop, y clientes de BD incluidos por defecto.
@@ -112,6 +113,7 @@ packer build -var-file=variables.pkrvars.hcl main.pkr.hcl
 | | `install_cursor` | ¿Instalar Cursor IDE?| `false` |
 | | `install_antigravity`| ¿Instalar Antigravity IDE?| `false` |
 | | `install_sublimemerge`| ¿Instalar Sublime Merge?| `false` |
+| | `install_api_tools`| `bruno`, `insomnia`, `none`| `none` |
 | | `install_portainer`| ¿Instalar Portainer?| `false` |
 | | `install_browser` | `firefox`, `chrome`, `none`| `firefox` |
 | **Avanzado**| `network_mode` | `dhcp` o `static` | `dhcp` |
