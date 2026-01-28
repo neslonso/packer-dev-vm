@@ -90,6 +90,15 @@ packer build -var-file=variables.pkrvars.hcl main.pkr.hcl
 
 ---
 
+## 🚀 API Testing
+
+La VM incluye soporte para las herramientas más modernas de pruebas de API, permitiéndote elegir la que mejor se adapte a tu flujo:
+
+- **Bruno**: *Recomendado*. Un cliente de API de código abierto, ultrarrápido y "git-friendly". Guarda las colecciones como archivos planos (`.bru`) en tu carpeta de proyecto, facilitando el control de versiones sin depender de nubes externas.
+- **Insomnia**: Una interfaz potente y pulida para diseñar y probar APIs (REST, gRPC, GraphQL). Ideal si buscas una experiencia visual rica y herramientas integradas de diseño de especificaciones.
+
+---
+
 ## 📂 Estructura del Proyecto
 
 - `main.pkr.hcl`: El corazón del proyecto. Define el build de Packer.
