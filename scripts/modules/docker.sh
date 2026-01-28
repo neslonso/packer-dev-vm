@@ -45,6 +45,7 @@ EOF
 
     usermod -aG docker "${USERNAME}"
 
+    systemctl enable containerd
     systemctl enable docker
     systemctl start docker
 
