@@ -695,10 +695,4 @@ build {
     destination = "${var.output_directory}/provision-${var.hostname}.log"
     direction   = "download"
   }
-
-  # --- Post-processors ---
-  post-processor "manifest" {
-    output     = "${var.output_directory}/manifest.json"
-    strip_path = true
-  }
 }
