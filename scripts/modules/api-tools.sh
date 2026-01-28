@@ -41,15 +41,17 @@ install_api_tools() {
             "insomnia")
                 log_task "Instalando Insomnia..."
 
-                # Añadir repositorio oficial
-                curl -v -fsSL https://insomnia.rest/keys/debian.key | gpg --dearmor -o /usr/share/keyrings/insomnia.gpg
-                echo "deb [arch=amd64 signed-by=/usr/share/keyrings/insomnia.gpg] https://download.konghq.com/insomnia-ubuntu/ default all" > /etc/apt/sources.list.d/insomnia.list
-
-                apt-get update
-                if apt-get install -y insomnia; then
-                    log_success "Insomnia instalado correctamente"
+                # Usar el script de configuración oficial de Kong
+                # Ref: https://docs.insomnia.rest/insomnia/install
+                if curl -1sLf 'https://packages.konghq.com/public/insomnia/setup.deb.sh' | distro=ubuntu codename=focal bash; then
+                    apt-get update
+                    if apt-get install -y insomnia; then
+                        log_success "Insomnia instalado correctamente"
+                    else
+                        log_error "Error al instalar Insomnia"
+                    fi
                 else
-                    log_error "Error al instalar Insomnia"
+                    log_error "Error al configurar el repositorio de Insomnia"
                 fi
                 ;;
 
