@@ -670,15 +670,15 @@ build {
   # --- Asegurar que los archivos a descargar existen ---
   provisioner "shell" {
     inline = [
-      "sudo touch /var/log/provision.log || true",
+      "sudo touch /var/log/provision-${var.hostname}.log || true",
       "touch /home/${var.username}/connect-${var.hostname}.rdp 2>/dev/null || sudo touch /home/${var.username}/connect-${var.hostname}.rdp || true"
     ]
   }
 
   # --- Descargar log de provisioning al host ---
   provisioner "file" {
-    source      = "/var/log/provision.log"
-    destination = "${var.output_directory}/provision.log"
+    source      = "/var/log/provision-${var.hostname}.log"
+    destination = "${var.output_directory}/provision-${var.hostname}.log"
     direction   = "download"
   }
 
@@ -691,8 +691,8 @@ build {
 
   # --- Descargar log en caso de error ---
   error-cleanup-provisioner "file" {
-    source      = "/var/log/provision.log"
-    destination = "${var.output_directory}/provision.log"
+    source      = "/var/log/provision-${var.hostname}.log"
+    destination = "${var.output_directory}/provision-${var.hostname}.log"
     direction   = "download"
   }
 
