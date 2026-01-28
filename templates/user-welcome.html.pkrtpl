@@ -102,6 +102,12 @@
             gap: 12px;
         }
 
+        .card-content.scrollable {
+            max-height: 200px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
         .info-row {
             display: flex;
             justify-content: space-between;
@@ -153,6 +159,8 @@
             border-radius: 24px;
             padding: 30px;
             box-shadow: var(--card-shadow);
+            max-height: 400px;
+            overflow-y: auto;
         }
 
         .alias-table-container h2 {
@@ -288,13 +296,17 @@
 
             <!-- Herramientas -->
             <div class="card">
-                <h2>Software Core</h2>
-                <div class="card-content" style="font-size: 0.85rem;">
-                    <p>• <strong>Docker:</strong> Engine, Compose, LZD</p>
-                    <p>• <strong>Git:</strong> CLI, LG, GitHub CLI</p>
-                    %{ if install_vscode == "true" }<p>• <strong>VS Code:</strong> Ext. básicas</p>%{ endif }
-                    %{ if install_cursor == "true" }<p>• <strong>Cursor AI:</strong> Editor avanzado</p>%{ endif }
-                    %{ if install_browser != "none" }<p>• <strong>Navegador:</strong> ${install_browser}</p>%{ endif }
+                <h2>Software Instalado</h2>
+                <div class="card-content scrollable" style="font-size: 0.85rem;">
+                    <p>• <strong>Docker:</strong> Engine, Compose, lazydocker</p>
+                    <p>• <strong>Git:</strong> CLI, lazygit, GitHub CLI</p>
+                    %{ if install_vscode == "true" }<p>• <strong>VS Code:</strong> Editor + extensiones</p>%{ endif }
+                    %{ if install_cursor == "true" }<p>• <strong>Cursor AI:</strong> Editor IA</p>%{ endif }
+                    %{ if install_sublimemerge == "true" }<p>• <strong>Sublime Merge:</strong> Git GUI</p>%{ endif }
+                    %{ if install_browser != "none" && install_browser != "" }<p>• <strong>Navegador:</strong> ${install_browser}</p>%{ endif }
+                    %{ if install_api_tools != "none" && install_api_tools != "" }<p>• <strong>API Tools:</strong> ${install_api_tools}</p>%{ endif }
+                    %{ if install_portainer == "true" }<p>• <strong>Portainer:</strong> Docker UI (puerto 9443)</p>%{ endif }
+                    %{ if install_antigravity == "true" }<p>• <strong>Antigravity:</strong> Custom tooling</p>%{ endif }
                 </div>
             </div>
         </div>
