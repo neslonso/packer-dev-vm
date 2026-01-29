@@ -63,6 +63,12 @@ setup_welcome_document() {
     chown "${USERNAME}:${USERNAME}" "${WELCOME_FILE}"
     chmod 644 "${WELCOME_FILE}"
 
+    # Asegurar permisos del log de provisión (ahora en home)
+    if [[ -f "${PROVISION_LOG}" ]]; then
+        chown "${USERNAME}:${USERNAME}" "${PROVISION_LOG}"
+        chmod 644 "${PROVISION_LOG}"
+    fi
+
     # Crear lanzador para autostart
     AUTOSTART_DIR="${HOME_DIR}/.config/autostart"
     mkdir -p "${AUTOSTART_DIR}"

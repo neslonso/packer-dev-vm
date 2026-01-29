@@ -326,7 +326,7 @@
 
         <div class="footer">
             <p style="margin-bottom: 10px;">
-                <a href="file:///var/log/provision-${hostname}.log" style="color: var(--primary); text-decoration: none;">
+                <a href="provision-${hostname}.log" target="_blank" style="color: var(--primary); text-decoration: none;">
                     📄 Ver log de provisión
                 </a>
             </p>
