@@ -12,7 +12,7 @@ configure_xrdp() {
     # -------------------------------------------------------------------------
     # Instalar xrdp y dependencias
     # -------------------------------------------------------------------------
-    apt-get install -y xrdp xorgxrdp avahi-daemon ssl-cert
+    apt-get install -y xrdp xorgxrdp avahi-daemon ssl-cert pipewire-module-xrdp pulseaudio-utils
 
     # Añadir usuario xrdp al grupo ssl-cert para acceso a certificados
     usermod -aG ssl-cert xrdp
@@ -153,7 +153,7 @@ desktopheight:i:1080
 session bpp:i:24
 compression:i:1
 keyboardhook:i:2
-audiocapturemode:i:0
+audiocapturemode:i:1
 videoplaybackmode:i:1
 connection type:i:7
 networkautodetect:i:1

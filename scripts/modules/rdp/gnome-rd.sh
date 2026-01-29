@@ -10,7 +10,7 @@ configure_gnome_remote_desktop() {
     log_section "Configurando GNOME Remote Desktop (modo sistema)..."
 
     # Instalar gnome-remote-desktop, avahi (mDNS) y herramientas necesarias
-    apt-get install -y gnome-remote-desktop avahi-daemon xclip openssl
+    apt-get install -y gnome-remote-desktop avahi-daemon xclip openssl pipewire-audio-client-libraries libspa-0.2-bluetooth
 
     GRD_USER="gnome-remote-desktop"
     GRD_DIR="/var/lib/gnome-remote-desktop/.local/share/gnome-remote-desktop"
@@ -104,7 +104,7 @@ desktopheight:i:1080
 session bpp:i:32
 compression:i:1
 keyboardhook:i:2
-audiocapturemode:i:0
+audiocapturemode:i:1
 videoplaybackmode:i:1
 connection type:i:7
 networkautodetect:i:1
