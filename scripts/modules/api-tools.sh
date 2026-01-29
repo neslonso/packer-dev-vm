@@ -42,17 +42,21 @@ install_api_tools() {
             "insomnia")
                 log_task "Instalando Insomnia..."
 
-                # Usar el script de configuración oficial de Kong (auto-detecta distro)
-                # Ref: https://docs.insomnia.rest/insomnia/install
-                if curl -1sLf 'https://packages.konghq.com/public/insomnia/setup.deb.sh' | bash; then
-                    apt-get update
-                    if apt-get install -y insomnia; then
-                        log_success "Insomnia instalado correctamente"
+                # Obtener la URL del último .deb de GitHub Releases
+                # El tag suele ser 'core@X.Y.Z'
+                INSOMNIA_DEB_URL=$(curl --max-time 30 --fail --silent --show-error https://api.github.com/repos/Kong/insomnia/releases/latest | jq -r '.assets[] | select(.name | endswith(".deb")) | .browser_download_url' 2>/dev/null || echo "")
+
+                if [[ -n "$INSOMNIA_DEB_URL" && "$INSOMNIA_DEB_URL" != "null" ]]; then
+                    TEMP_DEB="/tmp/insomnia.deb"
+                    if curl --retry 3 --retry-delay 2 --max-time 120 --fail -Lo "$TEMP_DEB" "$INSOMNIA_DEB_URL"; then
+                        apt-get install -y "$TEMP_DEB"
+                        rm -f "$TEMP_DEB"
+                        log_success "Insomnia instalado correctamente desde GitHub"
                     else
-                        log_error "Error al instalar Insomnia"
+                        log_error "Error al descargar Insomnia de ${INSOMNIA_DEB_URL}"
                     fi
                 else
-                    log_error "Error al configurar el repositorio de Insomnia"
+                    log_error "No se pudo encontrar la URL de descarga de Insomnia en GitHub"
                 fi
                 ;;
 
