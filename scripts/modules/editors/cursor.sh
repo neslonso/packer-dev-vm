@@ -14,7 +14,7 @@ install_cursor() {
     log_section "Instalando Cursor..."
 
     # Dependencias necesarias para Cursor/Electron
-    apt-get install -y libconf-2-4 libasound2 libnss3 libgbm1 libxcb-dri3-0 libxtst6
+    apt-get install -y libasound2t64 libnss3 libgbm1 libxcb-dri3-0 libxtst6
 
     TEMP_DEB="/tmp/cursor_latest_amd64.deb"
 
