@@ -93,6 +93,7 @@ source "${MODULES_DIR}/api-tools.sh"
 log_section "10/11 Desktop XFCE"
 source "${MODULES_DIR}/desktop/xfce.sh"
 source "${MODULES_DIR}/aliases.sh"
+source "${MODULES_DIR}/history.sh"
 source "${MODULES_DIR}/packer-shutdown.sh"
 
 # 11. RDP (xrdp)

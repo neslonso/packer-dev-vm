@@ -93,6 +93,7 @@ source "${MODULES_DIR}/api-tools.sh"
 log_section "10/11 Desktop GNOME"
 source "${MODULES_DIR}/desktop/gnome.sh"
 source "${MODULES_DIR}/aliases.sh"
+source "${MODULES_DIR}/history.sh"
 source "${MODULES_DIR}/packer-shutdown.sh"
 
 # 11. RDP (GNOME Remote Desktop)
