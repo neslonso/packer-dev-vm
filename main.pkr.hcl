@@ -372,6 +372,16 @@ variable "install_messaging" {
   }
 }
 
+variable "install_privacy" {
+  type        = list(string)
+  default     = ["none"]
+  description = "Lista de herramientas de privacidad a instalar: keybase, element, all o none"
+  validation {
+    condition     = alltrue([for p in var.install_privacy : contains(["keybase", "element", "all", "none"], p)])
+    error_message = "Cada elemento de install_privacy debe ser 'keybase', 'element', 'all' o 'none'."
+  }
+}
+
 variable "keep_vm_registered" {
   type        = bool
   description = "Mantener la VM registrada en Hyper-V después del build (true = no exportar ni borrar, false = exportar y borrar VM temporal)"
@@ -493,6 +503,7 @@ locals {
     "VM_INSTALL_SUBLIMEMERGE=${var.install_sublimemerge}",
     "VM_INSTALL_BROWSER=${join(",", var.install_browser)}",
     "VM_INSTALL_MESSAGING=${join(",", var.install_messaging)}",
+    "VM_INSTALL_PRIVACY=${join(",", var.install_privacy)}",
     "VM_INSTALL_API_TOOLS=${join(",", var.install_api_tools)}",
     # GPG Fingerprints (centralized)
     "GPG_FINGERPRINT_DOCKER=${local.gpg_fingerprints.docker}",

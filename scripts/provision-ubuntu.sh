@@ -43,6 +43,7 @@ log_msg "  - Install Cursor: ${INSTALL_CURSOR}"
 log_msg "  - Install Sublime Merge: ${INSTALL_SUBLIMEMERGE}"
 log_msg "  - Install Browser: ${INSTALL_BROWSER}"
 log_msg "  - Install Messaging: ${INSTALL_MESSAGING}"
+log_msg "  - Install Privacy: ${INSTALL_PRIVACY}"
 log_msg "  - Install Portainer: ${INSTALL_PORTAINER}"
 log_msg "  - Network Mode: ${NETWORK_MODE}"
 log_msg ""
@@ -52,57 +53,61 @@ log_msg ""
 # ==============================================================================
 
 # 1. Sistema base (red, locale, herramientas)
-log_section "1/12 Sistema base"
+log_section "1/13Sistema base"
 source "${MODULES_DIR}/system-base.sh"
 
 # 2. Docker
-log_section "2/12 Docker"
+log_section "2/13Docker"
 source "${MODULES_DIR}/docker.sh"
 
 # 3. Git
-log_section "3/12 Git"
+log_section "3/13Git"
 source "${MODULES_DIR}/git.sh"
 
 # 4. Nerd Fonts
-log_section "4/12 Nerd Fonts"
+log_section "4/13Nerd Fonts"
 source "${MODULES_DIR}/fonts.sh"
 
 # 5. Shell y Prompt
-log_section "5/12 Shell y Prompt"
+log_section "5/13Shell y Prompt"
 source "${MODULES_DIR}/shell.sh"
 
 # 6. Clientes de base de datos
-log_section "6/12 Clientes de BD"
+log_section "6/13Clientes de BD"
 source "${MODULES_DIR}/databases.sh"
 
 # 7. Editores
-log_section "7/12 Editores"
+log_section "7/13Editores"
 source "${MODULES_DIR}/editors/vscode.sh"
 source "${MODULES_DIR}/editors/antigravity.sh"
 source "${MODULES_DIR}/editors/cursor.sh"
 source "${MODULES_DIR}/editors/sublime-merge.sh"
 
 # 8. Navegador
-log_section "8/12 Navegador"
+log_section "8/13Navegador"
 source "${MODULES_DIR}/browsers.sh"
 
 # 9. Mensajería (Slack, Signal, Telegram)
-log_section "9/12 Mensajería"
+log_section "9/13 Mensajería"
 source "${MODULES_DIR}/messaging.sh"
 
-# 10. Herramientas de API (Bruno, Insomnia)
-log_section "10/12 Herramientas de API"
+# 10. Privacidad (Keybase, Element)
+log_section "10/13 Privacidad"
+source "${MODULES_DIR}/privacy.sh"
+
+# 11. Herramientas de API (Bruno, Insomnia)
+log_section "11/13 Herramientas de API"
 source "${MODULES_DIR}/api-tools.sh"
 
-# 11. Desktop GNOME + Aliases
-log_section "11/12 Desktop GNOME"
+# 12. Desktop GNOME + Aliases
+log_section "12/13 Desktop GNOME"
 source "${MODULES_DIR}/desktop/gnome.sh"
 source "${MODULES_DIR}/aliases.sh"
 source "${MODULES_DIR}/history.sh"
 source "${MODULES_DIR}/packer-shutdown.sh"
 
-# 12. RDP (GNOME Remote Desktop)
-log_section "12/12 GNOME Remote Desktop"
+# 13. RDP (GNOME Remote Desktop)
+log_section "13/13 GNOME Remote Desktop"
 source "${MODULES_DIR}/rdp/gnome-rd.sh"
 
 # Welcome document
@@ -127,6 +132,7 @@ log_msg "  - Cursor: ${INSTALL_CURSOR}"
 log_msg "  - Sublime Merge: ${INSTALL_SUBLIMEMERGE}"
 log_msg "  - Navegador: ${INSTALL_BROWSER}"
 log_msg "  - Mensajería: ${INSTALL_MESSAGING}"
+log_msg "  - Privacidad: ${INSTALL_PRIVACY}"
 log_msg "  - Nerd Font: ${NERD_FONT}"
 log_msg "  - RDP: GNOME Remote Desktop (puerto 3389)"
 log_msg "  - Red: ${NETWORK_MODE} - IP: $(hostname -I | awk '{print $1}')"
