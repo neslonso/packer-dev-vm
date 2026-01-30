@@ -147,6 +147,7 @@ install_cursor       = true             # Instalar Cursor (AI-powered code edito
 install_sublimemerge = true             # Instalar Sublime Merge (cliente Git visual)
 install_api_tools    = ["bruno", "insomnia"] # Herramientas de API: bruno, insomnia, none
 install_browser      = ["firefox"]       # firefox, chrome, chromium, all, none (ej: ["firefox", "chrome"])
+install_messaging    = ["slack"]         # slack, signal, telegram, all, none (ej: ["slack", "signal"])
 
 # ==============================================================================
 # BUILD

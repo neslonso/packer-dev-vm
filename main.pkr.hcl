@@ -362,6 +362,16 @@ variable "install_browser" {
   }
 }
 
+variable "install_messaging" {
+  type        = list(string)
+  default     = ["none"]
+  description = "Lista de apps de mensajería a instalar: slack, signal, telegram, all o none"
+  validation {
+    condition     = alltrue([for m in var.install_messaging : contains(["slack", "signal", "telegram", "all", "none"], m)])
+    error_message = "Cada elemento de install_messaging debe ser 'slack', 'signal', 'telegram', 'all' o 'none'."
+  }
+}
+
 variable "keep_vm_registered" {
   type        = bool
   description = "Mantener la VM registrada en Hyper-V después del build (true = no exportar ni borrar, false = exportar y borrar VM temporal)"
@@ -482,6 +492,7 @@ locals {
     "VM_INSTALL_CURSOR=${var.install_cursor}",
     "VM_INSTALL_SUBLIMEMERGE=${var.install_sublimemerge}",
     "VM_INSTALL_BROWSER=${join(",", var.install_browser)}",
+    "VM_INSTALL_MESSAGING=${join(",", var.install_messaging)}",
     "VM_INSTALL_API_TOOLS=${join(",", var.install_api_tools)}",
     # GPG Fingerprints (centralized)
     "GPG_FINGERPRINT_DOCKER=${local.gpg_fingerprints.docker}",
