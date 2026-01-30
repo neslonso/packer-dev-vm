@@ -32,15 +32,19 @@ install_browser() {
                 ;;
             "chrome")
                 log_task "Instalando Google Chrome..."
-                download_and_verify_gpg_key \
-                    "https://dl.google.com/linux/linux_signing_key.pub" \
-                    "/etc/apt/keyrings/google-chrome.gpg" \
-                    "$GOOGLE_GPG_FINGERPRINT" \
-                    "Google Chrome"
+                # Download Chrome directly as .deb to avoid GPG key issues
+                local chrome_deb="/tmp/google-chrome-stable.deb"
+                log_task "Descargando Google Chrome .deb..."
+                if ! curl --max-time 120 --fail --silent --show-error --location \
+                    "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" \
+                    -o "$chrome_deb"; then
+                    log_error "Error descargando Google Chrome"
+                    return 1
+                fi
 
-                echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
-                apt-get update
-                apt-get install -y google-chrome-stable
+                log_task "Instalando dependencias y paquete Chrome..."
+                apt-get install -y "$chrome_deb"
+                rm -f "$chrome_deb"
                 log_success "Google Chrome instalado"
                 ;;
             "chromium")
