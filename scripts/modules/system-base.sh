@@ -94,7 +94,10 @@ NETPLAN_EOF
         fzf \
         ripgrep \
         fd-find \
-        bat
+        bat \
+        gnupg \
+        curl \
+        wget
 
     # Crear symlinks para herramientas con nombres diferentes
     if ! ln -sf /usr/bin/batcat /usr/local/bin/bat 2>/dev/null; then

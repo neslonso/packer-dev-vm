@@ -209,8 +209,12 @@ download_and_verify_gpg_key() {
     mkdir -p "$temp_keyring"
     chmod 700 "$temp_keyring"
 
+    # Import logic with error handling (ignore set -e)
     local import_output
-    import_output=$(gpg --no-default-keyring --keyring "$temp_keyring/temp.gpg" --import "$temp_key" 2>&1)
+    if ! import_output=$(gpg --no-default-keyring --keyring "$temp_keyring/temp.gpg" --import "$temp_key" 2>&1); then
+        log_msg "WARNING: GPG import command returned authentication error (common with apt keys), continuing analysis..."
+        log_msg "GPG Output: $import_output"
+    fi
 
     local actual_fingerprint=""
     actual_fingerprint=$(echo "$import_output" | grep -oP '[0-9A-F]{40}' | head -1)
@@ -239,6 +243,14 @@ download_and_verify_gpg_key() {
 
     local expected_norm="${expected_fingerprint// /}"
     local actual_norm="${actual_fingerprint// /}"
+
+    if [[ -z "$actual_norm" ]]; then
+        log_msg "ERROR: Failed to extract fingerprint from downloaded key ${description}"
+        log_msg "GPG Import Output:"
+        log_msg "$import_output"
+        rm -f "$temp_key"
+        return 1
+    fi
 
     if [[ "$actual_norm" != "$expected_norm" ]]; then
         log_msg "ERROR: ${description} fingerprint mismatch!"
