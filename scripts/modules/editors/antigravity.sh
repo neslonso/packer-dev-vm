@@ -27,6 +27,19 @@ install_antigravity() {
     # Configure Antigravity settings
     apply_vscode_settings "Antigravity"
 
+    # Instalar extensiones desde variable
+    if [[ -n "${VSCODE_EXTENSIONS}" ]]; then
+        log_task "Instalando extensiones de Antigravity..."
+        IFS=',' read -ra EXTENSIONS <<< "${VSCODE_EXTENSIONS}"
+        for ext in "${EXTENSIONS[@]}"; do
+            if run_as_user "antigravity --install-extension ${ext} --force" 2>&1; then
+                log_success "Extensión instalada: ${ext}"
+            else
+                log_warning "Error instalando extensión: ${ext}"
+            fi
+        done
+    fi
+
     # Configure desktop launcher
     if [[ -f "/usr/share/applications/antigravity.desktop" ]]; then
         run_as_user "mkdir -p '${HOME_DIR}/.local/share/applications'"

@@ -26,24 +26,18 @@ install_vscode() {
     # Apply settings
     apply_vscode_settings "Code"
 
-    # Instalar extensiones básicas
-    EXTENSIONS=(
-        "ms-azuretools.vscode-docker"
-        "ms-vscode-remote.remote-containers"
-        "eamodio.gitlens"
-        "mhutchie.git-graph"
-        "EditorConfig.EditorConfig"
-        "redhat.vscode-yaml"
-    )
-
-    log_task "Installing VS Code extensions..."
-    for ext in "${EXTENSIONS[@]}"; do
-        if run_as_user "code --install-extension ${ext} --force" 2>&1; then
-            log_success "Installed extension: ${ext}"
-        else
-            log_warning "Failed to install extension: ${ext}"
-        fi
-    done
+    # Instalar extensiones desde variable
+    if [[ -n "${VSCODE_EXTENSIONS}" ]]; then
+        log_task "Instalando extensiones de VS Code..."
+        IFS=',' read -ra EXTENSIONS <<< "${VSCODE_EXTENSIONS}"
+        for ext in "${EXTENSIONS[@]}"; do
+            if run_as_user "code --install-extension ${ext} --force" 2>&1; then
+                log_success "Extensión instalada: ${ext}"
+            else
+                log_warning "Error instalando extensión: ${ext}"
+            fi
+        done
+    fi
 
     log_success "VS Code instalado"
 }

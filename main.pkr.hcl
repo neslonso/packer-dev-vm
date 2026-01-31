@@ -342,6 +342,12 @@ variable "install_sublimemerge" {
   description = "Instalar Sublime Merge (cliente Git visual de alta velocidad)"
 }
 
+variable "vscode_extensions" {
+  type        = list(string)
+  default     = []
+  description = "Lista de extensiones para VS Code, Cursor y Antigravity (IDs del marketplace)"
+}
+
 variable "install_api_tools" {
   type        = list(string)
   default     = ["none"]
@@ -359,6 +365,26 @@ variable "install_browser" {
   validation {
     condition     = alltrue([for b in var.install_browser : contains(["firefox", "chrome", "chromium", "all", "none"], b)])
     error_message = "Cada elemento de install_browser debe ser 'firefox', 'chrome', 'chromium', 'all' o 'none'."
+  }
+}
+
+variable "install_messaging" {
+  type        = list(string)
+  default     = ["none"]
+  description = "Lista de apps de mensajería a instalar: slack, signal, telegram, all o none"
+  validation {
+    condition     = alltrue([for m in var.install_messaging : contains(["slack", "signal", "telegram", "all", "none"], m)])
+    error_message = "Cada elemento de install_messaging debe ser 'slack', 'signal', 'telegram', 'all' o 'none'."
+  }
+}
+
+variable "install_privacy" {
+  type        = list(string)
+  default     = ["none"]
+  description = "Lista de herramientas de privacidad a instalar: keybase, element, all o none"
+  validation {
+    condition     = alltrue([for p in var.install_privacy : contains(["keybase", "element", "all", "none"], p)])
+    error_message = "Cada elemento de install_privacy debe ser 'keybase', 'element', 'all' o 'none'."
   }
 }
 
@@ -481,7 +507,10 @@ locals {
     "VM_INSTALL_ANTIGRAVITY=${var.install_antigravity}",
     "VM_INSTALL_CURSOR=${var.install_cursor}",
     "VM_INSTALL_SUBLIMEMERGE=${var.install_sublimemerge}",
+    "VM_VSCODE_EXTENSIONS=${join(",", var.vscode_extensions)}",
     "VM_INSTALL_BROWSER=${join(",", var.install_browser)}",
+    "VM_INSTALL_MESSAGING=${join(",", var.install_messaging)}",
+    "VM_INSTALL_PRIVACY=${join(",", var.install_privacy)}",
     "VM_INSTALL_API_TOOLS=${join(",", var.install_api_tools)}",
     # GPG Fingerprints (centralized)
     "GPG_FINGERPRINT_DOCKER=${local.gpg_fingerprints.docker}",

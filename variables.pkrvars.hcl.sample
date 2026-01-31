@@ -145,8 +145,23 @@ install_vscode       = true             # Instalar VS Code
 install_antigravity  = false            # Instalar Google Antigravity IDE (en preview, puede fallar)
 install_cursor       = true             # Instalar Cursor (AI-powered code editor)
 install_sublimemerge = true             # Instalar Sublime Merge (cliente Git visual)
+
+# Extensiones para VS Code, Cursor y Antigravity (IDs del marketplace)
+vscode_extensions = [
+  "ms-azuretools.vscode-docker",         # Docker: syntax, comandos, explorador
+  "ms-vscode-remote.remote-containers",  # Dev Containers: desarrollo en contenedores
+  "mhutchie.git-graph",                  # Git Graph: visualización de ramas/commits
+  "EditorConfig.EditorConfig",           # EditorConfig: consistencia de formato
+  "redhat.vscode-yaml",                  # YAML: docker-compose, k8s, CI/CD
+  "esbenp.prettier-vscode",              # Prettier: formateo automático
+  "usernamehw.errorlens",                # Error Lens: errores inline
+  "PKief.material-icon-theme",           # Material Icons: iconos de archivo
+]
+
 install_api_tools    = ["bruno", "insomnia"] # Herramientas de API: bruno, insomnia, none
-install_browser      = ["firefox"]       # firefox, chrome, chromium, all, none (ej: ["firefox", "chrome"])
+install_browser      = ["firefox"]       # firefox, chrome, chromium, all, none - EL PRIMERO es el predeterminado (all = firefox)
+install_messaging    = ["slack"]         # slack, signal, telegram, all, none (ej: ["slack", "signal"])
+install_privacy      = ["keybase"]       # keybase, element, all, none (ej: ["keybase", "element"])
 
 # ==============================================================================
 # BUILD

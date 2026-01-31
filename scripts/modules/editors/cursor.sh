@@ -72,6 +72,19 @@ install_cursor() {
 
             # Configure Cursor settings
             apply_vscode_settings "Cursor"
+
+            # Instalar extensiones desde variable
+            if [[ -n "${VSCODE_EXTENSIONS}" ]]; then
+                log_task "Instalando extensiones de Cursor..."
+                IFS=',' read -ra EXTENSIONS <<< "${VSCODE_EXTENSIONS}"
+                for ext in "${EXTENSIONS[@]}"; do
+                    if run_as_user "cursor --install-extension ${ext} --force" 2>&1; then
+                        log_success "Extensión instalada: ${ext}"
+                    else
+                        log_warning "Error instalando extensión: ${ext}"
+                    fi
+                done
+            fi
         else
             log_error "Failed to install Cursor .deb package"
             rm -f "${TEMP_DEB}"

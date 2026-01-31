@@ -42,6 +42,8 @@ log_msg "  - Install Antigravity: ${INSTALL_ANTIGRAVITY}"
 log_msg "  - Install Cursor: ${INSTALL_CURSOR}"
 log_msg "  - Install Sublime Merge: ${INSTALL_SUBLIMEMERGE}"
 log_msg "  - Install Browser: ${INSTALL_BROWSER}"
+log_msg "  - Install Messaging: ${INSTALL_MESSAGING}"
+log_msg "  - Install Privacy: ${INSTALL_PRIVACY}"
 log_msg "  - Install Portainer: ${INSTALL_PORTAINER}"
 log_msg "  - Network Mode: ${NETWORK_MODE}"
 log_msg ""
@@ -51,52 +53,61 @@ log_msg ""
 # ==============================================================================
 
 # 1. Sistema base (red, locale, herramientas)
-log_section "1/11 Sistema base"
+log_section "1/13Sistema base"
 source "${MODULES_DIR}/system-base.sh"
 
 # 2. Docker
-log_section "2/11 Docker"
+log_section "2/13Docker"
 source "${MODULES_DIR}/docker.sh"
 
 # 3. Git
-log_section "3/11 Git"
+log_section "3/13Git"
 source "${MODULES_DIR}/git.sh"
 
 # 4. Nerd Fonts
-log_section "4/11 Nerd Fonts"
+log_section "4/13Nerd Fonts"
 source "${MODULES_DIR}/fonts.sh"
 
 # 5. Shell y Prompt
-log_section "5/11 Shell y Prompt"
+log_section "5/13Shell y Prompt"
 source "${MODULES_DIR}/shell.sh"
 
 # 6. Clientes de base de datos
-log_section "6/11 Clientes de BD"
+log_section "6/13Clientes de BD"
 source "${MODULES_DIR}/databases.sh"
 
 # 7. Editores
-log_section "7/11 Editores"
+log_section "7/13Editores"
 source "${MODULES_DIR}/editors/vscode.sh"
 source "${MODULES_DIR}/editors/antigravity.sh"
 source "${MODULES_DIR}/editors/cursor.sh"
 source "${MODULES_DIR}/editors/sublime-merge.sh"
 
 # 8. Navegador
-log_section "8/11 Navegador"
+log_section "8/13Navegador"
 source "${MODULES_DIR}/browsers.sh"
 
-# 9. Herramientas de API (Bruno, Insomnia)
-log_section "9/11 Herramientas de API"
+# 9. Mensajería (Slack, Signal, Telegram)
+log_section "9/13 Mensajería"
+source "${MODULES_DIR}/messaging.sh"
+
+# 10. Privacidad (Keybase, Element)
+log_section "10/13 Privacidad"
+source "${MODULES_DIR}/privacy.sh"
+
+# 11. Herramientas de API (Bruno, Insomnia)
+log_section "11/13 Herramientas de API"
 source "${MODULES_DIR}/api-tools.sh"
 
-# 10. Desktop XFCE + Aliases
-log_section "10/11 Desktop XFCE"
+# 12. Desktop XFCE + Aliases
+log_section "12/13 Desktop XFCE"
 source "${MODULES_DIR}/desktop/xfce.sh"
 source "${MODULES_DIR}/aliases.sh"
+source "${MODULES_DIR}/history.sh"
 source "${MODULES_DIR}/packer-shutdown.sh"
 
-# 11. RDP (xrdp)
-log_section "11/11 xrdp"
+# 13. RDP (xrdp)
+log_section "13/13 xrdp"
 source "${MODULES_DIR}/rdp/xrdp.sh"
 
 # Welcome document
@@ -120,6 +131,8 @@ log_msg "  - Antigravity: ${INSTALL_ANTIGRAVITY}"
 log_msg "  - Cursor: ${INSTALL_CURSOR}"
 log_msg "  - Sublime Merge: ${INSTALL_SUBLIMEMERGE}"
 log_msg "  - Navegador: ${INSTALL_BROWSER}"
+log_msg "  - Mensajería: ${INSTALL_MESSAGING}"
+log_msg "  - Privacidad: ${INSTALL_PRIVACY}"
 log_msg "  - Nerd Font: ${NERD_FONT}"
 log_msg "  - RDP: xrdp (puerto 3389)"
 log_msg "  - Red: ${NETWORK_MODE} - IP: $(hostname -I | awk '{print $1}')"
