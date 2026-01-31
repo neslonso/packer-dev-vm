@@ -146,7 +146,7 @@ install_antigravity  = false            # Instalar Google Antigravity IDE (en pr
 install_cursor       = true             # Instalar Cursor (AI-powered code editor)
 install_sublimemerge = true             # Instalar Sublime Merge (cliente Git visual)
 install_api_tools    = ["bruno", "insomnia"] # Herramientas de API: bruno, insomnia, none
-install_browser      = ["firefox"]       # firefox, chrome, chromium, all, none (ej: ["firefox", "chrome"])
+install_browser      = ["firefox"]       # firefox, chrome, chromium, all, none - EL PRIMERO es el predeterminado (all = firefox)
 install_messaging    = ["slack"]         # slack, signal, telegram, all, none (ej: ["slack", "signal"])
 install_privacy      = ["keybase"]       # keybase, element, all, none (ej: ["keybase", "element"])
 

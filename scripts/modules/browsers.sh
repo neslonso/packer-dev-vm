@@ -6,6 +6,15 @@
 # Requiere: common.sh
 # ==============================================================================
 
+# Mapeo de navegador a archivo .desktop
+get_desktop_file() {
+    case "$1" in
+        "firefox")  echo "firefox.desktop" ;;
+        "chrome")   echo "google-chrome.desktop" ;;
+        "chromium") echo "chromium.desktop" ;;
+    esac
+}
+
 install_browser() {
     # Si es "none", salir inmediatamente
     if [[ "${INSTALL_BROWSER}" == "none" ]]; then
@@ -21,9 +30,17 @@ install_browser() {
 
     log_section "Configurando navegadores: ${browsers_to_install}..."
 
+    # Guardar el primer navegador para establecerlo como predeterminado
+    local first_browser=""
+
     # Iterar sobre la lista separada por comas
     IFS=',' read -ra ADDR <<< "${browsers_to_install}"
     for browser in "${ADDR[@]}"; do
+        # Guardar el primer navegador válido
+        if [[ -z "$first_browser" && "$browser" != "none" ]]; then
+            first_browser="$browser"
+        fi
+
         case "${browser}" in
             "firefox")
                 log_task "Instalando Firefox..."
@@ -60,6 +77,24 @@ install_browser() {
                 ;;
         esac
     done
+
+    # Establecer el primer navegador como predeterminado
+    if [[ -n "$first_browser" ]]; then
+        local desktop_file
+        desktop_file=$(get_desktop_file "$first_browser")
+        if [[ -n "$desktop_file" ]]; then
+            log_task "Estableciendo ${first_browser} como navegador predeterminado..."
+            # Configurar para el usuario
+            run_as_user "xdg-settings set default-web-browser ${desktop_file}" 2>/dev/null || true
+            # Configurar alternativas del sistema
+            case "$first_browser" in
+                "firefox")  update-alternatives --set x-www-browser /usr/bin/firefox 2>/dev/null || true ;;
+                "chrome")   update-alternatives --set x-www-browser /usr/bin/google-chrome-stable 2>/dev/null || true ;;
+                "chromium") update-alternatives --set x-www-browser /usr/bin/chromium 2>/dev/null || true ;;
+            esac
+            log_success "${first_browser} establecido como predeterminado"
+        fi
+    fi
 }
 
 # Ejecutar
