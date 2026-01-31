@@ -342,6 +342,12 @@ variable "install_sublimemerge" {
   description = "Instalar Sublime Merge (cliente Git visual de alta velocidad)"
 }
 
+variable "vscode_extensions" {
+  type        = list(string)
+  default     = []
+  description = "Lista de extensiones para VS Code, Cursor y Antigravity (IDs del marketplace)"
+}
+
 variable "install_api_tools" {
   type        = list(string)
   default     = ["none"]
@@ -501,6 +507,7 @@ locals {
     "VM_INSTALL_ANTIGRAVITY=${var.install_antigravity}",
     "VM_INSTALL_CURSOR=${var.install_cursor}",
     "VM_INSTALL_SUBLIMEMERGE=${var.install_sublimemerge}",
+    "VM_VSCODE_EXTENSIONS=${join(",", var.vscode_extensions)}",
     "VM_INSTALL_BROWSER=${join(",", var.install_browser)}",
     "VM_INSTALL_MESSAGING=${join(",", var.install_messaging)}",
     "VM_INSTALL_PRIVACY=${join(",", var.install_privacy)}",
