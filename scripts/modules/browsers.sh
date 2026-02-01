@@ -15,6 +15,15 @@ get_desktop_file() {
     esac
 }
 
+# Mapeo de navegador a nombre XFCE helper
+get_xfce_helper() {
+    case "$1" in
+        "firefox")  echo "firefox" ;;
+        "chrome")   echo "google-chrome" ;;
+        "chromium") echo "chromium" ;;
+    esac
+}
+
 install_browser() {
     # Si es "none", salir inmediatamente
     if [[ "${INSTALL_BROWSER}" == "none" ]]; then
@@ -122,6 +131,29 @@ application/x-extension-xht=${desktop_file}
                 "chrome")   update-alternatives --set x-www-browser /usr/bin/google-chrome-stable 2>/dev/null || true ;;
                 "chromium") update-alternatives --set x-www-browser /usr/bin/chromium 2>/dev/null || true ;;
             esac
+
+            # 5. XFCE: ~/.config/xfce4/helpers.rc (usado por exo-open)
+            local xfce_helper
+            xfce_helper=$(get_xfce_helper "$first_browser")
+            if [[ -n "$xfce_helper" ]]; then
+                local xfce_config_dir="${HOME_DIR}/.config/xfce4"
+                mkdir -p "$xfce_config_dir"
+
+                # Crear o actualizar helpers.rc
+                local helpers_rc="${xfce_config_dir}/helpers.rc"
+                if [[ -f "$helpers_rc" ]]; then
+                    # Si existe, actualizar la línea WebBrowser
+                    if grep -q "^WebBrowser=" "$helpers_rc"; then
+                        sed -i "s/^WebBrowser=.*/WebBrowser=${xfce_helper}/" "$helpers_rc"
+                    else
+                        echo "WebBrowser=${xfce_helper}" >> "$helpers_rc"
+                    fi
+                else
+                    # Crear nuevo helpers.rc
+                    echo "WebBrowser=${xfce_helper}" > "$helpers_rc"
+                fi
+                chown -R "${USERNAME}:${USERNAME}" "$xfce_config_dir"
+            fi
 
             log_success "${first_browser} establecido como predeterminado"
         fi
