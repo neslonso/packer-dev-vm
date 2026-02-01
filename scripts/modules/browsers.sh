@@ -85,17 +85,12 @@ install_browser() {
         if [[ -n "$desktop_file" ]]; then
             log_task "Estableciendo ${first_browser} como navegador predeterminado..."
 
-            # Método 1: Escribir directamente en mimeapps.list (funciona sin sesión gráfica)
-            local mimeapps_dir="${HOME_DIR}/.config"
-            local mimeapps_file="${mimeapps_dir}/mimeapps.list"
-            mkdir -p "$mimeapps_dir"
-
-            # Crear o actualizar mimeapps.list
-            cat > "$mimeapps_file" << MIMEAPPS_EOF
-[Default Applications]
+            # Contenido del mimeapps.list
+            local mimeapps_content="[Default Applications]
 x-scheme-handler/http=${desktop_file}
 x-scheme-handler/https=${desktop_file}
 x-scheme-handler/about=${desktop_file}
+x-scheme-handler/unknown=${desktop_file}
 text/html=${desktop_file}
 application/xhtml+xml=${desktop_file}
 application/x-extension-htm=${desktop_file}
@@ -103,10 +98,25 @@ application/x-extension-html=${desktop_file}
 application/x-extension-shtml=${desktop_file}
 application/x-extension-xhtml=${desktop_file}
 application/x-extension-xht=${desktop_file}
-MIMEAPPS_EOF
-            chown "${USERNAME}:${USERNAME}" "$mimeapps_file"
+"
 
-            # Método 2: update-alternatives (sistema)
+            # 1. Nivel sistema: /etc/xdg/mimeapps.list (máxima prioridad)
+            mkdir -p /etc/xdg
+            echo "$mimeapps_content" > /etc/xdg/mimeapps.list
+
+            # 2. Nivel usuario: ~/.config/mimeapps.list
+            local user_mimeapps_dir="${HOME_DIR}/.config"
+            mkdir -p "$user_mimeapps_dir"
+            echo "$mimeapps_content" > "${user_mimeapps_dir}/mimeapps.list"
+            chown -R "${USERNAME}:${USERNAME}" "$user_mimeapps_dir"
+
+            # 3. Nivel usuario alternativo: ~/.local/share/applications/mimeapps.list
+            local user_apps_dir="${HOME_DIR}/.local/share/applications"
+            mkdir -p "$user_apps_dir"
+            echo "$mimeapps_content" > "${user_apps_dir}/mimeapps.list"
+            chown -R "${USERNAME}:${USERNAME}" "${HOME_DIR}/.local"
+
+            # 4. update-alternatives (sistema)
             case "$first_browser" in
                 "firefox")  update-alternatives --set x-www-browser /usr/bin/firefox 2>/dev/null || true ;;
                 "chrome")   update-alternatives --set x-www-browser /usr/bin/google-chrome-stable 2>/dev/null || true ;;
