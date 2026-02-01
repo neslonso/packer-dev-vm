@@ -80,16 +80,12 @@ try {
             exit 1
         }
 
-        # Create standard Hyper-V folder structure (same as Hyper-V Manager)
+        # Standard Hyper-V folder structure (same as Hyper-V Manager)
         $vmBasePath = Join-Path $RegisterVmPath $VmName
         $vhdPath = Join-Path $vmBasePath "Virtual Hard Disks"
         $snapshotPath = Join-Path $vmBasePath "Snapshots"
 
-        Write-Host "Creating VM folder structure at: $vmBasePath"
-        New-Item -ItemType Directory -Path $vhdPath -Force | Out-Null
-        New-Item -ItemType Directory -Path $snapshotPath -Force | Out-Null
-
-        Write-Host "Copying and registering VM..."
+        Write-Host "Copying and registering VM to: $vmBasePath"
 
         Import-VM -Path $vmcxFile.FullName `
             -Copy `
