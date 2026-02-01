@@ -80,21 +80,29 @@ try {
             exit 1
         }
 
-        $destPath = Join-Path $RegisterVmPath $VmName
+        # Create standard Hyper-V folder structure (same as Hyper-V Manager)
+        $vmBasePath = Join-Path $RegisterVmPath $VmName
+        $vhdPath = Join-Path $vmBasePath "Virtual Hard Disks"
+        $snapshotPath = Join-Path $vmBasePath "Snapshots"
 
-        Write-Host "Copying and registering VM to: $destPath"
+        Write-Host "Creating VM folder structure at: $vmBasePath"
+        New-Item -ItemType Directory -Path $vhdPath -Force | Out-Null
+        New-Item -ItemType Directory -Path $snapshotPath -Force | Out-Null
+
+        Write-Host "Copying and registering VM..."
 
         Import-VM -Path $vmcxFile.FullName `
             -Copy `
             -GenerateNewId `
-            -VirtualMachinePath $RegisterVmPath `
-            -VhdDestinationPath $destPath `
-            -SnapshotFilePath $destPath `
-            -SmartPagingFilePath $destPath
+            -VirtualMachinePath $vmBasePath `
+            -VhdDestinationPath $vhdPath `
+            -SnapshotFilePath $snapshotPath `
+            -SmartPagingFilePath $vmBasePath
 
-        Write-Host "SUCCESS: VM '$VmName' registered at $RegisterVmPath"
-        Write-Host "  - VHDs: $destPath"
-        Write-Host "  - Snapshots: $destPath"
+        Write-Host "SUCCESS: VM '$VmName' registered at $vmBasePath"
+        Write-Host "  - Virtual Machines: $vmBasePath\Virtual Machines"
+        Write-Host "  - Virtual Hard Disks: $vhdPath"
+        Write-Host "  - Snapshots: $snapshotPath"
     }
     else {
         # In-place mode: Register VM from output directory
