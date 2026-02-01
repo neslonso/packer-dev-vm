@@ -166,9 +166,14 @@ install_privacy      = ["keybase"]       # keybase, element, all, none (ej: ["ke
 # ==============================================================================
 # BUILD
 # ==============================================================================
-output_directory  = "./output"         # Directorio de salida de la VM
+output_directory  = "./output"         # Directorio de salida de la VM exportada
 headless          = false              # true = sin ventana (para CI/CD)
-keep_vm_registered = false             # true = mantener VM en Hyper-V (no exportar), false = exportar y borrar VM temporal
+
+# --- VM Registration (post-build) ---
+# Registra automáticamente la VM en el hypervisor tras el build
+register_vm       = true               # true = registrar VM tras build
+register_vm_copy  = true               # true = copiar a register_vm_path, false = registrar in-place
+register_vm_path  = "C:/VMs"           # Destino de la copia (solo si register_vm_copy=true)
 
 # ==============================================================================
 # HYPER-V (específico)
