@@ -94,7 +94,7 @@ install_browser() {
         if [[ -n "$desktop_file" ]]; then
             log_task "Estableciendo ${first_browser} como navegador predeterminado..."
 
-            # Contenido del mimeapps.list
+            # Contenido del mimeapps.list (Default + Added Associations)
             local mimeapps_content="[Default Applications]
 x-scheme-handler/http=${desktop_file}
 x-scheme-handler/https=${desktop_file}
@@ -107,6 +107,11 @@ application/x-extension-html=${desktop_file}
 application/x-extension-shtml=${desktop_file}
 application/x-extension-xhtml=${desktop_file}
 application/x-extension-xht=${desktop_file}
+
+[Added Associations]
+x-scheme-handler/http=${desktop_file}
+x-scheme-handler/https=${desktop_file}
+text/html=${desktop_file}
 "
 
             # 1. Nivel sistema: /etc/xdg/mimeapps.list (máxima prioridad)
@@ -147,7 +152,12 @@ application/x-extension-xht=${desktop_file}
                 chown -R "${USERNAME}:${USERNAME}" "$xfce_config_dir"
             fi
 
-            # 6. Refrescar base de datos MIME
+            # 6. Limpiar mimeapps.list del sistema que Chrome pueda haber creado
+            if [[ -f /usr/share/applications/mimeapps.list ]]; then
+                rm -f /usr/share/applications/mimeapps.list
+            fi
+
+            # 7. Refrescar base de datos MIME
             update-mime-database /usr/share/mime 2>/dev/null || true
             update-desktop-database /usr/share/applications 2>/dev/null || true
 
