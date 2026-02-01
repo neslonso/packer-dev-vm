@@ -94,72 +94,31 @@ install_browser() {
         if [[ -n "$desktop_file" ]]; then
             log_task "Estableciendo ${first_browser} como navegador predeterminado..."
 
-            # Contenido del mimeapps.list (Default + Added Associations)
-            local mimeapps_content="[Default Applications]
-x-scheme-handler/http=${desktop_file}
-x-scheme-handler/https=${desktop_file}
-x-scheme-handler/about=${desktop_file}
-x-scheme-handler/unknown=${desktop_file}
-text/html=${desktop_file}
-application/xhtml+xml=${desktop_file}
-application/x-extension-htm=${desktop_file}
-application/x-extension-html=${desktop_file}
-application/x-extension-shtml=${desktop_file}
-application/x-extension-xhtml=${desktop_file}
-application/x-extension-xht=${desktop_file}
-
-[Added Associations]
-x-scheme-handler/http=${desktop_file}
-x-scheme-handler/https=${desktop_file}
-text/html=${desktop_file}
-"
-
-            # 1. Nivel sistema: /etc/xdg/mimeapps.list (máxima prioridad)
-            mkdir -p /etc/xdg
-            echo "$mimeapps_content" > /etc/xdg/mimeapps.list
-
-            # 2. Nivel usuario: ~/.config/mimeapps.list
-            local user_mimeapps_dir="${HOME_DIR}/.config"
-            mkdir -p "$user_mimeapps_dir"
-            echo "$mimeapps_content" > "${user_mimeapps_dir}/mimeapps.list"
-            chown -R "${USERNAME}:${USERNAME}" "$user_mimeapps_dir"
-
-            # 3. Nivel usuario alternativo: ~/.local/share/applications/mimeapps.list
-            local user_apps_dir="${HOME_DIR}/.local/share/applications"
-            mkdir -p "$user_apps_dir"
-            echo "$mimeapps_content" > "${user_apps_dir}/mimeapps.list"
-            chown -R "${USERNAME}:${USERNAME}" "${HOME_DIR}/.local"
-
-            # 4. update-alternatives (sistema)
+            # 1. update-alternatives: usado por x-www-browser (welcome.html, etc.)
             case "$first_browser" in
                 "firefox")  update-alternatives --set x-www-browser /usr/bin/firefox 2>/dev/null || true ;;
                 "chrome")   update-alternatives --set x-www-browser /usr/bin/google-chrome-stable 2>/dev/null || true ;;
                 "chromium") update-alternatives --set x-www-browser /usr/bin/chromium 2>/dev/null || true ;;
             esac
 
-            # 5. XFCE: helpers.rc (usado por exo-open)
+            # 2. mimeapps.list: para URLs clickeadas en apps (Slack, etc.)
+            local mimeapps_content="[Default Applications]
+x-scheme-handler/http=${desktop_file}
+x-scheme-handler/https=${desktop_file}
+text/html=${desktop_file}
+"
+            mkdir -p "${HOME_DIR}/.config"
+            echo "$mimeapps_content" > "${HOME_DIR}/.config/mimeapps.list"
+            chown "${USERNAME}:${USERNAME}" "${HOME_DIR}/.config/mimeapps.list"
+
+            # 3. XFCE helpers.rc: para exo-open --launch WebBrowser
             local xfce_helper
             xfce_helper=$(get_xfce_helper "$first_browser")
             if [[ -n "$xfce_helper" ]]; then
-                # 5a. Nivel sistema: /etc/xdg/xfce4/helpers.rc
-                mkdir -p /etc/xdg/xfce4
-                echo "WebBrowser=${xfce_helper}" > /etc/xdg/xfce4/helpers.rc
-
-                # 5b. Nivel usuario: ~/.config/xfce4/helpers.rc
-                local xfce_config_dir="${HOME_DIR}/.config/xfce4"
-                mkdir -p "$xfce_config_dir"
-                echo "WebBrowser=${xfce_helper}" > "${xfce_config_dir}/helpers.rc"
-                chown -R "${USERNAME}:${USERNAME}" "$xfce_config_dir"
+                mkdir -p "${HOME_DIR}/.config/xfce4"
+                echo "WebBrowser=${xfce_helper}" > "${HOME_DIR}/.config/xfce4/helpers.rc"
+                chown -R "${USERNAME}:${USERNAME}" "${HOME_DIR}/.config/xfce4"
             fi
-
-            # 6. Limpiar mimeapps.list del sistema que Chrome pueda haber creado
-            if [[ -f /usr/share/applications/mimeapps.list ]]; then
-                rm -f /usr/share/applications/mimeapps.list
-            fi
-
-            # 7. Refrescar base de datos MIME
-            update-mime-database /usr/share/mime 2>/dev/null || true
-            update-desktop-database /usr/share/applications 2>/dev/null || true
 
             log_success "${first_browser} establecido como predeterminado"
         fi
