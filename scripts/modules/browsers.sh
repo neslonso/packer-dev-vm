@@ -15,6 +15,15 @@ get_desktop_file() {
     esac
 }
 
+# Mapeo de navegador a nombre XFCE helper
+get_xfce_helper() {
+    case "$1" in
+        "firefox")  echo "firefox" ;;
+        "chrome")   echo "google-chrome" ;;
+        "chromium") echo "chromium" ;;
+    esac
+}
+
 install_browser() {
     # Si es "none", salir inmediatamente
     if [[ "${INSTALL_BROWSER}" == "none" ]]; then
@@ -84,14 +93,33 @@ install_browser() {
         desktop_file=$(get_desktop_file "$first_browser")
         if [[ -n "$desktop_file" ]]; then
             log_task "Estableciendo ${first_browser} como navegador predeterminado..."
-            # Configurar para el usuario
-            run_as_user "xdg-settings set default-web-browser ${desktop_file}" 2>/dev/null || true
-            # Configurar alternativas del sistema
+
+            # 1. update-alternatives: usado por x-www-browser (welcome.html, etc.)
             case "$first_browser" in
                 "firefox")  update-alternatives --set x-www-browser /usr/bin/firefox 2>/dev/null || true ;;
                 "chrome")   update-alternatives --set x-www-browser /usr/bin/google-chrome-stable 2>/dev/null || true ;;
                 "chromium") update-alternatives --set x-www-browser /usr/bin/chromium 2>/dev/null || true ;;
             esac
+
+            # 2. mimeapps.list: para URLs clickeadas en apps (Slack, etc.)
+            local mimeapps_content="[Default Applications]
+x-scheme-handler/http=${desktop_file}
+x-scheme-handler/https=${desktop_file}
+text/html=${desktop_file}
+"
+            mkdir -p "${HOME_DIR}/.config"
+            echo "$mimeapps_content" > "${HOME_DIR}/.config/mimeapps.list"
+            chown "${USERNAME}:${USERNAME}" "${HOME_DIR}/.config/mimeapps.list"
+
+            # 3. XFCE helpers.rc: para exo-open --launch WebBrowser
+            local xfce_helper
+            xfce_helper=$(get_xfce_helper "$first_browser")
+            if [[ -n "$xfce_helper" ]]; then
+                mkdir -p "${HOME_DIR}/.config/xfce4"
+                echo "WebBrowser=${xfce_helper}" > "${HOME_DIR}/.config/xfce4/helpers.rc"
+                chown -R "${USERNAME}:${USERNAME}" "${HOME_DIR}/.config/xfce4"
+            fi
+
             log_success "${first_browser} establecido como predeterminado"
         fi
     fi

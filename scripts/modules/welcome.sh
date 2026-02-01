@@ -76,7 +76,7 @@ setup_welcome_document() {
 [Desktop Entry]
 Type=Application
 Name=Welcome Guide
-Exec=xdg-open ${WELCOME_FILE}
+Exec=x-www-browser ${WELCOME_FILE}
 Hidden=false
 NoDisplay=false
 X-GNOME-Autostart-enabled=true

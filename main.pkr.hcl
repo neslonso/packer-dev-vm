@@ -388,10 +388,23 @@ variable "install_privacy" {
   }
 }
 
-variable "keep_vm_registered" {
+# --- VM Registration (post-build) ---
+variable "register_vm" {
   type        = bool
-  description = "Mantener la VM registrada en Hyper-V después del build (true = no exportar ni borrar, false = exportar y borrar VM temporal)"
+  description = "Registrar la VM en el hypervisor local tras el build"
   default     = false
+}
+
+variable "register_vm_copy" {
+  type        = bool
+  description = "true = copiar VM a register_vm_path (nuevo ID), false = registrar in-place desde output_directory"
+  default     = true
+}
+
+variable "register_vm_path" {
+  type        = string
+  description = "Ruta base donde almacenar la VM copiada (solo si register_vm_copy=true). Ej: C:/VMs"
+  default     = ""
 }
 
 # --- Build ---
@@ -615,12 +628,6 @@ source "hyperv-iso" "ubuntu" {
   output_directory = "${var.output_directory}/hyperv-${var.vm_name}"
   headless         = var.headless
 
-  # --- VM Management ---
-  # keep_registered: mantener VM en Hyper-V después del build (no exportar ni borrar)
-  # false (default): exporta la VM a output_directory y borra la VM temporal
-  # true: mantiene la VM registrada y lista para usar (más rápido para testing)
-  keep_registered = var.keep_vm_registered
-
   # --- Shutdown ---
   # Note: provision.sh creates /etc/sudoers.d/99-packer-shutdown to allow shutdown without password
   # This works regardless of sudo_nopassword setting (security: only allows shutdown, not all sudo)
@@ -723,5 +730,17 @@ build {
     source      = "/home/${var.username}/provision-${var.hostname}.log"
     destination = "${var.output_directory}/provision-${var.hostname}.log"
     direction   = "download"
+  }
+
+  # ===========================================================================
+  # POST-PROCESSORS: Hyper-V VM Registration
+  # ===========================================================================
+  # Registers the VM in Hyper-V after build (if register_vm=true)
+  # Supports copy mode (new location + new ID) or in-place registration
+  post-processor "shell-local" {
+    only = ["hyperv-iso.ubuntu"]
+    inline = [
+      "powershell.exe -ExecutionPolicy Bypass -File \"${path.root}/scripts/hyperv-register-vm.ps1\" -VmName \"${var.vm_name}\" -OutputDir \"${var.output_directory}/hyperv-${var.vm_name}\" -RegisterVm \"${var.register_vm}\" -RegisterVmCopy \"${var.register_vm_copy}\" -RegisterVmPath \"${var.register_vm_path}\""
+    ]
   }
 }
