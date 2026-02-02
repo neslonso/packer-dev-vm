@@ -176,6 +176,7 @@ vscode_extensions = [
   "esbenp.prettier-vscode",              # Prettier: formateo automático
   "usernamehw.errorlens",                # Error Lens: errores inline
   "PKief.material-icon-theme",           # Material Icons: iconos de archivo
+  "mechatroner.rainbow-csv",             # Rainbow-csv: Coloreador CSV
 ]
 
 install_api_tools    = ["bruno", "insomnia"] # Herramientas de API: bruno, insomnia, none
