@@ -53,62 +53,70 @@ log_msg ""
 # ==============================================================================
 
 # 1. Sistema base (red, locale, herramientas)
-log_section "1/13Sistema base"
+log_section "1/15 Sistema base"
 source "${MODULES_DIR}/system-base.sh"
 
 # 2. Docker
-log_section "2/13Docker"
+log_section "2/15 Docker"
 source "${MODULES_DIR}/docker.sh"
 
 # 3. Git
-log_section "3/13Git"
+log_section "3/15 Git"
 source "${MODULES_DIR}/git.sh"
 
 # 4. Nerd Fonts
-log_section "4/13Nerd Fonts"
+log_section "4/15 Nerd Fonts"
 source "${MODULES_DIR}/fonts.sh"
 
 # 5. Shell y Prompt
-log_section "5/13Shell y Prompt"
+log_section "5/15 Shell y Prompt"
 source "${MODULES_DIR}/shell.sh"
 
-# 6. Clientes de base de datos
-log_section "6/13Clientes de BD"
+# 6. SSH Keys y Agent
+log_section "6/15 SSH Keys y Agent"
+source "${MODULES_DIR}/ssh-agent.sh"
+
+# 7. Clientes de base de datos
+log_section "7/15 Clientes de BD"
 source "${MODULES_DIR}/databases.sh"
 
-# 7. Editores
-log_section "7/13Editores"
+# 8. Editores
+log_section "8/15 Editores"
 source "${MODULES_DIR}/editors/vscode.sh"
 source "${MODULES_DIR}/editors/antigravity.sh"
 source "${MODULES_DIR}/editors/cursor.sh"
 source "${MODULES_DIR}/editors/sublime-merge.sh"
 
-# 8. Navegador
-log_section "8/13Navegador"
+# 9. Navegador
+log_section "9/15 Navegador"
 source "${MODULES_DIR}/browsers.sh"
 
-# 9. Mensajería (Slack, Signal, Telegram)
-log_section "9/13 Mensajería"
+# 10. Mensajeria (Slack, Signal, Telegram)
+log_section "10/15 Mensajeria"
 source "${MODULES_DIR}/messaging.sh"
 
-# 10. Privacidad (Keybase, Element)
-log_section "10/13 Privacidad"
+# 11. Privacidad (Keybase, Element)
+log_section "11/15 Privacidad"
 source "${MODULES_DIR}/privacy.sh"
 
-# 11. Herramientas de API (Bruno, Insomnia)
-log_section "11/13 Herramientas de API"
+# 12. Herramientas de API (Bruno, Insomnia)
+log_section "12/15 Herramientas de API"
 source "${MODULES_DIR}/api-tools.sh"
 
-# 12. Desktop XFCE + Aliases
-log_section "12/13 Desktop XFCE"
+# 13. Desktop XFCE + Aliases
+log_section "13/15 Desktop XFCE"
 source "${MODULES_DIR}/desktop/xfce.sh"
 source "${MODULES_DIR}/aliases.sh"
 source "${MODULES_DIR}/history.sh"
 source "${MODULES_DIR}/packer-shutdown.sh"
 
-# 13. RDP (xrdp)
-log_section "13/13 xrdp"
+# 14. RDP (xrdp)
+log_section "14/15 xrdp"
 source "${MODULES_DIR}/rdp/xrdp.sh"
+
+# 15. Comandos personalizados (post-provisioning)
+log_section "15/15 Comandos personalizados"
+source "${MODULES_DIR}/custom-commands.sh"
 
 # Welcome document
 source "${MODULES_DIR}/welcome.sh"

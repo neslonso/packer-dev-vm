@@ -164,6 +164,51 @@ install_messaging    = ["slack"]         # slack, signal, telegram, all, none (e
 install_privacy      = ["keybase"]       # keybase, element, all, none (ej: ["keybase", "element"])
 
 # ==============================================================================
+# SSH KEYS
+# ==============================================================================
+# Lista de pares de claves SSH a instalar en la VM.
+# Cada clave tiene: name (nombre del archivo), private_key y public_key (contenido)
+# El SSH agent se configurara automaticamente en .bashrc/.zshrc para cargar estas claves.
+#
+# NOTA: Para claves multi-linea, usar heredoc syntax o escapar con \n
+# ==============================================================================
+ssh_key_pairs = [
+  # Ejemplo (descomentar y modificar):
+  # {
+  #   name        = "id_ed25519"
+  #   private_key = <<-EOT
+  # -----BEGIN OPENSSH PRIVATE KEY-----
+  # ... contenido de la clave privada ...
+  # -----END OPENSSH PRIVATE KEY-----
+  # EOT
+  #   public_key  = "ssh-ed25519 AAAA... user@example.com"
+  # },
+  # {
+  #   name        = "id_gitlab"
+  #   private_key = <<-EOT
+  # -----BEGIN OPENSSH PRIVATE KEY-----
+  # ... contenido de la clave privada ...
+  # -----END OPENSSH PRIVATE KEY-----
+  # EOT
+  #   public_key  = "ssh-ed25519 AAAA... user@gitlab"
+  # }
+]
+
+# ==============================================================================
+# POST-PROVISION COMMANDS
+# ==============================================================================
+# Lista de comandos a ejecutar al final del provisioning (como usuario normal).
+# Utiles para: clonar repositorios, crear directorios, configuracion inicial, etc.
+#
+# NOTA: Los comandos se ejecutan en orden, con SSH agent activo.
+# ==============================================================================
+post_provision_commands = [
+  # Ejemplo (descomentar y modificar):
+  # "mkdir -p ~/workspace/src/gitlab.com/hub-buildings",
+  # "git clone git@gitlab.com:hub-buildings/hub-zero.git ~/workspace/src/gitlab.com/hub-buildings/hub-zero",
+]
+
+# ==============================================================================
 # BUILD
 # ==============================================================================
 output_directory  = "./output"         # Directorio de salida de la VM exportada

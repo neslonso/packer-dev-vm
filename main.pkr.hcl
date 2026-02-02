@@ -388,6 +388,25 @@ variable "install_privacy" {
   }
 }
 
+# --- SSH Keys ---
+variable "ssh_key_pairs" {
+  type = list(object({
+    name        = string
+    private_key = string
+    public_key  = string
+  }))
+  default     = []
+  sensitive   = true
+  description = "Lista de pares de claves SSH a instalar. Cada elemento tiene: name (nombre del archivo sin extensión, ej: 'id_rsa'), private_key (contenido de la clave privada), public_key (contenido de la clave pública)"
+}
+
+# --- Post-provision Commands ---
+variable "post_provision_commands" {
+  type        = list(string)
+  default     = []
+  description = "Lista de comandos a ejecutar al final del provisioning (como usuario normal). Ejemplo: ['git clone git@github.com:user/repo.git ~/workspace/repo']"
+}
+
 # --- VM Registration (post-build) ---
 variable "register_vm" {
   type        = bool
@@ -525,6 +544,10 @@ locals {
     "VM_INSTALL_MESSAGING=${join(",", var.install_messaging)}",
     "VM_INSTALL_PRIVACY=${join(",", var.install_privacy)}",
     "VM_INSTALL_API_TOOLS=${join(",", var.install_api_tools)}",
+    # SSH Keys (JSON encoded)
+    "VM_SSH_KEY_PAIRS=${base64encode(jsonencode(var.ssh_key_pairs))}",
+    # Post-provision commands (JSON encoded)
+    "VM_POST_PROVISION_COMMANDS=${base64encode(jsonencode(var.post_provision_commands))}",
     # GPG Fingerprints (centralized)
     "GPG_FINGERPRINT_DOCKER=${local.gpg_fingerprints.docker}",
     "GPG_FINGERPRINT_GITHUB=${local.gpg_fingerprints.github}",
