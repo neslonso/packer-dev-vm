@@ -49,7 +49,7 @@ finalize_luks_encryption() {
 
     # Primero verificamos cuántos slots hay ocupados
     local slots_before
-    slots_before=$(cryptsetup luksDump "$luks_dev" | grep -c "ENABLED")
+    slots_before=$(cryptsetup luksDump "$luks_dev" | grep -c "ENABLED" || true)
     log_task "  Slots LUKS activos antes: $slots_before"
 
     # El keyfile debería estar en slot 1 (slot 0 es el password original)
@@ -61,7 +61,7 @@ finalize_luks_encryption() {
     fi
 
     local slots_after
-    slots_after=$(cryptsetup luksDump "$luks_dev" | grep -c "ENABLED")
+    slots_after=$(cryptsetup luksDump "$luks_dev" | grep -c "ENABLED" || true)
     log_task "  Slots LUKS activos después: $slots_after"
 
     # -------------------------------------------------------------------------
