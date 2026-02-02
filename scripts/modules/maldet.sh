@@ -123,9 +123,10 @@ EOF
     # -------------------------------------------------------------------------
     # Verificar instalación
     # -------------------------------------------------------------------------
-    if command -v maldet &> /dev/null; then
+    # maldet se instala en /usr/local/sbin/maldet
+    if [[ -x /usr/local/sbin/maldet ]]; then
         local installed_version
-        installed_version=$(maldet --version 2>&1 | head -1)
+        installed_version=$(/usr/local/sbin/maldet --version 2>&1 | head -1)
         log_success "maldet instalado correctamente: $installed_version"
     else
         log_error "maldet no se instaló correctamente"
