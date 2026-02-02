@@ -49,80 +49,50 @@ log_msg "  - Network Mode: ${NETWORK_MODE}"
 log_msg ""
 
 # ==============================================================================
+# DEFINICIÓN DE PASOS
+# ==============================================================================
+# Formato: "modulo1 modulo2 ...|Descripción del paso"
+# Los módulos se ejecutan en orden dentro de cada paso.
+# El total de pasos y la numeración se calculan automáticamente.
+# ==============================================================================
+
+declare -a STEPS=(
+    "system-base.sh|Sistema base"
+    "maldet.sh|Seguridad (maldet)"
+    "docker.sh|Docker"
+    "git.sh|Git"
+    "fonts.sh|Nerd Fonts"
+    "shell.sh|Shell y Prompt"
+    "ssh-agent.sh|SSH Keys y Agent"
+    "databases.sh|Clientes de BD"
+    "editors/vscode.sh editors/antigravity.sh editors/cursor.sh editors/sublime-merge.sh|Editores"
+    "browsers.sh|Navegador"
+    "messaging.sh|Mensajería"
+    "privacy.sh|Privacidad"
+    "api-tools.sh|Herramientas de API"
+    "desktop/gnome.sh aliases.sh history.sh packer-shutdown.sh|Desktop GNOME"
+    "rdp/gnome-rd.sh|GNOME Remote Desktop"
+    "luks-finalize.sh|Finalizar LUKS"
+)
+
+# ==============================================================================
 # EJECUTAR MÓDULOS EN ORDEN
 # ==============================================================================
 
-# 1. Sistema base (red, locale, herramientas)
-log_section "1/16 Sistema base"
-source "${MODULES_DIR}/system-base.sh"
+TOTAL_STEPS=${#STEPS[@]}
+CURRENT_STEP=1
 
-# 2. Seguridad (maldet)
-log_section "2/16 Seguridad (maldet)"
-source "${MODULES_DIR}/maldet.sh"
+for step in "${STEPS[@]}"; do
+    modules="${step%%|*}"
+    description="${step#*|}"
+    log_section "${CURRENT_STEP}/${TOTAL_STEPS} ${description}"
+    for module in $modules; do
+        source "${MODULES_DIR}/${module}"
+    done
+    ((CURRENT_STEP++))
+done
 
-# 3. Docker
-log_section "3/16 Docker"
-source "${MODULES_DIR}/docker.sh"
-
-# 4. Git
-log_section "4/16 Git"
-source "${MODULES_DIR}/git.sh"
-
-# 5. Nerd Fonts
-log_section "5/16 Nerd Fonts"
-source "${MODULES_DIR}/fonts.sh"
-
-# 6. Shell y Prompt
-log_section "6/16 Shell y Prompt"
-source "${MODULES_DIR}/shell.sh"
-
-# 7. SSH Keys y Agent
-log_section "7/16 SSH Keys y Agent"
-source "${MODULES_DIR}/ssh-agent.sh"
-
-# 8. Clientes de base de datos
-log_section "8/16 Clientes de BD"
-source "${MODULES_DIR}/databases.sh"
-
-# 9. Editores
-log_section "9/16 Editores"
-source "${MODULES_DIR}/editors/vscode.sh"
-source "${MODULES_DIR}/editors/antigravity.sh"
-source "${MODULES_DIR}/editors/cursor.sh"
-source "${MODULES_DIR}/editors/sublime-merge.sh"
-
-# 10. Navegador
-log_section "10/16 Navegador"
-source "${MODULES_DIR}/browsers.sh"
-
-# 11. Mensajeria (Slack, Signal, Telegram)
-log_section "11/16 Mensajeria"
-source "${MODULES_DIR}/messaging.sh"
-
-# 12. Privacidad (Keybase, Element)
-log_section "12/16 Privacidad"
-source "${MODULES_DIR}/privacy.sh"
-
-# 13. Herramientas de API (Bruno, Insomnia)
-log_section "13/16 Herramientas de API"
-source "${MODULES_DIR}/api-tools.sh"
-
-# 14. Desktop GNOME + Aliases
-log_section "14/16 Desktop GNOME"
-source "${MODULES_DIR}/desktop/gnome.sh"
-source "${MODULES_DIR}/aliases.sh"
-source "${MODULES_DIR}/history.sh"
-source "${MODULES_DIR}/packer-shutdown.sh"
-
-# 15. RDP (GNOME Remote Desktop)
-log_section "15/16 GNOME Remote Desktop"
-source "${MODULES_DIR}/rdp/gnome-rd.sh"
-
-# 16. Finalizar LUKS (eliminar keyfile, requerir password)
-log_section "16/16 Finalizar LUKS"
-source "${MODULES_DIR}/luks-finalize.sh"
-
-# Welcome document
+# Welcome document (sin numerar, es informativo)
 source "${MODULES_DIR}/welcome.sh"
 
 # ==============================================================================
