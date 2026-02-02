@@ -123,13 +123,22 @@ EOF
     # -------------------------------------------------------------------------
     # Verificar instalación
     # -------------------------------------------------------------------------
-    # maldet se instala en /usr/local/sbin/maldet
-    if [[ -x /usr/local/sbin/maldet ]]; then
+    # maldet puede instalarse en diferentes ubicaciones
+    local maldet_bin=""
+    for path in /usr/local/sbin/maldet /usr/local/maldetect/maldet /usr/sbin/maldet; do
+        if [[ -x "$path" ]]; then
+            maldet_bin="$path"
+            break
+        fi
+    done
+
+    if [[ -n "$maldet_bin" ]]; then
         local installed_version
-        installed_version=$(/usr/local/sbin/maldet --version 2>&1 | head -1)
+        installed_version=$("$maldet_bin" --version 2>&1 | head -1)
         log_success "maldet instalado correctamente: $installed_version"
+        log_task "  Ubicación: $maldet_bin"
     else
-        log_error "maldet no se instaló correctamente"
+        log_error "maldet no se instaló correctamente (no encontrado en rutas conocidas)"
         return 1
     fi
 
