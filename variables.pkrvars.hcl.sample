@@ -28,6 +28,25 @@ cpus      = 4                          # Número de CPUs
 disk_size = 80000                      # Disco en MB
 
 # ==============================================================================
+# CIFRADO DE DISCO (LUKS)
+# ==============================================================================
+# Password para cifrado LUKS del disco. Si está vacío, el disco NO se cifra.
+#
+# IMPORTANTE:
+#   - El cifrado usa AES-256-XTS (estándar militar/empresarial)
+#   - Cumple con: GDPR, HIPAA, PCI-DSS, ISO 27001, ENS
+#   - En cada arranque se pedirá esta contraseña para desbloquear el disco
+#   - Sin la contraseña, los datos son IRRECUPERABLES
+#
+# Formas de pasar la contraseña (de más a menos segura):
+#   1. Variable de entorno: PKR_VAR_disk_encryption_password="xxx" packer build .
+#   2. Prompt interactivo: dejar vacío aquí, Packer la pedirá
+#   3. En este archivo: disk_encryption_password = "xxx" (menos seguro)
+#
+# ==============================================================================
+disk_encryption_password = ""          # Vacío = sin cifrado
+
+# ==============================================================================
 # VM FLAVOR
 # ==============================================================================
 # Selecciona el "sabor" de la VM. Cada flavor incluye una ISO diferente y

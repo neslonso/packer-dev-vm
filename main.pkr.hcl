@@ -111,6 +111,13 @@ variable "disk_size" {
   }
 }
 
+variable "disk_encryption_password" {
+  type        = string
+  default     = ""
+  sensitive   = true
+  description = "Password para cifrado LUKS del disco. Si está vacío, el disco no se cifra. El cifrado usa AES-256-XTS y cumple con GDPR, HIPAA, PCI-DSS, ISO 27001."
+}
+
 # --- VM Flavor ---
 variable "vm_flavor" {
   type        = string
@@ -548,6 +555,8 @@ locals {
     "VM_SSH_KEY_PAIRS=${base64encode(jsonencode(var.ssh_key_pairs))}",
     # Post-provision commands (JSON encoded)
     "VM_POST_PROVISION_COMMANDS=${base64encode(jsonencode(var.post_provision_commands))}",
+    # Disk encryption (empty = no encryption)
+    "VM_DISK_ENCRYPTION_ENABLED=${var.disk_encryption_password != "" ? "true" : "false"}",
     # GPG Fingerprints (centralized)
     "GPG_FINGERPRINT_DOCKER=${local.gpg_fingerprints.docker}",
     "GPG_FINGERPRINT_GITHUB=${local.gpg_fingerprints.github}",
@@ -617,19 +626,20 @@ source "hyperv-iso" "ubuntu" {
   # --- HTTP Server for cloud-init (template desde flavor) ---
   http_content = {
     "/user-data" = templatefile(local.flavor.user_data_tpl, {
-      hostname           = var.hostname
-      username           = var.username
-      password_hash      = local.password_hash
-      timezone           = var.timezone
-      locale             = var.locale
-      keyboard           = var.keyboard
-      autologin          = var.autologin
-      ssh_allow_password = var.ssh_allow_password
-      sudo_nopassword    = var.sudo_nopassword
+      hostname                 = var.hostname
+      username                 = var.username
+      password_hash            = local.password_hash
+      timezone                 = var.timezone
+      locale                   = var.locale
+      keyboard                 = var.keyboard
+      autologin                = var.autologin
+      ssh_allow_password       = var.ssh_allow_password
+      sudo_nopassword          = var.sudo_nopassword
+      disk_encryption_password = var.disk_encryption_password
       # Red (usada durante build y opcionalmente después si network_mode=static)
-      static_ip          = var.static_ip
-      static_gateway     = var.static_gateway
-      static_dns         = var.static_dns
+      static_ip                = var.static_ip
+      static_gateway           = var.static_gateway
+      static_dns               = var.static_dns
     })
     "/meta-data" = templatefile("${path.root}/templates/meta-data.pkrtpl", {
       hostname = var.hostname
