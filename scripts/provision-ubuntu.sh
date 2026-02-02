@@ -53,77 +53,73 @@ log_msg ""
 # ==============================================================================
 
 # 1. Sistema base (red, locale, herramientas)
-log_section "1/17 Sistema base"
+log_section "1/16 Sistema base"
 source "${MODULES_DIR}/system-base.sh"
 
 # 2. Seguridad (maldet)
-log_section "2/17 Seguridad (maldet)"
+log_section "2/16 Seguridad (maldet)"
 source "${MODULES_DIR}/maldet.sh"
 
 # 3. Docker
-log_section "3/17 Docker"
+log_section "3/16 Docker"
 source "${MODULES_DIR}/docker.sh"
 
 # 4. Git
-log_section "4/17 Git"
+log_section "4/16 Git"
 source "${MODULES_DIR}/git.sh"
 
 # 5. Nerd Fonts
-log_section "5/17 Nerd Fonts"
+log_section "5/16 Nerd Fonts"
 source "${MODULES_DIR}/fonts.sh"
 
 # 6. Shell y Prompt
-log_section "6/17 Shell y Prompt"
+log_section "6/16 Shell y Prompt"
 source "${MODULES_DIR}/shell.sh"
 
 # 7. SSH Keys y Agent
-log_section "7/17 SSH Keys y Agent"
+log_section "7/16 SSH Keys y Agent"
 source "${MODULES_DIR}/ssh-agent.sh"
 
 # 8. Clientes de base de datos
-log_section "8/17 Clientes de BD"
+log_section "8/16 Clientes de BD"
 source "${MODULES_DIR}/databases.sh"
 
 # 9. Editores
-log_section "9/17 Editores"
+log_section "9/16 Editores"
 source "${MODULES_DIR}/editors/vscode.sh"
 source "${MODULES_DIR}/editors/antigravity.sh"
 source "${MODULES_DIR}/editors/cursor.sh"
 source "${MODULES_DIR}/editors/sublime-merge.sh"
 
 # 10. Navegador
-log_section "10/17 Navegador"
+log_section "10/16 Navegador"
 source "${MODULES_DIR}/browsers.sh"
 
 # 11. Mensajeria (Slack, Signal, Telegram)
-log_section "11/17 Mensajeria"
+log_section "11/16 Mensajeria"
 source "${MODULES_DIR}/messaging.sh"
 
 # 12. Privacidad (Keybase, Element)
-log_section "12/17 Privacidad"
+log_section "12/16 Privacidad"
 source "${MODULES_DIR}/privacy.sh"
 
 # 13. Herramientas de API (Bruno, Insomnia)
-log_section "13/17 Herramientas de API"
+log_section "13/16 Herramientas de API"
 source "${MODULES_DIR}/api-tools.sh"
 
 # 14. Desktop GNOME + Aliases
-log_section "14/17 Desktop GNOME"
+log_section "14/16 Desktop GNOME"
 source "${MODULES_DIR}/desktop/gnome.sh"
 source "${MODULES_DIR}/aliases.sh"
 source "${MODULES_DIR}/history.sh"
 source "${MODULES_DIR}/packer-shutdown.sh"
 
 # 15. RDP (GNOME Remote Desktop)
-log_section "15/17 GNOME Remote Desktop"
+log_section "15/16 GNOME Remote Desktop"
 source "${MODULES_DIR}/rdp/gnome-rd.sh"
 
-# 16. Comandos personalizados (post-provisioning)
-log_section "16/17 Comandos personalizados"
-source "${MODULES_DIR}/custom-commands.sh"
-
-# 17. Finalizar LUKS (eliminar keyfile, requerir password)
-log_section "17/17 Finalizar LUKS"
+# 16. Finalizar LUKS (eliminar keyfile, requerir password)
+log_section "16/16 Finalizar LUKS"
 source "${MODULES_DIR}/luks-finalize.sh"
 
 # Welcome document

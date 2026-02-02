@@ -215,18 +215,18 @@ ssh_key_pairs = [
 ]
 
 # ==============================================================================
-# POST-PROVISION COMMANDS
+# POST-PROVISION SCRIPT
 # ==============================================================================
-# Lista de comandos a ejecutar al final del provisioning (como usuario normal).
-# Utiles para: clonar repositorios, crear directorios, configuracion inicial, etc.
+# Ruta a un script local que se copiará al home del usuario como 'post-provision.sh'.
+# El usuario puede ejecutarlo manualmente tras conectarse a la VM.
 #
-# NOTA: Los comandos se ejecutan en orden, con SSH agent activo.
+# Útil para: clonar repositorios, configuración inicial, etc.
+# El script se ejecutará con el SSH agent activo (si hay claves configuradas).
+#
+# NOTA: Si se deja vacío, no se copia ningún script.
 # ==============================================================================
-post_provision_commands = [
-  # Ejemplo (descomentar y modificar):
-  # "mkdir -p ~/workspace/src/gitlab.com/hub-buildings",
-  # "git clone git@gitlab.com:hub-buildings/hub-zero.git ~/workspace/src/gitlab.com/hub-buildings/hub-zero",
-]
+post_provision_script = ""
+# Ejemplo: post_provision_script = "./my-post-provision.sh"
 
 # ==============================================================================
 # BUILD

@@ -407,11 +407,11 @@ variable "ssh_key_pairs" {
   description = "Lista de pares de claves SSH a instalar. Cada elemento tiene: name (nombre del archivo sin extensión, ej: 'id_rsa'), private_key (contenido de la clave privada), public_key (contenido de la clave pública)"
 }
 
-# --- Post-provision Commands ---
-variable "post_provision_commands" {
-  type        = list(string)
-  default     = []
-  description = "Lista de comandos a ejecutar al final del provisioning (como usuario normal). Ejemplo: ['git clone git@github.com:user/repo.git ~/workspace/repo']"
+# --- Post-provision Script ---
+variable "post_provision_script" {
+  type        = string
+  default     = ""
+  description = "Ruta a un script local que se copiará al home del usuario como 'post-provision.sh'. El usuario puede ejecutarlo manualmente tras conectarse a la VM. Útil para comandos que requieren interacción (git clone con SSH, etc.)"
 }
 
 # --- VM Registration (post-build) ---
@@ -553,8 +553,6 @@ locals {
     "VM_INSTALL_API_TOOLS=${join(",", var.install_api_tools)}",
     # SSH Keys (JSON encoded)
     "VM_SSH_KEY_PAIRS=${base64encode(jsonencode(var.ssh_key_pairs))}",
-    # Post-provision commands (JSON encoded)
-    "VM_POST_PROVISION_COMMANDS=${base64encode(jsonencode(var.post_provision_commands))}",
     # Disk encryption (empty = no encryption)
     "VM_DISK_ENCRYPTION_ENABLED=${var.disk_encryption_password != "" ? "true" : "false"}",
     # GPG Fingerprints (centralized)
@@ -742,6 +740,33 @@ build {
       "sudo touch /home/${var.username}/provision-${var.hostname}.log || true",
       "touch /home/${var.username}/connect-${var.hostname}.rdp 2>/dev/null || sudo touch /home/${var.username}/connect-${var.hostname}.rdp || true"
     ]
+  }
+
+  # --- Subir script post-provision si está configurado ---
+  dynamic "provisioner" {
+    labels   = ["file"]
+    for_each = var.post_provision_script != "" ? [1] : []
+    content {
+      source      = var.post_provision_script
+      destination = "/home/${var.username}/post-provision.sh"
+    }
+  }
+
+  # --- Hacer ejecutable el script post-provision ---
+  provisioner "shell" {
+    inline = var.post_provision_script != "" ? [
+      "chmod +x /home/${var.username}/post-provision.sh",
+      "chown ${var.username}:${var.username} /home/${var.username}/post-provision.sh",
+      "echo ''",
+      "echo '============================================================'",
+      "echo 'SCRIPT POST-PROVISION DISPONIBLE'",
+      "echo '============================================================'",
+      "echo 'Se ha copiado el script a: ~/post-provision.sh'",
+      "echo 'Ejecutalo manualmente tras conectarte a la VM:'",
+      "echo '  ./post-provision.sh'",
+      "echo '============================================================'",
+      "echo ''"
+    ] : ["echo 'No post-provision script configured'"]
   }
 
   # --- Descargar log de provisioning al host ---
