@@ -55,7 +55,7 @@ install_ssh_keys_and_agent() {
 
                     # Escribir clave privada
                     if [[ -n "$private_key" && "$private_key" != "null" ]]; then
-                        echo "$private_key" > "${ssh_dir}/${key_name}"
+                        printf '%s\n' "$private_key" > "${ssh_dir}/${key_name}"
                         chmod 600 "${ssh_dir}/${key_name}"
                         chown "${USERNAME}:${USERNAME}" "${ssh_dir}/${key_name}"
                         key_names+=("${key_name}")
@@ -63,7 +63,7 @@ install_ssh_keys_and_agent() {
 
                     # Escribir clave publica
                     if [[ -n "$public_key" && "$public_key" != "null" ]]; then
-                        echo "$public_key" > "${ssh_dir}/${key_name}.pub"
+                        printf '%s\n' "$public_key" > "${ssh_dir}/${key_name}.pub"
                         chmod 644 "${ssh_dir}/${key_name}.pub"
                         chown "${USERNAME}:${USERNAME}" "${ssh_dir}/${key_name}.pub"
                     fi
