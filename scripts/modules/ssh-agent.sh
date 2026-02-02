@@ -126,7 +126,7 @@ SSHAGENT_EOF
         for key_name in "${key_names[@]}"; do
             ssh_agent_config+="
 if [ -f ~/.ssh/${key_name} ]; then
-    ssh-add -l 2>/dev/null | grep -q \"\$(ssh-keygen -lf ~/.ssh/${key_name} 2>/dev/null | awk '{print \$2}')\" || ssh-add ~/.ssh/${key_name} 2>/dev/null
+    ssh-add -l 2>/dev/null | grep -q \"\$(ssh-keygen -lf ~/.ssh/${key_name} 2>/dev/null | awk '{print \$2}')\" || ssh-add ~/.ssh/${key_name}
 fi"
         done
     else
@@ -135,7 +135,7 @@ fi"
 # Add default keys if they exist
 for key in ~/.ssh/id_rsa ~/.ssh/id_ed25519 ~/.ssh/id_ecdsa; do
     if [ -f "$key" ]; then
-        ssh-add -l 2>/dev/null | grep -q "$(ssh-keygen -lf "$key" 2>/dev/null | awk '"'"'{print $2}'"'"')" || ssh-add "$key" 2>/dev/null
+        ssh-add -l 2>/dev/null | grep -q "$(ssh-keygen -lf "$key" 2>/dev/null | awk '"'"'{print $2}'"'"')" || ssh-add "$key"
     fi
 done'
     fi
