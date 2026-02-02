@@ -111,6 +111,13 @@ variable "disk_size" {
   }
 }
 
+variable "disk_encryption_password" {
+  type        = string
+  default     = ""
+  sensitive   = true
+  description = "Password para cifrado LUKS del disco. Si está vacío, el disco no se cifra. El cifrado usa AES-256-XTS y cumple con GDPR, HIPAA, PCI-DSS, ISO 27001."
+}
+
 # --- VM Flavor ---
 variable "vm_flavor" {
   type        = string
@@ -388,6 +395,25 @@ variable "install_privacy" {
   }
 }
 
+# --- SSH Keys ---
+variable "ssh_key_pairs" {
+  type = list(object({
+    name        = string
+    private_key = string
+    public_key  = string
+  }))
+  default     = []
+  sensitive   = true
+  description = "Lista de pares de claves SSH a instalar. Cada elemento tiene: name (nombre del archivo sin extensión, ej: 'id_rsa'), private_key (contenido de la clave privada), public_key (contenido de la clave pública)"
+}
+
+# --- Post-provision Script ---
+variable "post_provision_script" {
+  type        = string
+  default     = ""
+  description = "Ruta a un script local que se copiará al home del usuario como 'post-provision.sh'. El usuario puede ejecutarlo manualmente tras conectarse a la VM. Útil para comandos que requieren interacción (git clone con SSH, etc.)"
+}
+
 # --- VM Registration (post-build) ---
 variable "register_vm" {
   type        = bool
@@ -525,6 +551,10 @@ locals {
     "VM_INSTALL_MESSAGING=${join(",", var.install_messaging)}",
     "VM_INSTALL_PRIVACY=${join(",", var.install_privacy)}",
     "VM_INSTALL_API_TOOLS=${join(",", var.install_api_tools)}",
+    # SSH Keys (JSON encoded)
+    "VM_SSH_KEY_PAIRS=${base64encode(jsonencode(var.ssh_key_pairs))}",
+    # Disk encryption (empty = no encryption)
+    "VM_DISK_ENCRYPTION_ENABLED=${var.disk_encryption_password != "" ? "true" : "false"}",
     # GPG Fingerprints (centralized)
     "GPG_FINGERPRINT_DOCKER=${local.gpg_fingerprints.docker}",
     "GPG_FINGERPRINT_GITHUB=${local.gpg_fingerprints.github}",
@@ -594,19 +624,20 @@ source "hyperv-iso" "ubuntu" {
   # --- HTTP Server for cloud-init (template desde flavor) ---
   http_content = {
     "/user-data" = templatefile(local.flavor.user_data_tpl, {
-      hostname           = var.hostname
-      username           = var.username
-      password_hash      = local.password_hash
-      timezone           = var.timezone
-      locale             = var.locale
-      keyboard           = var.keyboard
-      autologin          = var.autologin
-      ssh_allow_password = var.ssh_allow_password
-      sudo_nopassword    = var.sudo_nopassword
+      hostname                 = var.hostname
+      username                 = var.username
+      password_hash            = local.password_hash
+      timezone                 = var.timezone
+      locale                   = var.locale
+      keyboard                 = var.keyboard
+      autologin                = var.autologin
+      ssh_allow_password       = var.ssh_allow_password
+      sudo_nopassword          = var.sudo_nopassword
+      disk_encryption_password = var.disk_encryption_password
       # Red (usada durante build y opcionalmente después si network_mode=static)
-      static_ip          = var.static_ip
-      static_gateway     = var.static_gateway
-      static_dns         = var.static_dns
+      static_ip                = var.static_ip
+      static_gateway           = var.static_gateway
+      static_dns               = var.static_dns
     })
     "/meta-data" = templatefile("${path.root}/templates/meta-data.pkrtpl", {
       hostname = var.hostname
@@ -709,6 +740,33 @@ build {
       "sudo touch /home/${var.username}/provision-${var.hostname}.log || true",
       "touch /home/${var.username}/connect-${var.hostname}.rdp 2>/dev/null || sudo touch /home/${var.username}/connect-${var.hostname}.rdp || true"
     ]
+  }
+
+  # --- Subir script post-provision si está configurado ---
+  dynamic "provisioner" {
+    labels   = ["file"]
+    for_each = var.post_provision_script != "" ? [1] : []
+    content {
+      source      = var.post_provision_script
+      destination = "/home/${var.username}/post-provision.sh"
+    }
+  }
+
+  # --- Hacer ejecutable el script post-provision ---
+  provisioner "shell" {
+    inline = var.post_provision_script != "" ? [
+      "chmod +x /home/${var.username}/post-provision.sh",
+      "chown ${var.username}:${var.username} /home/${var.username}/post-provision.sh",
+      "echo ''",
+      "echo '============================================================'",
+      "echo 'SCRIPT POST-PROVISION DISPONIBLE'",
+      "echo '============================================================'",
+      "echo 'Se ha copiado el script a: ~/post-provision.sh'",
+      "echo 'Ejecutalo manualmente tras conectarte a la VM:'",
+      "echo '  ./post-provision.sh'",
+      "echo '============================================================'",
+      "echo ''"
+    ] : ["echo 'No post-provision script configured'"]
   }
 
   # --- Descargar log de provisioning al host ---

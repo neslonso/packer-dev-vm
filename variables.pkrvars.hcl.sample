@@ -28,6 +28,26 @@ cpus      = 4                          # Número de CPUs
 disk_size = 80000                      # Disco en MB
 
 # ==============================================================================
+# CIFRADO DE DISCO (LUKS)
+# ==============================================================================
+# Password para cifrado LUKS del disco. Si está vacío, el disco NO se cifra.
+#
+# IMPORTANTE:
+#   - El cifrado usa AES-256-XTS (estándar militar/empresarial)
+#   - Cumple con: GDPR, HIPAA, PCI-DSS, ISO 27001, ENS
+#   - En cada arranque se pedirá esta contraseña para desbloquear el disco
+#   - Sin la contraseña, los datos son IRRECUPERABLES
+#
+# Formas de pasar la contraseña (de más a menos segura):
+#   1. Variable de entorno: PKR_VAR_disk_encryption_password="xxx" packer build .
+#   2. En este archivo: disk_encryption_password = "xxx"
+#
+# NOTA: Si se deja vacío aquí y no se pasa por variable de entorno,
+#       el disco NO se cifra (comportamiento por defecto).
+# ==============================================================================
+disk_encryption_password = ""          # Vacío = sin cifrado
+
+# ==============================================================================
 # VM FLAVOR
 # ==============================================================================
 # Selecciona el "sabor" de la VM. Cada flavor incluye una ISO diferente y
@@ -156,12 +176,58 @@ vscode_extensions = [
   "esbenp.prettier-vscode",              # Prettier: formateo automático
   "usernamehw.errorlens",                # Error Lens: errores inline
   "PKief.material-icon-theme",           # Material Icons: iconos de archivo
+  "mechatroner.rainbow-csv",             # Rainbow-csv: Coloreador CSV
 ]
 
 install_api_tools    = ["bruno", "insomnia"] # Herramientas de API: bruno, insomnia, none
 install_browser      = ["firefox"]       # firefox, chrome, chromium, all, none - EL PRIMERO es el predeterminado (all = firefox)
 install_messaging    = ["slack"]         # slack, signal, telegram, all, none (ej: ["slack", "signal"])
 install_privacy      = ["keybase"]       # keybase, element, all, none (ej: ["keybase", "element"])
+
+# ==============================================================================
+# SSH KEYS
+# ==============================================================================
+# Lista de pares de claves SSH a instalar en la VM.
+# Cada clave tiene: name (nombre del archivo), private_key y public_key (contenido)
+# El SSH agent se configurara automaticamente en .bashrc/.zshrc para cargar estas claves.
+#
+# NOTA: Para claves multi-linea, usar heredoc syntax o escapar con \n
+# ==============================================================================
+ssh_key_pairs = [
+  # Ejemplo (descomentar y modificar):
+  # {
+  #   name        = "id_ed25519"
+  #   private_key = <<-EOT
+  # -----BEGIN OPENSSH PRIVATE KEY-----
+  # ... contenido de la clave privada ...
+  # -----END OPENSSH PRIVATE KEY-----
+  # EOT
+  #   public_key  = "ssh-ed25519 AAAA... user@example.com"
+  # },
+  # {
+  #   name        = "id_gitlab"
+  #   private_key = <<-EOT
+  # -----BEGIN OPENSSH PRIVATE KEY-----
+  # ... contenido de la clave privada ...
+  # -----END OPENSSH PRIVATE KEY-----
+  # EOT
+  #   public_key  = "ssh-ed25519 AAAA... user@gitlab"
+  # }
+]
+
+# ==============================================================================
+# POST-PROVISION SCRIPT
+# ==============================================================================
+# Ruta a un script local que se copiará al home del usuario como 'post-provision.sh'.
+# El usuario puede ejecutarlo manualmente tras conectarse a la VM.
+#
+# Útil para: clonar repositorios, configuración inicial, etc.
+# El script se ejecutará con el SSH agent activo (si hay claves configuradas).
+#
+# NOTA: Si se deja vacío, no se copia ningún script.
+# ==============================================================================
+post_provision_script = ""
+# Ejemplo: post_provision_script = "./my-post-provision.sh"
 
 # ==============================================================================
 # BUILD

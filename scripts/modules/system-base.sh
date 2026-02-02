@@ -97,7 +97,9 @@ NETPLAN_EOF
         bat \
         gnupg \
         curl \
-        wget
+        wget \
+        make \
+        build-essential
 
     # Crear symlinks para herramientas con nombres diferentes
     if ! ln -sf /usr/bin/batcat /usr/local/bin/bat 2>/dev/null; then

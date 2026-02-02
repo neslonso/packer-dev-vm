@@ -49,68 +49,50 @@ log_msg "  - Network Mode: ${NETWORK_MODE}"
 log_msg ""
 
 # ==============================================================================
+# DEFINICIÓN DE PASOS
+# ==============================================================================
+# Formato: "modulo1 modulo2 ...|Descripción del paso"
+# Los módulos se ejecutan en orden dentro de cada paso.
+# El total de pasos y la numeración se calculan automáticamente.
+# ==============================================================================
+
+declare -a STEPS=(
+    "system-base.sh|Sistema base"
+    "maldet.sh|Seguridad (maldet)"
+    "docker.sh|Docker"
+    "git.sh|Git"
+    "fonts.sh|Nerd Fonts"
+    "shell.sh|Shell y Prompt"
+    "ssh-agent.sh|SSH Keys y Agent"
+    "databases.sh|Clientes de BD"
+    "editors/vscode.sh editors/antigravity.sh editors/cursor.sh editors/sublime-merge.sh|Editores"
+    "browsers.sh|Navegador"
+    "messaging.sh|Mensajería"
+    "privacy.sh|Privacidad"
+    "api-tools.sh|Herramientas de API"
+    "desktop/xfce.sh aliases.sh history.sh packer-shutdown.sh|Desktop XFCE"
+    "rdp/xrdp.sh|xrdp"
+    "luks-finalize.sh|Finalizar LUKS"
+)
+
+# ==============================================================================
 # EJECUTAR MÓDULOS EN ORDEN
 # ==============================================================================
 
-# 1. Sistema base (red, locale, herramientas)
-log_section "1/13Sistema base"
-source "${MODULES_DIR}/system-base.sh"
+TOTAL_STEPS=${#STEPS[@]}
+CURRENT_STEP=1
 
-# 2. Docker
-log_section "2/13Docker"
-source "${MODULES_DIR}/docker.sh"
+for step in "${STEPS[@]}"; do
+    modules="${step%%|*}"
+    description="${step#*|}"
+    log_section "${CURRENT_STEP}/${TOTAL_STEPS} ${description}"
+    for module in $modules; do
+        source "${MODULES_DIR}/${module}"
+    done
+    ((CURRENT_STEP++))
+done
 
-# 3. Git
-log_section "3/13Git"
-source "${MODULES_DIR}/git.sh"
-
-# 4. Nerd Fonts
-log_section "4/13Nerd Fonts"
-source "${MODULES_DIR}/fonts.sh"
-
-# 5. Shell y Prompt
-log_section "5/13Shell y Prompt"
-source "${MODULES_DIR}/shell.sh"
-
-# 6. Clientes de base de datos
-log_section "6/13Clientes de BD"
-source "${MODULES_DIR}/databases.sh"
-
-# 7. Editores
-log_section "7/13Editores"
-source "${MODULES_DIR}/editors/vscode.sh"
-source "${MODULES_DIR}/editors/antigravity.sh"
-source "${MODULES_DIR}/editors/cursor.sh"
-source "${MODULES_DIR}/editors/sublime-merge.sh"
-
-# 8. Navegador
-log_section "8/13Navegador"
-source "${MODULES_DIR}/browsers.sh"
-
-# 9. Mensajería (Slack, Signal, Telegram)
-log_section "9/13 Mensajería"
-source "${MODULES_DIR}/messaging.sh"
-
-# 10. Privacidad (Keybase, Element)
-log_section "10/13 Privacidad"
-source "${MODULES_DIR}/privacy.sh"
-
-# 11. Herramientas de API (Bruno, Insomnia)
-log_section "11/13 Herramientas de API"
-source "${MODULES_DIR}/api-tools.sh"
-
-# 12. Desktop XFCE + Aliases
-log_section "12/13 Desktop XFCE"
-source "${MODULES_DIR}/desktop/xfce.sh"
-source "${MODULES_DIR}/aliases.sh"
-source "${MODULES_DIR}/history.sh"
-source "${MODULES_DIR}/packer-shutdown.sh"
-
-# 13. RDP (xrdp)
-log_section "13/13 xrdp"
-source "${MODULES_DIR}/rdp/xrdp.sh"
-
-# Welcome document
+# Welcome document (sin numerar, es informativo)
 source "${MODULES_DIR}/welcome.sh"
 
 # ==============================================================================

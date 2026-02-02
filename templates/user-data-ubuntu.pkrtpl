@@ -35,6 +35,9 @@ autoinstall:
     layout:
       name: lvm
       sizing-policy: all
+%{ if disk_encryption_password != "" ~}
+      password: "${disk_encryption_password}"
+%{ endif ~}
     swap:
       size: 0
   
@@ -125,3 +128,48 @@ autoinstall:
     # GRUB timeout reducido
     - sed -i 's/GRUB_TIMEOUT=.*/GRUB_TIMEOUT=2/' /target/etc/default/grub
     - curtin in-target --target=/target -- update-grub
+
+%{ if disk_encryption_password != "" ~}
+    # =========================================================================
+    # LUKS Auto-unlock keyfile (para provisioning, se elimina después)
+    # =========================================================================
+    # Crear directorio para keyfiles
+    - mkdir -p /target/etc/cryptsetup-keys.d
+    - chmod 700 /target/etc/cryptsetup-keys.d
+
+    # Generar keyfile aleatorio
+    - dd if=/dev/urandom of=/target/etc/cryptsetup-keys.d/luks-keyfile bs=4096 count=1
+    - chmod 400 /target/etc/cryptsetup-keys.d/luks-keyfile
+
+    # Encontrar el dispositivo LUKS y añadir el keyfile como clave válida
+    - |
+      LUKS_DEV=$(blkid -t TYPE=crypto_LUKS -o device | head -1)
+      if [ -n "$LUKS_DEV" ]; then
+        echo -n "${disk_encryption_password}" | cryptsetup luksAddKey "$LUKS_DEV" /target/etc/cryptsetup-keys.d/luks-keyfile -
+        echo "LUKS keyfile added to $LUKS_DEV"
+      else
+        echo "ERROR: No LUKS device found"
+      fi
+
+    # Configurar crypttab para usar el keyfile
+    - |
+      if [ -f /target/etc/crypttab ]; then
+        echo "Original crypttab:"
+        cat /target/etc/crypttab
+        # Reemplazar 'none' con el path del keyfile (manteniendo las opciones)
+        sed -i 's|none luks|/etc/cryptsetup-keys.d/luks-keyfile luks|g' /target/etc/crypttab
+        echo "Modified crypttab:"
+        cat /target/etc/crypttab
+      else
+        echo "ERROR: crypttab not found"
+      fi
+
+    # Configurar cryptsetup-initramfs para incluir el keyfile
+    - |
+      mkdir -p /target/etc/cryptsetup-initramfs
+      echo 'KEYFILE_PATTERN="/etc/cryptsetup-keys.d/*"' > /target/etc/cryptsetup-initramfs/conf-hook
+      echo 'UMASK=0077' >> /target/etc/cryptsetup-initramfs/conf-hook
+
+    # Regenerar initramfs para incluir el keyfile
+    - curtin in-target --target=/target -- update-initramfs -u -k all
+%{ endif ~}
