@@ -331,7 +331,8 @@ apply_vscode_settings() {
     "git.autofetch": true,
     "git.confirmSync": false,
     "docker.showStartPage": false,
-    "telemetry.telemetryLevel": "off"
+    "telemetry.telemetryLevel": "off",
+    "keyboard.dispatch": "keyCode"
 }
 EOF
     chown -R "${USERNAME}:${USERNAME}" "${HOME_DIR}/.config/${config_dir}"
