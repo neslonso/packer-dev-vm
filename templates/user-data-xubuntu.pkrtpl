@@ -143,19 +143,29 @@ autoinstall:
       LUKS_DEV=$(blkid -t TYPE=crypto_LUKS -o device | head -1)
       if [ -n "$LUKS_DEV" ]; then
         echo -n "${disk_encryption_password}" | cryptsetup luksAddKey "$LUKS_DEV" /target/etc/cryptsetup-keys.d/luks-keyfile -
+        echo "LUKS keyfile added to $LUKS_DEV"
+      else
+        echo "ERROR: No LUKS device found"
       fi
 
     # Configurar crypttab para usar el keyfile
     - |
       if [ -f /target/etc/crypttab ]; then
-        # Obtener el nombre del dispositivo LUKS mapeado
-        LUKS_NAME=$(cat /target/etc/crypttab | grep -v '^#' | head -1 | awk '{print $1}')
-        LUKS_UUID=$(cat /target/etc/crypttab | grep -v '^#' | head -1 | awk '{print $2}')
-        if [ -n "$LUKS_NAME" ] && [ -n "$LUKS_UUID" ]; then
-          # Reemplazar 'none' con el path del keyfile
-          sed -i "s|$LUKS_NAME $LUKS_UUID none|$LUKS_NAME $LUKS_UUID /etc/cryptsetup-keys.d/luks-keyfile|" /target/etc/crypttab
-        fi
+        echo "Original crypttab:"
+        cat /target/etc/crypttab
+        # Reemplazar 'none' con el path del keyfile (manteniendo las opciones)
+        sed -i 's|none luks|/etc/cryptsetup-keys.d/luks-keyfile luks|g' /target/etc/crypttab
+        echo "Modified crypttab:"
+        cat /target/etc/crypttab
+      else
+        echo "ERROR: crypttab not found"
       fi
+
+    # Configurar cryptsetup-initramfs para incluir el keyfile
+    - |
+      mkdir -p /target/etc/cryptsetup-initramfs
+      echo 'KEYFILE_PATTERN="/etc/cryptsetup-keys.d/*"' > /target/etc/cryptsetup-initramfs/conf-hook
+      echo 'UMASK=0077' >> /target/etc/cryptsetup-initramfs/conf-hook
 
     # Regenerar initramfs para incluir el keyfile
     - curtin in-target --target=/target -- update-initramfs -u -k all
