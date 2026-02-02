@@ -118,6 +118,7 @@ EOF
     # Limpieza
     # -------------------------------------------------------------------------
     log_task "Limpiando archivos temporales..."
+    cd /  # Volver a un directorio válido antes de eliminar temp_dir
     rm -rf "$temp_dir"
     log_task "  Archivos temporales eliminados"
 
