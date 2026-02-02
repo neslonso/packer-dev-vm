@@ -40,9 +40,10 @@ disk_size = 80000                      # Disco en MB
 #
 # Formas de pasar la contraseña (de más a menos segura):
 #   1. Variable de entorno: PKR_VAR_disk_encryption_password="xxx" packer build .
-#   2. Prompt interactivo: dejar vacío aquí, Packer la pedirá
-#   3. En este archivo: disk_encryption_password = "xxx" (menos seguro)
+#   2. En este archivo: disk_encryption_password = "xxx"
 #
+# NOTA: Si se deja vacío aquí y no se pasa por variable de entorno,
+#       el disco NO se cifra (comportamiento por defecto).
 # ==============================================================================
 disk_encryption_password = ""          # Vacío = sin cifrado
 
