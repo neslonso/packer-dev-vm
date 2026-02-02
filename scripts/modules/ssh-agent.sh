@@ -46,9 +46,9 @@ install_ssh_keys_and_agent() {
                 local private_key
                 local public_key
 
-                key_name=$(echo "$json_data" | jq -r ".[$i].name" 2>/dev/null)
-                private_key=$(echo "$json_data" | jq -r ".[$i].private_key" 2>/dev/null)
-                public_key=$(echo "$json_data" | jq -r ".[$i].public_key" 2>/dev/null)
+                key_name=$(echo "$json_data" | jq -r ".[$i].name" 2>/dev/null | tr -d '\r')
+                private_key=$(echo "$json_data" | jq -r ".[$i].private_key" 2>/dev/null | tr -d '\r')
+                public_key=$(echo "$json_data" | jq -r ".[$i].public_key" 2>/dev/null | tr -d '\r')
 
                 if [[ -n "$key_name" && "$key_name" != "null" ]]; then
                     log_task "  Instalando clave: ${key_name}..."
