@@ -119,26 +119,41 @@ EOF
     # -------------------------------------------------------------------------
     log_task "Limpiando archivos temporales..."
     rm -rf "$temp_dir"
+    log_task "  Archivos temporales eliminados"
 
     # -------------------------------------------------------------------------
     # Verificar instalación
     # -------------------------------------------------------------------------
+    log_task "Verificando instalación de maldet..."
+
     # maldet puede instalarse en diferentes ubicaciones
     local maldet_bin=""
+    log_task "  Buscando binario en rutas conocidas..."
     for path in /usr/local/sbin/maldet /usr/local/maldetect/maldet /usr/sbin/maldet; do
+        log_task "    Probando: $path"
         if [[ -x "$path" ]]; then
             maldet_bin="$path"
+            log_task "    ENCONTRADO: $path"
             break
+        else
+            log_task "    No encontrado o no ejecutable"
         fi
     done
 
+    log_task "  Resultado búsqueda: maldet_bin='$maldet_bin'"
+
     if [[ -n "$maldet_bin" ]]; then
+        log_task "  Obteniendo versión..."
         local installed_version
         installed_version=$("$maldet_bin" --version 2>&1 | head -1)
         log_success "maldet instalado correctamente: $installed_version"
         log_task "  Ubicación: $maldet_bin"
     else
         log_error "maldet no se instaló correctamente (no encontrado en rutas conocidas)"
+        log_task "  Listando /usr/local/sbin/:"
+        ls -la /usr/local/sbin/ 2>&1 | head -10 || true
+        log_task "  Listando /usr/local/maldetect/:"
+        ls -la /usr/local/maldetect/ 2>&1 | head -10 || true
         return 1
     fi
 
