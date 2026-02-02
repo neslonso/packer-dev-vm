@@ -145,7 +145,8 @@ EOF
     if [[ -n "$maldet_bin" ]]; then
         log_task "  Obteniendo versión..."
         local installed_version
-        installed_version=$("$maldet_bin" --version 2>&1 | head -1)
+        # maldet --version puede fallar, ignoramos el error
+        installed_version=$("$maldet_bin" --version 2>&1 | head -1) || installed_version="(versión desconocida)"
         log_success "maldet instalado correctamente: $installed_version"
         log_task "  Ubicación: $maldet_bin"
     else
