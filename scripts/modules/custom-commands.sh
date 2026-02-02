@@ -5,6 +5,9 @@
 # Ejecuta una lista de comandos definidos por el usuario al final del
 # provisioning. Los comandos se ejecutan como el usuario normal (no root).
 # Requiere: common.sh
+#
+# NOTA: Las claves SSH con passphrase NO funcionarán automáticamente.
+#       Use claves sin passphrase para el provisioning automatizado.
 # ==============================================================================
 
 run_custom_commands() {
@@ -30,6 +33,38 @@ run_custom_commands() {
 
     log_task "Ejecutando ${cmd_count} comando(s) personalizado(s)..."
 
+    # -------------------------------------------------------------------------
+    # Preparar SSH agent para comandos que necesiten SSH (git clone, etc.)
+    # -------------------------------------------------------------------------
+    log_task "Iniciando SSH agent para comandos..."
+
+    # Crear script temporal que inicia SSH agent, añade claves y ejecuta comando
+    local ssh_wrapper="/tmp/ssh-cmd-wrapper.sh"
+    cat > "$ssh_wrapper" << 'WRAPPER_EOF'
+#!/bin/bash
+# Iniciar SSH agent
+eval "$(ssh-agent -s)" > /dev/null 2>&1
+
+# Añadir todas las claves privadas de ~/.ssh (sin passphrase)
+for key in ~/.ssh/id_* ~/.ssh/*_key; do
+    if [[ -f "$key" && ! "$key" =~ \.pub$ ]]; then
+        # Intentar añadir (fallará silenciosamente si tiene passphrase)
+        ssh-add "$key" 2>/dev/null || true
+    fi
+done
+
+# Ejecutar el comando pasado como argumento
+eval "$1"
+exit_code=$?
+
+# Matar el agent
+ssh-agent -k > /dev/null 2>&1
+
+exit $exit_code
+WRAPPER_EOF
+    chmod +x "$ssh_wrapper"
+    chown "${USERNAME}:${USERNAME}" "$ssh_wrapper"
+
     local failed_commands=0
 
     # Iterar sobre cada comando
@@ -40,9 +75,8 @@ run_custom_commands() {
         if [[ -n "$cmd" && "$cmd" != "null" ]]; then
             log_task "  [$(($i + 1))/${cmd_count}] Ejecutando: ${cmd}"
 
-            # Ejecutar el comando como usuario normal
-            # Usamos bash -l para cargar el entorno completo (incluyendo SSH agent)
-            if run_as_user "bash -l -c '$cmd'"; then
+            # Ejecutar el comando con el wrapper de SSH
+            if run_as_user "$ssh_wrapper '$cmd'"; then
                 log_success "  Comando completado exitosamente"
             else
                 log_warning "  Comando fallo (codigo de salida: $?)"
@@ -50,6 +84,9 @@ run_custom_commands() {
             fi
         fi
     done
+
+    # Limpiar
+    rm -f "$ssh_wrapper"
 
     if [[ $failed_commands -gt 0 ]]; then
         log_warning "${failed_commands} comando(s) fallaron"
