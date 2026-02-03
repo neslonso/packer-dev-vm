@@ -29,8 +29,8 @@ install_dbeaver() {
 
     # Añadir repositorio oficial de DBeaver
     # https://dbeaver.io/download/
-    curl -fsSL https://dbeaver.io/debi/dbeaver.gpg.key | gpg --dearmor -o /usr/share/keyrings/dbeaver.gpg
-    echo "deb [signed-by=/usr/share/keyrings/dbeaver.gpg] https://dbeaver.io/debi/ stable main" > /etc/apt/sources.list.d/dbeaver.list
+    wget -qO /usr/share/keyrings/dbeaver.gpg.key https://dbeaver.io/debs/dbeaver.gpg.key
+    echo "deb [signed-by=/usr/share/keyrings/dbeaver.gpg.key] https://dbeaver.io/debs/dbeaver-ce /" > /etc/apt/sources.list.d/dbeaver.list
 
     apt-get update
     apt-get install -y dbeaver-ce
