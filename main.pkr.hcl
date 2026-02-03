@@ -735,23 +735,24 @@ build {
     ]
   }
 
-  # --- Subir script post-provision según flavor ---
+  # --- Subir carpeta post-provision según flavor ---
   provisioner "file" {
-    source      = "scripts-post-provision-custom/post-provision-${var.vm_flavor}.sh"
-    destination = "/home/${var.username}/post-provision.sh"
+    source      = "${path.root}/scripts-post-provision-custom/"
+    destination = "/home/${var.username}/post-provision/"
   }
 
-  # --- Hacer ejecutable el script post-provision ---
+  # --- Configurar script post-provision ---
   provisioner "shell" {
     inline = [
-      "chmod +x /home/${var.username}/post-provision.sh",
-      "chown ${var.username}:${var.username} /home/${var.username}/post-provision.sh",
+      "chmod -R +x /home/${var.username}/post-provision/",
+      "chown -R ${var.username}:${var.username} /home/${var.username}/post-provision/",
+      "ln -sf /home/${var.username}/post-provision/post-provision-${var.vm_flavor}.sh /home/${var.username}/post-provision.sh",
       "echo ''",
       "echo '============================================================'",
       "echo 'SCRIPT POST-PROVISION DISPONIBLE'",
       "echo '============================================================'",
-      "echo 'Se ha copiado el script a: ~/post-provision.sh'",
-      "echo 'Ejecutalo manualmente tras conectarte a la VM:'",
+      "echo 'Se ha copiado la carpeta post-provision/ al home.'",
+      "echo 'Ejecuta manualmente tras conectarte a la VM:'",
       "echo '  ./post-provision.sh'",
       "echo '============================================================'",
       "echo ''"
