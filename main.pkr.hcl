@@ -349,6 +349,11 @@ variable "install_sublimemerge" {
   description = "Instalar Sublime Merge (cliente Git visual de alta velocidad)"
 }
 
+variable "install_dbeaver" {
+  type        = bool
+  description = "Instalar DBeaver Community Edition (cliente de base de datos gráfico universal: MySQL, PostgreSQL, SQLite, etc.)"
+}
+
 variable "vscode_extensions" {
   type        = list(string)
   default     = []
@@ -539,6 +544,7 @@ locals {
     "VM_INSTALL_ANTIGRAVITY=${var.install_antigravity}",
     "VM_INSTALL_CURSOR=${var.install_cursor}",
     "VM_INSTALL_SUBLIMEMERGE=${var.install_sublimemerge}",
+    "VM_INSTALL_DBEAVER=${var.install_dbeaver}",
     "VM_VSCODE_EXTENSIONS=${join(",", var.vscode_extensions)}",
     "VM_INSTALL_BROWSER=${join(",", var.install_browser)}",
     "VM_INSTALL_MESSAGING=${join(",", var.install_messaging)}",

@@ -3,11 +3,12 @@
 # DATABASES.SH - Instalación de clientes de base de datos
 # ==============================================================================
 # Instala: mysql-client, postgresql-client, redis-tools, sqlite3
+# Opcionalmente: DBeaver CE (cliente gráfico universal)
 # Requiere: common.sh
 # ==============================================================================
 
 install_database_clients() {
-    log_section "Instalando clientes de base de datos..."
+    log_task "Instalando clientes CLI de base de datos..."
 
     apt-get install -y \
         mysql-client \
@@ -15,8 +16,28 @@ install_database_clients() {
         redis-tools \
         sqlite3
 
-    log_success "Clientes de base de datos instalados"
+    log_success "Clientes CLI de base de datos instalados"
+}
+
+install_dbeaver() {
+    if [[ "${INSTALL_DBEAVER}" != "true" ]]; then
+        log_task "DBeaver: omitido (INSTALL_DBEAVER=${INSTALL_DBEAVER})"
+        return 0
+    fi
+
+    log_task "Instalando DBeaver Community Edition..."
+
+    # Añadir repositorio oficial de DBeaver
+    # https://dbeaver.io/download/
+    curl -fsSL https://dbeaver.io/debi/dbeaver.gpg.key | gpg --dearmor -o /usr/share/keyrings/dbeaver.gpg
+    echo "deb [signed-by=/usr/share/keyrings/dbeaver.gpg] https://dbeaver.io/debi/ stable main" > /etc/apt/sources.list.d/dbeaver.list
+
+    apt-get update
+    apt-get install -y dbeaver-ce
+
+    log_success "DBeaver Community Edition instalado"
 }
 
 # Ejecutar
 install_database_clients
+install_dbeaver

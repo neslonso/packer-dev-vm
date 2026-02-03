@@ -165,6 +165,7 @@ install_vscode       = true             # Instalar VS Code
 install_antigravity  = false            # Instalar Google Antigravity IDE (en preview, puede fallar)
 install_cursor       = true             # Instalar Cursor (AI-powered code editor)
 install_sublimemerge = true             # Instalar Sublime Merge (cliente Git visual)
+install_dbeaver      = true             # Instalar DBeaver CE (cliente BD gráfico: MySQL, PostgreSQL, SQLite, etc.)
 
 # Extensiones para VS Code, Cursor y Antigravity (IDs del marketplace)
 vscode_extensions = [
