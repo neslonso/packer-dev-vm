@@ -76,6 +76,25 @@ EOF
         log_warning "Failed to download lazydocker, skipping..."
     fi
 
+    # -------------------------------------------------------------------------
+    # docker-compose standalone (además del plugin docker compose)
+    # -------------------------------------------------------------------------
+    COMPOSE_VERSION=$(curl --max-time 30 --fail --silent --show-error https://api.github.com/repos/docker/compose/releases/latest 2>/dev/null | jq -r '.tag_name' 2>/dev/null || echo "")
+
+    if [[ -z "$COMPOSE_VERSION" || "$COMPOSE_VERSION" == "null" ]]; then
+        log_warning "Failed to fetch docker-compose latest version from GitHub API, using fallback"
+        COMPOSE_VERSION="v2.32.4"
+    fi
+
+    log_task "Installing docker-compose standalone ${COMPOSE_VERSION}..."
+
+    if curl --max-time 60 --fail -Lo /usr/local/bin/docker-compose "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-linux-x86_64" 2>&1; then
+        chmod +x /usr/local/bin/docker-compose
+        log_success "docker-compose ${COMPOSE_VERSION} installed successfully"
+    else
+        log_warning "Failed to download docker-compose standalone, skipping..."
+    fi
+
     log_success "Docker instalado"
 }
 
