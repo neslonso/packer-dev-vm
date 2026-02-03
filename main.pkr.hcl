@@ -735,10 +735,15 @@ build {
     ]
   }
 
-  # --- Subir carpeta post-provision según flavor ---
+  # --- Crear directorio post-provision ---
+  provisioner "shell" {
+    inline = ["mkdir -p /home/${var.username}/post-provision"]
+  }
+
+  # --- Subir carpeta post-provision ---
   provisioner "file" {
     source      = "${path.root}/scripts-post-provision-custom/"
-    destination = "/home/${var.username}/post-provision/"
+    destination = "/home/${var.username}/post-provision"
   }
 
   # --- Configurar script post-provision ---
