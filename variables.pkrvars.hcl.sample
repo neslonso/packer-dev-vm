@@ -237,7 +237,7 @@ ssh_key_pairs = [
 #   post-provision.sh -> módulos comunes -> post-provision-{flavor}.sh (si existe)
 #
 # Ejecución (tras conectarte a la VM):
-#   ./post-provision.sh
+#   ./post-provision/post-provision.sh
 #
 # NOTA: scripts-post-provision-custom/ está en .gitignore (contiene config personal)
 # ==============================================================================

@@ -758,14 +758,13 @@ build {
       "chmod -R +x /home/${var.username}/post-provision/",
       "chown -R ${var.username}:${var.username} /home/${var.username}/post-provision/",
       "echo '${var.vm_flavor}' > /home/${var.username}/post-provision/.flavor",
-      "ln -sf /home/${var.username}/post-provision/post-provision.sh /home/${var.username}/post-provision.sh",
       "echo ''",
       "echo '============================================================'",
       "echo 'SCRIPT POST-PROVISION DISPONIBLE'",
       "echo '============================================================'",
       "echo 'Se ha copiado la carpeta post-provision/ al home.'",
       "echo 'Ejecuta manualmente tras conectarte a la VM:'",
-      "echo '  ./post-provision.sh'",
+      "echo '  ./post-provision/post-provision.sh'",
       "echo '============================================================'",
       "echo ''"
     ]
