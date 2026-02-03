@@ -220,21 +220,25 @@ ssh_key_pairs = [
 # ==============================================================================
 # La carpeta scripts-post-provision-custom/ se sube completa a ~/post-provision/
 #
+# SETUP:
+#   cp -r scripts-post-provision-custom.sample scripts-post-provision-custom
+#
 # Estructura:
 #   scripts-post-provision-custom/
 #   ├── post-provision-ubuntu.sh    <- Orquestador para Ubuntu
 #   ├── post-provision-xubuntu.sh   <- Orquestador para Xubuntu
-#   └── modules/                    <- Módulos compartidos (opcional)
-#       ├── clone-repos.sh
-#       └── setup-workspace.sh
+#   └── modules/                    <- Módulos compartidos
+#       ├── workspace.sh
+#       └── repos.sh
 #
-# Se crea un symlink ~/post-provision.sh -> ~/post-provision/post-provision-{flavor}.sh
+# En la VM:
+#   ~/post-provision/               <- Carpeta completa
+#   ~/post-provision.sh             <- Symlink al orquestador del flavor
 #
-# El usuario ejecuta manualmente tras conectarse a la VM:
+# Ejecución (tras conectarte a la VM):
 #   ./post-provision.sh
 #
-# Útil para: clonar repositorios, configuración inicial con SSH, etc.
-# El SSH agent estará activo cuando ejecutes el script.
+# NOTA: scripts-post-provision-custom/ está en .gitignore (contiene config personal)
 # ==============================================================================
 
 # ==============================================================================
