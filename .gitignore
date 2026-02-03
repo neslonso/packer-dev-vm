@@ -1,3 +1,4 @@
 variables.pkrvars.hcl
 packer_cache/**
 output/**
+scripts-post-provision-custom/**
