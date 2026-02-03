@@ -27,10 +27,11 @@ install_docker() {
     # -------------------------------------------------------------------------
     # Configurar Docker
     # -------------------------------------------------------------------------
+    # Nota: No se especifica storage-driver para permitir containerd-snapshotter
+    # (default en Docker 23+), necesario para builds multi-plataforma
     mkdir -p /etc/docker
     cat > /etc/docker/daemon.json << EOF
 {
-    "storage-driver": "overlay2",
     "log-driver": "json-file",
     "log-opts": {
         "max-size": "${DOCKER_LOG_MAX_SIZE}",
