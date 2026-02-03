@@ -225,15 +225,15 @@ ssh_key_pairs = [
 #
 # Estructura:
 #   scripts-post-provision-custom/
-#   ├── post-provision-ubuntu.sh    <- Orquestador para Ubuntu
-#   ├── post-provision-xubuntu.sh   <- Orquestador para Xubuntu
+#   ├── post-provision.sh           <- Punto de entrada (módulos comunes)
+#   ├── post-provision-ubuntu.sh    <- Específico Ubuntu (opcional)
+#   ├── post-provision-xubuntu.sh   <- Específico Xubuntu (opcional)
 #   └── modules/                    <- Módulos compartidos
 #       ├── workspace.sh
 #       └── repos.sh
 #
-# En la VM:
-#   ~/post-provision/               <- Carpeta completa
-#   ~/post-provision.sh             <- Symlink al orquestador del flavor
+# Flujo:
+#   post-provision.sh -> módulos comunes -> post-provision-{flavor}.sh (si existe)
 #
 # Ejecución (tras conectarte a la VM):
 #   ./post-provision.sh

@@ -746,7 +746,8 @@ build {
     inline = [
       "chmod -R +x /home/${var.username}/post-provision/",
       "chown -R ${var.username}:${var.username} /home/${var.username}/post-provision/",
-      "ln -sf /home/${var.username}/post-provision/post-provision-${var.vm_flavor}.sh /home/${var.username}/post-provision.sh",
+      "echo '${var.vm_flavor}' > /home/${var.username}/post-provision/.flavor",
+      "ln -sf /home/${var.username}/post-provision/post-provision.sh /home/${var.username}/post-provision.sh",
       "echo ''",
       "echo '============================================================'",
       "echo 'SCRIPT POST-PROVISION DISPONIBLE'",
