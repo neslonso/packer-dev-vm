@@ -407,13 +407,6 @@ variable "ssh_key_pairs" {
   description = "Lista de pares de claves SSH a instalar. Cada elemento tiene: name (nombre del archivo sin extensión, ej: 'id_rsa'), private_key (contenido de la clave privada), public_key (contenido de la clave pública)"
 }
 
-# --- Post-provision Script ---
-variable "post_provision_script" {
-  type        = string
-  default     = ""
-  description = "Ruta a un script local que se copiará al home del usuario como 'post-provision.sh'. El usuario puede ejecutarlo manualmente tras conectarse a la VM. Útil para comandos que requieren interacción (git clone con SSH, etc.)"
-}
-
 # --- VM Registration (post-build) ---
 variable "register_vm" {
   type        = bool
@@ -742,19 +735,15 @@ build {
     ]
   }
 
-  # --- Subir script post-provision si está configurado ---
-  dynamic "provisioner" {
-    labels   = ["file"]
-    for_each = var.post_provision_script != "" ? [1] : []
-    content {
-      source      = var.post_provision_script
-      destination = "/home/${var.username}/post-provision.sh"
-    }
+  # --- Subir script post-provision según flavor ---
+  provisioner "file" {
+    source      = "scripts-post-provision-custom/post-provision-${var.vm_flavor}.sh"
+    destination = "/home/${var.username}/post-provision.sh"
   }
 
   # --- Hacer ejecutable el script post-provision ---
   provisioner "shell" {
-    inline = var.post_provision_script != "" ? [
+    inline = [
       "chmod +x /home/${var.username}/post-provision.sh",
       "chown ${var.username}:${var.username} /home/${var.username}/post-provision.sh",
       "echo ''",
@@ -766,7 +755,7 @@ build {
       "echo '  ./post-provision.sh'",
       "echo '============================================================'",
       "echo ''"
-    ] : ["echo 'No post-provision script configured'"]
+    ]
   }
 
   # --- Descargar log de provisioning al host ---

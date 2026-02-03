@@ -216,18 +216,23 @@ ssh_key_pairs = [
 ]
 
 # ==============================================================================
-# POST-PROVISION SCRIPT
+# POST-PROVISION SCRIPTS
 # ==============================================================================
-# Ruta a un script local que se copiará al home del usuario como 'post-provision.sh'.
-# El usuario puede ejecutarlo manualmente tras conectarse a la VM.
+# Los scripts de post-provisión se encuentran en:
+#   scripts-post-provision-custom/post-provision-{flavor}.sh
 #
-# Útil para: clonar repositorios, configuración inicial, etc.
-# El script se ejecutará con el SSH agent activo (si hay claves configuradas).
+# Se sube automáticamente el script correspondiente al flavor (ubuntu/xubuntu)
+# al home del usuario como ~/post-provision.sh
 #
-# NOTA: Si se deja vacío, no se copia ningún script.
+# El usuario puede ejecutarlo manualmente tras conectarse a la VM:
+#   ./post-provision.sh
+#
+# Útil para: clonar repositorios, configuración inicial con SSH, etc.
+# El SSH agent estará activo cuando ejecutes el script.
+#
+# Edita directamente los archivos en scripts-post-provision-custom/ para
+# personalizar los comandos de post-provisión.
 # ==============================================================================
-post_provision_script = ""
-# Ejemplo: post_provision_script = "./my-post-provision.sh"
 
 # ==============================================================================
 # BUILD
