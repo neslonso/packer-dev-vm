@@ -46,16 +46,16 @@ install_ssh_keys_and_agent() {
                 local private_key
                 local public_key
 
-                key_name=$(echo "$json_data" | jq -r ".[$i].name" 2>/dev/null)
-                private_key=$(echo "$json_data" | jq -r ".[$i].private_key" 2>/dev/null)
-                public_key=$(echo "$json_data" | jq -r ".[$i].public_key" 2>/dev/null)
+                key_name=$(echo "$json_data" | jq -r ".[$i].name" 2>/dev/null | tr -d '\r')
+                private_key=$(echo "$json_data" | jq -r ".[$i].private_key" 2>/dev/null | tr -d '\r')
+                public_key=$(echo "$json_data" | jq -r ".[$i].public_key" 2>/dev/null | tr -d '\r')
 
                 if [[ -n "$key_name" && "$key_name" != "null" ]]; then
                     log_task "  Instalando clave: ${key_name}..."
 
                     # Escribir clave privada
                     if [[ -n "$private_key" && "$private_key" != "null" ]]; then
-                        echo "$private_key" > "${ssh_dir}/${key_name}"
+                        printf '%s\n' "$private_key" > "${ssh_dir}/${key_name}"
                         chmod 600 "${ssh_dir}/${key_name}"
                         chown "${USERNAME}:${USERNAME}" "${ssh_dir}/${key_name}"
                         key_names+=("${key_name}")
@@ -63,7 +63,7 @@ install_ssh_keys_and_agent() {
 
                     # Escribir clave publica
                     if [[ -n "$public_key" && "$public_key" != "null" ]]; then
-                        echo "$public_key" > "${ssh_dir}/${key_name}.pub"
+                        printf '%s\n' "$public_key" > "${ssh_dir}/${key_name}.pub"
                         chmod 644 "${ssh_dir}/${key_name}.pub"
                         chown "${USERNAME}:${USERNAME}" "${ssh_dir}/${key_name}.pub"
                     fi
@@ -126,7 +126,7 @@ SSHAGENT_EOF
         for key_name in "${key_names[@]}"; do
             ssh_agent_config+="
 if [ -f ~/.ssh/${key_name} ]; then
-    ssh-add -l 2>/dev/null | grep -q \"\$(ssh-keygen -lf ~/.ssh/${key_name} 2>/dev/null | awk '{print \$2}')\" || ssh-add ~/.ssh/${key_name} 2>/dev/null
+    ssh-add -l 2>/dev/null | grep -q \"\$(ssh-keygen -lf ~/.ssh/${key_name} 2>/dev/null | awk '{print \$2}')\" || ssh-add ~/.ssh/${key_name}
 fi"
         done
     else
@@ -135,7 +135,7 @@ fi"
 # Add default keys if they exist
 for key in ~/.ssh/id_rsa ~/.ssh/id_ed25519 ~/.ssh/id_ecdsa; do
     if [ -f "$key" ]; then
-        ssh-add -l 2>/dev/null | grep -q "$(ssh-keygen -lf "$key" 2>/dev/null | awk '"'"'{print $2}'"'"')" || ssh-add "$key" 2>/dev/null
+        ssh-add -l 2>/dev/null | grep -q "$(ssh-keygen -lf "$key" 2>/dev/null | awk '"'"'{print $2}'"'"')" || ssh-add "$key"
     fi
 done'
     fi
