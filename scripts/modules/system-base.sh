@@ -99,7 +99,9 @@ NETPLAN_EOF
         curl \
         wget \
         make \
-        build-essential
+        build-essential \
+        cifs-utils \
+        samba
 
     # Crear symlinks para herramientas con nombres diferentes
     if ! ln -sf /usr/bin/batcat /usr/local/bin/bat 2>/dev/null; then
@@ -108,6 +110,13 @@ NETPLAN_EOF
     if ! ln -sf /usr/bin/fdfind /usr/local/bin/fd 2>/dev/null; then
         log_warning "fdfind not available, fd command will not work"
     fi
+
+    # -------------------------------------------------------------------------
+    # Configurar Samba y firewall
+    # -------------------------------------------------------------------------
+    log_task "Configurando Samba..."
+    systemctl enable smbd nmbd
+    ufw allow samba
 
     log_success "Sistema base configurado"
 }
