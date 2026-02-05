@@ -330,6 +330,7 @@ apply_vscode_settings() {
     "files.autoSave":"off",
     "files.trimTrailingWhitespace": true,
     "explorer.excludeGitIgnore": false,
+    "explorer.autoReveal": false,
     "git.autofetch": true,
     "git.confirmSync": false,
     "docker.showStartPage": false,
