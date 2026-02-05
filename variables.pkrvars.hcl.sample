@@ -50,17 +50,18 @@ disk_encryption_password = ""          # Vacío = sin cifrado
 # ==============================================================================
 # VM FLAVOR
 # ==============================================================================
-# Selecciona el "sabor" de la VM. Cada flavor incluye una ISO diferente y
-# configuración optimizada para su entorno de escritorio.
+# Selecciona el "sabor" de la VM.
 #
 # Opciones disponibles:
-#   - "xubuntu" (default): Xubuntu 24.04.3 LTS con XFCE
+#   - "xubuntu" (default): Ubuntu Server + xubuntu-desktop (XFCE)
+#       * Usa ISO de Ubuntu Server + paquete xubuntu-desktop
 #       * Ligero (~400MB RAM en reposo)
 #       * Ideal para VMs sin GPU
 #       * RDP via xrdp (muy compatible)
 #       * Compositor desactivado por defecto
 #
-#   - "ubuntu": Ubuntu Desktop 24.04.3 LTS con GNOME
+#   - "ubuntu": Ubuntu Desktop (GNOME)
+#       * Usa ISO de Ubuntu Desktop
 #       * Más pesado (~1.5GB RAM en reposo)
 #       * Mejor experiencia visual
 #       * RDP via gnome-remote-desktop
@@ -166,6 +167,7 @@ install_antigravity  = false            # Instalar Google Antigravity IDE (en pr
 install_cursor       = true             # Instalar Cursor (AI-powered code editor)
 install_sublimemerge = true             # Instalar Sublime Merge (cliente Git visual)
 install_dbeaver      = true             # Instalar DBeaver CE (cliente BD gráfico: MySQL, PostgreSQL, SQLite, etc.)
+install_samba        = true             # Instalar Samba (compartir archivos en red SMB/CIFS)
 
 # Extensiones para VS Code, Cursor y Antigravity (IDs del marketplace)
 vscode_extensions = [

@@ -354,6 +354,12 @@ variable "install_dbeaver" {
   description = "Instalar DBeaver Community Edition (cliente de base de datos gráfico universal: MySQL, PostgreSQL, SQLite, etc.)"
 }
 
+variable "install_samba" {
+  type        = bool
+  default     = true
+  description = "Instalar Samba para compartir archivos en red (SMB/CIFS)"
+}
+
 variable "vscode_extensions" {
   type        = list(string)
   default     = []
@@ -545,6 +551,7 @@ locals {
     "VM_INSTALL_CURSOR=${var.install_cursor}",
     "VM_INSTALL_SUBLIMEMERGE=${var.install_sublimemerge}",
     "VM_INSTALL_DBEAVER=${var.install_dbeaver}",
+    "VM_INSTALL_SAMBA=${var.install_samba}",
     "VM_VSCODE_EXTENSIONS=${join(",", var.vscode_extensions)}",
     "VM_INSTALL_BROWSER=${join(",", var.install_browser)}",
     "VM_INSTALL_MESSAGING=${join(",", var.install_messaging)}",

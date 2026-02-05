@@ -100,8 +100,7 @@ NETPLAN_EOF
         wget \
         make \
         build-essential \
-        cifs-utils \
-        samba
+        cifs-utils
 
     # Crear symlinks para herramientas con nombres diferentes
     if ! ln -sf /usr/bin/batcat /usr/local/bin/bat 2>/dev/null; then
@@ -112,11 +111,17 @@ NETPLAN_EOF
     fi
 
     # -------------------------------------------------------------------------
-    # Configurar Samba y firewall
+    # Samba (opcional)
     # -------------------------------------------------------------------------
-    log_task "Configurando Samba..."
-    systemctl enable smbd nmbd
-    ufw allow samba
+    if [[ "${INSTALL_SAMBA}" == "true" ]]; then
+        log_task "Instalando y configurando Samba..."
+        apt-get install -y samba
+        systemctl enable smbd nmbd
+        ufw allow samba
+        log_success "Samba instalado y configurado"
+    else
+        log_task "Samba: omitido (INSTALL_SAMBA=${INSTALL_SAMBA})"
+    fi
 
     log_success "Sistema base configurado"
 }
