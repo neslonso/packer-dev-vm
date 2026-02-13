@@ -38,6 +38,8 @@ INSTALL_VSCODE="${VM_INSTALL_VSCODE}"
 INSTALL_ANTIGRAVITY="${VM_INSTALL_ANTIGRAVITY}"
 INSTALL_CURSOR="${VM_INSTALL_CURSOR}"
 INSTALL_SUBLIMEMERGE="${VM_INSTALL_SUBLIMEMERGE}"
+INSTALL_DBEAVER="${VM_INSTALL_DBEAVER}"
+INSTALL_SAMBA="${VM_INSTALL_SAMBA}"
 VSCODE_EXTENSIONS="${VM_VSCODE_EXTENSIONS}"
 INSTALL_BROWSER="${VM_INSTALL_BROWSER}"
 INSTALL_MESSAGING="${VM_INSTALL_MESSAGING}"
@@ -328,6 +330,7 @@ apply_vscode_settings() {
     "files.autoSave":"off",
     "files.trimTrailingWhitespace": true,
     "explorer.excludeGitIgnore": false,
+    "explorer.autoReveal": false,
     "git.autofetch": true,
     "git.confirmSync": false,
     "docker.showStartPage": false,

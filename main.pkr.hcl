@@ -58,6 +58,7 @@ variable "hostname" {
 # --- Localización ---
 variable "timezone" {
   type        = string
+  default     = "Europe/Madrid"
   description = "Zona horaria (formato IANA). Ejemplos: 'America/New_York', 'Europe/Madrid', 'Asia/Tokyo', 'UTC'. Ver: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones"
   validation {
     condition     = can(regex("^[A-Za-z_]+(/[A-Za-z_]+)+$", var.timezone)) || var.timezone == "UTC"
@@ -349,6 +350,17 @@ variable "install_sublimemerge" {
   description = "Instalar Sublime Merge (cliente Git visual de alta velocidad)"
 }
 
+variable "install_dbeaver" {
+  type        = bool
+  description = "Instalar DBeaver Community Edition (cliente de base de datos gráfico universal: MySQL, PostgreSQL, SQLite, etc.)"
+}
+
+variable "install_samba" {
+  type        = bool
+  default     = true
+  description = "Instalar Samba para compartir archivos en red (SMB/CIFS)"
+}
+
 variable "vscode_extensions" {
   type        = list(string)
   default     = []
@@ -539,6 +551,8 @@ locals {
     "VM_INSTALL_ANTIGRAVITY=${var.install_antigravity}",
     "VM_INSTALL_CURSOR=${var.install_cursor}",
     "VM_INSTALL_SUBLIMEMERGE=${var.install_sublimemerge}",
+    "VM_INSTALL_DBEAVER=${var.install_dbeaver}",
+    "VM_INSTALL_SAMBA=${var.install_samba}",
     "VM_VSCODE_EXTENSIONS=${join(",", var.vscode_extensions)}",
     "VM_INSTALL_BROWSER=${join(",", var.install_browser)}",
     "VM_INSTALL_MESSAGING=${join(",", var.install_messaging)}",
@@ -752,14 +766,13 @@ build {
       "chmod -R +x /home/${var.username}/post-provision/",
       "chown -R ${var.username}:${var.username} /home/${var.username}/post-provision/",
       "echo '${var.vm_flavor}' > /home/${var.username}/post-provision/.flavor",
-      "ln -sf /home/${var.username}/post-provision/post-provision.sh /home/${var.username}/post-provision.sh",
       "echo ''",
       "echo '============================================================'",
       "echo 'SCRIPT POST-PROVISION DISPONIBLE'",
       "echo '============================================================'",
       "echo 'Se ha copiado la carpeta post-provision/ al home.'",
       "echo 'Ejecuta manualmente tras conectarte a la VM:'",
-      "echo '  ./post-provision.sh'",
+      "echo '  ./post-provision/post-provision.sh'",
       "echo '============================================================'",
       "echo ''"
     ]
