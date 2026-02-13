@@ -46,21 +46,20 @@ autoinstall:
   # Después del build, provision.sh puede cambiar a DHCP según network_mode
   # ==========================================================================
   network:
-    network:
-      version: 2
-      ethernets:
-        eth0:
-          match:
-            name: "eth*"
-          addresses:
-            - ${static_ip}
-          routes:
-            - to: default
-              via: ${static_gateway}
-          nameservers:
-            addresses: [${replace(static_dns, ",", ", ")}]
-          dhcp4: false
-          dhcp6: false
+    version: 2
+    ethernets:
+      eth0:
+        match:
+          name: "eth*"
+        addresses:
+          - ${static_ip}
+        routes:
+          - to: default
+            via: ${static_gateway}
+        nameservers:
+          addresses: [${replace(static_dns, ",", ", ")}]
+        dhcp4: false
+        dhcp6: false
   
   # ==========================================================================
   # SSH
