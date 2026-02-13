@@ -58,6 +58,7 @@ variable "hostname" {
 # --- Localización ---
 variable "timezone" {
   type        = string
+  default     = "Europe/Madrid"
   description = "Zona horaria (formato IANA). Ejemplos: 'America/New_York', 'Europe/Madrid', 'Asia/Tokyo', 'UTC'. Ver: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones"
   validation {
     condition     = can(regex("^[A-Za-z_]+(/[A-Za-z_]+)+$", var.timezone)) || var.timezone == "UTC"
