@@ -315,6 +315,8 @@ apply_vscode_settings() {
     local config_dir=$1
     local user_dir="${HOME_DIR}/.config/${config_dir}/User"
     mkdir -p "${user_dir}"
+    # Ensure .config itself is owned by the user (mkdir -p may have created it as root)
+    chown "${USERNAME}:${USERNAME}" "${HOME_DIR}/.config"
     cat > "${user_dir}/settings.json" << EOF
 {
     "editor.fontFamily": "${GLOBAL_FONT_FAMILY}",
