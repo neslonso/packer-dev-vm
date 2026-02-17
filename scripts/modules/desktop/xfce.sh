@@ -9,10 +9,10 @@
 configure_xfce_desktop() {
     log_section "Configurando XFCE desktop..."
 
-    # Crear directorios de configuración
-    run_as_user "mkdir -p '${HOME_DIR}/.config/xfce4/xfconf/xfce-perchannel-xml'"
-    run_as_user "mkdir -p '${HOME_DIR}/.config/xfce4/terminal'"
-    run_as_user "mkdir -p '${HOME_DIR}/.config/autostart'"
+    # Crear directorios de configuración (como root; chown -R al final del script)
+    mkdir -p "${HOME_DIR}/.config/xfce4/xfconf/xfce-perchannel-xml"
+    mkdir -p "${HOME_DIR}/.config/xfce4/terminal"
+    mkdir -p "${HOME_DIR}/.config/autostart"
 
     # -------------------------------------------------------------------------
     # Configurar tema oscuro/claro
@@ -112,7 +112,7 @@ EOF
     update-alternatives --set x-terminal-emulator /usr/bin/xfce4-terminal.wrapper 2>/dev/null || true
 
     # Configurar exo-preferred-applications
-    run_as_user "mkdir -p '${HOME_DIR}/.config/xfce4'"
+    mkdir -p "${HOME_DIR}/.config/xfce4"
     cat > "${HOME_DIR}/.config/xfce4/helpers.rc" << EOF
 TerminalEmulator=xfce4-terminal
 EOF
