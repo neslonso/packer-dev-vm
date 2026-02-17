@@ -493,16 +493,16 @@ locals {
   # ===========================================================================
   flavors = {
     xubuntu = {
-      iso_url       = "https://releases.ubuntu.com/24.04.3/ubuntu-24.04.3-live-server-amd64.iso"
-      iso_checksum  = "sha256:c3514bf0056180d09376462a7a1b4f213c1d6e8ea67fae5c25099c6fd3d8274b"
+      iso_url       = "https://releases.ubuntu.com/24.04.4/ubuntu-24.04.4-live-server-amd64.iso"
+      iso_checksum  = "sha256:e907d92eeec9df64163a7e454cbc8d7755e8ddc7ed42f99dbc80c40f1a138433"
       user_data_tpl = "${path.root}/templates/user-data-xubuntu.pkrtpl"
-      description   = "Ubuntu Server 24.04.3 + xubuntu-desktop (XFCE) - Ligero, ideal para VM"
+      description   = "Ubuntu Server 24.04.4 + xubuntu-desktop (XFCE) - Ligero, ideal para VM"
     }
     ubuntu = {
-      iso_url       = "https://releases.ubuntu.com/24.04.3/ubuntu-24.04.3-desktop-amd64.iso"
-      iso_checksum  = "sha256:faabcf33ae53976d2b8207a001ff32f4e5daae013505ac7188c9ea63988f8328"
+      iso_url       = "https://releases.ubuntu.com/24.04.4/ubuntu-24.04.4-desktop-amd64.iso"
+      iso_checksum  = "sha256:3a4c9877b483ab46d7c3fbe165a0db275e1ae3cfe56a5657e5a47c2f99a99d1e"
       user_data_tpl = "${path.root}/templates/user-data-ubuntu.pkrtpl"
-      description   = "Ubuntu 24.04.3 LTS (GNOME) - Completo"
+      description   = "Ubuntu 24.04.4 LTS (GNOME) - Completo"
     }
   }
 
