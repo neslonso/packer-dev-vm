@@ -73,7 +73,6 @@ vm_flavor = "xubuntu"
 # ==============================================================================
 # SISTEMA
 # ==============================================================================
-autologin          = true              # Login automático en el desktop
 ssh_port           = 22                # Puerto SSH
 ssh_allow_password = true              # Permitir auth por password
 sudo_nopassword    = true              # Sudo sin password

@@ -97,16 +97,6 @@ autoinstall:
     - chmod 440 /target/etc/sudoers.d/${username}
 %{ endif ~}
 
-%{ if autologin ~}
-    # Autologin en LightDM
-    - mkdir -p /target/etc/lightdm/lightdm.conf.d
-    - |
-      cat > /target/etc/lightdm/lightdm.conf.d/50-autologin.conf << EOF
-      [Seat:*]
-      autologin-user=${username}
-      autologin-user-timeout=0
-      EOF
-%{ endif ~}
 
     # Timezone
     - curtin in-target --target=/target -- timedatectl set-timezone ${timezone}
