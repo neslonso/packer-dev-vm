@@ -99,21 +99,6 @@ autoinstall:
     - chmod 440 /target/etc/sudoers.d/${username}
 %{ endif ~}
     
-%{ if autologin ~}
-    # Autologin en GDM
-    - |
-      mkdir -p /target/etc/gdm3
-      cat > /target/etc/gdm3/custom.conf << 'GDMEOF'
-      [daemon]
-      AutomaticLoginEnable=true
-      AutomaticLogin=${username}
-      [security]
-      [xdmcp]
-      [chooser]
-      [debug]
-      GDMEOF
-%{ endif ~}
-    
     # Timezone
     - curtin in-target --target=/target -- timedatectl set-timezone ${timezone}
     

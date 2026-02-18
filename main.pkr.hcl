@@ -131,11 +131,6 @@ variable "vm_flavor" {
 }
 
 # --- Sistema ---
-variable "autologin" {
-  type        = bool
-  description = "Habilitar autologin"
-}
-
 variable "ssh_port" {
   type        = number
   description = "Puerto SSH"
@@ -525,7 +520,6 @@ locals {
     "VM_TIMEZONE=${var.timezone}",
     "VM_LOCALE=${var.locale}",
     "VM_KEYBOARD=${var.keyboard}",
-    "VM_AUTOLOGIN=${var.autologin}",
     "VM_SSH_PORT=${var.ssh_port}",
     "VM_SSH_ALLOW_PASSWORD=${var.ssh_allow_password}",
     "VM_SUDO_NOPASSWORD=${var.sudo_nopassword}",
@@ -637,7 +631,6 @@ source "hyperv-iso" "ubuntu" {
       timezone                 = var.timezone
       locale                   = var.locale
       keyboard                 = var.keyboard
-      autologin                = var.autologin
       ssh_allow_password       = var.ssh_allow_password
       sudo_nopassword          = var.sudo_nopassword
       disk_encryption_password = var.disk_encryption_password
