@@ -46,7 +46,7 @@ install_nerd_font() {
     fi
 
     # Actualizar cache de fuentes
-    fc-cache -fv
+    fc-cache -fv || true
 
     log_success "Nerd Font instalada"
 }
