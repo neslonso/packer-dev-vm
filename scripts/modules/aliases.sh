@@ -77,6 +77,16 @@ alias lt="eza --tree --icons --level=2"
 alias ..="cd .."
 # description: Subir dos niveles de directorio
 alias ...="cd ../.."
+
+# ==============================================================================
+# Modern CLI Tools
+# ==============================================================================
+# description: Cat con syntax highlighting
+alias cat="bat --paging=never"
+# description: Ver archivo con paginación
+alias less="bat"
+# description: Saltar a directorio frecuente (zoxide)
+alias cd="z"
 '
 
     if [[ "${SHELL_TYPE}" == "zsh" ]]; then
