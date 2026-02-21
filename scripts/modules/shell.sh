@@ -100,6 +100,17 @@ install_shell_config() {
             ;;
     esac
 
+    # -------------------------------------------------------------------------
+    # Inicializar zoxide (cd inteligente)
+    # -------------------------------------------------------------------------
+    if command -v zoxide &>/dev/null; then
+        if [[ "${SHELL_TYPE}" == "zsh" ]]; then
+            echo 'eval "$(zoxide init zsh)"' >> "${HOME_DIR}/.zshrc"
+        else
+            echo 'eval "$(zoxide init bash)"' >> "${HOME_DIR}/.bashrc"
+        fi
+    fi
+
     log_success "Shell y prompt configurados"
 }
 

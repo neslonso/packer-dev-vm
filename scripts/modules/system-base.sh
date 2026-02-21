@@ -95,6 +95,8 @@ NETPLAN_EOF
         ripgrep \
         fd-find \
         bat \
+        eza \
+        zoxide \
         gnupg \
         curl \
         wget \
