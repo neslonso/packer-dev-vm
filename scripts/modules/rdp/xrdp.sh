@@ -18,6 +18,26 @@ configure_xrdp() {
     usermod -aG ssl-cert xrdp
 
     # -------------------------------------------------------------------------
+    # Configurar PAM para auto-desbloquear gnome-keyring en login xrdp
+    # -------------------------------------------------------------------------
+    # Sin esto, gnome-keyring no recibe la contraseña del usuario al hacer
+    # login por xRDP, y el keyring queda bloqueado. Esto provoca que VS Code
+    # (y cualquier app que use libsecret) muestre un popup pidiendo la
+    # contraseña del keyring cada vez que arranca.
+    # -------------------------------------------------------------------------
+    log_task "Configurando PAM para auto-desbloquear gnome-keyring..."
+
+    if [ -f /etc/pam.d/xrdp-sesman ]; then
+        if ! grep -q pam_gnome_keyring /etc/pam.d/xrdp-sesman; then
+            sed -i '/^@include common-auth/a auth       optional     pam_gnome_keyring.so' /etc/pam.d/xrdp-sesman
+            sed -i '/^@include common-session/a session    optional     pam_gnome_keyring.so auto_start' /etc/pam.d/xrdp-sesman
+            log_success "PAM configurado para auto-desbloquear gnome-keyring en xrdp"
+        else
+            log_task "PAM ya configurado para gnome-keyring"
+        fi
+    fi
+
+    # -------------------------------------------------------------------------
     # Configurar sesión XFCE para xrdp
     # -------------------------------------------------------------------------
     log_task "Configurando sesión XFCE..."
@@ -34,10 +54,13 @@ if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
 fi
 
 # Start gnome-keyring-daemon for secrets/pkcs11 (needed by VS Code, etc.)
-# This ensures the user's own keyring is running before XFCE starts,
-# avoiding conflicts with the xrdp service user's keyring instance.
+# PAM should have already unlocked the login keyring via pam_gnome_keyring.so.
+# We only need secrets and pkcs11 components — NOT ssh (that's handled by
+# ssh-agent in .bashrc/.zshrc with a fixed socket path).
+# IMPORTANT: Filter out SSH_AUTH_SOCK from the eval output to prevent
+# gnome-keyring from hijacking SSH connections.
 if command -v gnome-keyring-daemon >/dev/null 2>&1; then
-    eval $(gnome-keyring-daemon --start --components=secrets,pkcs11 2>/dev/null)
+    eval $(gnome-keyring-daemon --start --components=secrets,pkcs11 2>/dev/null | grep -v SSH_AUTH_SOCK)
     export GNOME_KEYRING_CONTROL
 fi
 
