@@ -33,6 +33,14 @@ if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
     export DBUS_SESSION_BUS_ADDRESS
 fi
 
+# Start gnome-keyring-daemon for secrets/pkcs11 (needed by VS Code, etc.)
+# This ensures the user's own keyring is running before XFCE starts,
+# avoiding conflicts with the xrdp service user's keyring instance.
+if command -v gnome-keyring-daemon >/dev/null 2>&1; then
+    eval $(gnome-keyring-daemon --start --components=secrets,pkcs11 2>/dev/null)
+    export GNOME_KEYRING_CONTROL
+fi
+
 # Set XDG directories
 export XDG_SESSION_TYPE=x11
 export XDG_SESSION_DESKTOP=xfce
