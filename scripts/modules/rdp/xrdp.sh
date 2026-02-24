@@ -64,6 +64,11 @@ if command -v gnome-keyring-daemon >/dev/null 2>&1; then
     export GNOME_KEYRING_CONTROL
 fi
 
+# Export SSH_AUTH_SOCK so graphical apps (Sublime Merge, etc.) see the
+# ssh-agent started from .bashrc/.zshrc (fixed socket path).
+# Without this, only terminal apps inherit SSH_AUTH_SOCK.
+export SSH_AUTH_SOCK="/run/user/$(id -u)/ssh-agent.sock"
+
 # Set XDG directories
 export XDG_SESSION_TYPE=x11
 export XDG_SESSION_DESKTOP=xfce
