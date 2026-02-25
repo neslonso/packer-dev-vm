@@ -30,14 +30,10 @@ network:
 NETPLAN_EOF
 
         chmod 600 /etc/netplan/00-installer-config.yaml
-        netplan apply
-
-        sleep 2
-        dhclient -r eth0 2>/dev/null || true
-        dhclient eth0 2>/dev/null || true
-        sleep 2
-
-        log_success "Red configurada (DHCP) - IP: $(hostname -I | awk '{print $1}')"
+        # No aplicar netplan aquí: cambiar a DHCP durante el provisioning
+        # mata la conexión SSH de Packer (la IP cambia). La config se aplica
+        # automáticamente en el próximo boot.
+        log_success "Red configurada (DHCP) - se aplicará en próximo boot"
     else
         DNS_YAML=$(echo "${STATIC_DNS}" | sed 's/,/, /g')
 
