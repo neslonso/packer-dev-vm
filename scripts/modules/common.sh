@@ -341,6 +341,29 @@ apply_vscode_settings() {
 }
 EOF
     chown -R "${USERNAME}:${USERNAME}" "${HOME_DIR}/.config/${config_dir}"
+
+    # -------------------------------------------------------------------------
+    # Configurar argv.json para Electron password store
+    # -------------------------------------------------------------------------
+    # En sesiones xRDP, Electron no detecta bien el backend de secretos y
+    # muestra un diálogo "troubleshooting / weaker encryption" al arrancar.
+    # Configurando password-store en argv.json se fuerza el backend correcto.
+    # Mapping: "Code" -> ~/.vscode, "Cursor" -> ~/.cursor, etc.
+    local argv_dir
+    case "${config_dir}" in
+        "Code")         argv_dir="${HOME_DIR}/.vscode" ;;
+        "Cursor")       argv_dir="${HOME_DIR}/.cursor" ;;
+        "Antigravity")  argv_dir="${HOME_DIR}/.antigravity" ;;
+        *)              argv_dir="${HOME_DIR}/.$(echo "${config_dir}" | tr '[:upper:]' '[:lower:]')" ;;
+    esac
+
+    mkdir -p "${argv_dir}"
+    cat > "${argv_dir}/argv.json" << 'ARGV_EOF'
+{
+    "password-store": "gnome-libsecret"
+}
+ARGV_EOF
+    chown -R "${USERNAME}:${USERNAME}" "${argv_dir}"
 }
 
 # Initialize font family on load

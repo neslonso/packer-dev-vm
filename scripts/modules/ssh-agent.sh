@@ -97,25 +97,33 @@ install_ssh_keys_and_agent() {
 # ==============================================================================
 # SSH Agent Configuration
 # ==============================================================================
-# Start ssh-agent if not running
-if [ -z "$SSH_AUTH_SOCK" ]; then
-    # Check for existing agent
+# Use a fixed socket path so all terminals (XFCE, VS Code, XRDP) share the
+# same agent. This avoids conflicts with gnome-keyring or gpg-agent claiming
+# SSH_AUTH_SOCK with a different socket.
+_SSH_AGENT_SOCK="/run/user/$(id -u)/ssh-agent.sock"
+
+if [ -S "$_SSH_AGENT_SOCK" ]; then
+    # Socket exists — check if the agent behind it is alive
+    export SSH_AUTH_SOCK="$_SSH_AGENT_SOCK"
     if [ -f ~/.ssh/agent.env ]; then
         . ~/.ssh/agent.env > /dev/null
-        if ! kill -0 "$SSH_AGENT_PID" 2>/dev/null; then
-            # Agent is dead, start new one
-            eval "$(ssh-agent -s)" > /dev/null
-            echo "export SSH_AUTH_SOCK=$SSH_AUTH_SOCK" > ~/.ssh/agent.env
-            echo "export SSH_AGENT_PID=$SSH_AGENT_PID" >> ~/.ssh/agent.env
-        fi
-    else
-        # No agent file, start new one
-        eval "$(ssh-agent -s)" > /dev/null
-        mkdir -p ~/.ssh
-        echo "export SSH_AUTH_SOCK=$SSH_AUTH_SOCK" > ~/.ssh/agent.env
-        echo "export SSH_AGENT_PID=$SSH_AGENT_PID" >> ~/.ssh/agent.env
     fi
+    if ! ssh-add -l >/dev/null 2>&1; then
+        # Socket is stale, remove and start fresh
+        rm -f "$_SSH_AGENT_SOCK"
+        eval "$(ssh-agent -a "$_SSH_AGENT_SOCK" -s)" > /dev/null
+        mkdir -p ~/.ssh
+        echo "export SSH_AGENT_PID=$SSH_AGENT_PID" > ~/.ssh/agent.env
+    fi
+else
+    # No socket — start a new agent on the fixed path
+    eval "$(ssh-agent -a "$_SSH_AGENT_SOCK" -s)" > /dev/null
+    mkdir -p ~/.ssh
+    echo "export SSH_AGENT_PID=$SSH_AGENT_PID" > ~/.ssh/agent.env
 fi
+
+export SSH_AUTH_SOCK="$_SSH_AGENT_SOCK"
+unset _SSH_AGENT_SOCK
 
 # Add SSH keys to agent (if not already added)
 SSHAGENT_EOF
