@@ -76,6 +76,13 @@ NETPLAN_EOF
     update-locale LANG="${LOCALE}"
 
     # -------------------------------------------------------------------------
+    # Configurar timezone
+    # -------------------------------------------------------------------------
+    log_task "Configurar timezone (${TIMEZONE})..."
+    timedatectl set-timezone "${TIMEZONE}"
+    log_success "Timezone configurada: ${TIMEZONE}"
+
+    # -------------------------------------------------------------------------
     # Instalar herramientas básicas
     # -------------------------------------------------------------------------
     log_task "Instalar herramientas básicas..."

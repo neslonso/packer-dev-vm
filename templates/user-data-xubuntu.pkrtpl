@@ -98,9 +98,6 @@ autoinstall:
 %{ endif ~}
 
 
-    # Timezone
-    - curtin in-target --target=/target -- timedatectl set-timezone ${timezone}
-
     # SSH config
 %{ if ssh_allow_password ~}
     - sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /target/etc/ssh/sshd_config

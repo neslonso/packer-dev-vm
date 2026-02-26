@@ -628,7 +628,6 @@ source "hyperv-iso" "ubuntu" {
       hostname                 = var.hostname
       username                 = var.username
       password_hash            = local.password_hash
-      timezone                 = var.timezone
       locale                   = var.locale
       keyboard                 = var.keyboard
       ssh_allow_password       = var.ssh_allow_password
