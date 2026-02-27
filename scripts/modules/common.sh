@@ -330,6 +330,7 @@ apply_vscode_settings() {
     "terminal.integrated.fontFamily": "${GLOBAL_FONT_FAMILY}",
     "terminal.integrated.fontSize": 13,
     "files.autoSave":"off",
+    "files.hotExit": "onExitAndWindowClose",
     "files.trimTrailingWhitespace": true,
     "explorer.excludeGitIgnore": false,
     "explorer.autoReveal": false,
